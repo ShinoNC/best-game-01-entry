@@ -1,6 +1,6 @@
-// One GameState holds everything. Phases: title, play, levelup, paused, over.
+// One GameState holds everything. Phases: title, play, levelup, stageclear, paused, over.
 // A fresh state is cheap, so restart is just createState with the same seed stream.
-import { PAL, PLAYER, POOL, WIN_TIME } from './config.js';
+import { PAL, PLAYER, POOL } from './config.js';
 
 export function createState(rng, seed) {
   const decor = [];
@@ -18,25 +18,28 @@ export function createState(rng, seed) {
     player: {
       x: POOL.cx, y: POOL.cy + 40, vx: 0, vy: 0, angle: -Math.PI / 2,
       hp: PLAYER.hp, maxHp: PLAYER.hp, radius: PLAYER.radius,
-      speed: PLAYER.speed, clawDamage: PLAYER.clawDamage, clawRate: PLAYER.clawRate,
-      clawRange: PLAYER.clawRange, clawCd: 0, boltCd: 0, dashCd: 0, dashT: 0,
+      speed: PLAYER.speed, weapCd: 0, boltCd: 0, dashCd: 0, dashT: 0,
       iframes: 0, magnet: PLAYER.magnet, shellTier: 0, flash: 0, swing: 0, moving: 0,
     },
     // Upgrade levels, one slot per track — the HUD shows these as ability slots.
     ups: { claws: 0, tempo: 0, reach: 0, shell: 0, legs: 0, bubbles: 0, ink: 0, magnet: 0 },
-    level: 1, xp: 0, pearlsCollected: 0,
+    level: 1, xp: 0, pearlsCollected: 0, coins: 0, coinsEarned: 0,
+    // v4: three weapons, one equipped. Claw is owned from the start; the bow
+    // and blaster come from stage cards or the shop. level 0 = not owned.
+    weapons: { claw: 1, bow: 0, blaster: 0 }, weapon: 'claw',
+    // v4: stage progression. stageSpawned counts this stage's spawned enemies
+    // against the stage budget; the stage clears when the budget is spent and
+    // the pool is empty. stageClearT is the banner beat before the card+shop.
+    stage: 1, stageSpawned: 0, stageEliteDone: false, stageClearT: 0,
     enemies: [], bolts: [], pearls: [], pickups: [], inks: [],
-    kills: 0, score: 0, wave: 1, spawnT: 0.8, eliteT: 45, bossSpawned: false,
+    kills: 0, score: 0, spawnT: 0.8, bossSpawned: false,
     boss: null, banner: '', bannerT: 0, bubbleT: 6, result: null, best: 0,
-    levelChoices: null, stats: { damage: 0, taken: 0, dashes: 0 },
+    levelChoices: null, cardSource: 'level', stagePicked: false, pickedCard: null,
+    stats: { damage: 0, taken: 0, dashes: 0, spent: 0 },
     // v2 clarity: the tutorial hint queue, the boss warning, the level-up flash.
     hints: { idx: 0, cur: null, t: 0, wait: 0, done: [false, false, false, false, false] },
     bossWarned: false, levelFlash: 0,
   };
 }
 
-export function fmtTime(t) {
-  const s = Math.max(0, Math.ceil(WIN_TIME - t));
-  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
-}
 export { PAL };

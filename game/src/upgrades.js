@@ -2,11 +2,13 @@
 // Eight tracks, five levels each; each level is a real, visible change.
 // `what` is the plain-language line on the card — a new player must understand
 // the upgrade without knowing the numbers (v1 cards were numbers only).
+// v4: the damage/speed/range tracks multiply ALL weapons (see weapons.js), so
+// they stay meaningful whichever weapon is equipped.
 export const UPGRADE_DEFS = [
-  { id: 'claws', name: 'SHARPER CLAWS', icon: '✂', desc: '+20% claw damage', what: 'Your claws hit harder', max: 5 },
-  { id: 'tempo', name: 'QUICK CLAWS', icon: '≫', desc: '+18% claw speed', what: 'Your claws swing faster', max: 5 },
-  { id: 'reach', name: 'LONGER REACH', icon: '↔', desc: '+20% claw range', what: 'Your claws reach further', max: 5 },
-  { id: 'shell', name: 'STURDIER SHELL', icon: '⦿', desc: '+20 max HP, heal 20', what: 'More health, tougher shell', max: 5 },
+  { id: 'claws', name: 'SHARPER CLAWS', icon: '✂', desc: '+12% weapon damage', what: 'All your weapons hit harder', max: 5 },
+  { id: 'tempo', name: 'QUICK CLAWS', icon: '≫', desc: '+11% weapon speed', what: 'All your weapons fire faster', max: 5 },
+  { id: 'reach', name: 'LONGER REACH', icon: '↔', desc: '+20% weapon range', what: 'All your weapons reach further', max: 5 },
+  { id: 'shell', name: 'STURDIER SHELL', icon: '⦿', desc: '+15 max HP, heal 15', what: 'More health, tougher shell', max: 5 },
   { id: 'legs', name: 'SWIFT LEGS', icon: '»', desc: '+12% move speed', what: 'You move faster', max: 5 },
   { id: 'bubbles', name: 'BUBBLE BURST', icon: '○', desc: 'A damaging ring every 6s', what: 'Bubbles burst around you', max: 5 },
   { id: 'ink', name: 'INK TRAIL', icon: '✦', desc: 'Dash leaves burning ink', what: 'Dashing leaves burning ink', max: 5 },
@@ -16,10 +18,8 @@ export const UPGRADE_DEFS = [
 export function applyUpgrade(state, id) {
   const p = state.player, u = state.ups;
   u[id] += 1;
-  if (id === 'claws') p.clawDamage *= 1.2;
-  if (id === 'tempo') p.clawRate *= 0.85;
-  if (id === 'reach') p.clawRange *= 1.2;
-  if (id === 'shell') { p.maxHp += 20; p.hp = Math.min(p.maxHp, p.hp + 20); p.shellTier = Math.min(3, u.shell); }
+  // claws/tempo/reach take effect in weaponStats (weapons.js) — no field to mutate.
+  if (id === 'shell') { p.maxHp += 15; p.hp = Math.min(p.maxHp, p.hp + 15); p.shellTier = Math.min(3, u.shell); }
   if (id === 'legs') p.speed *= 1.12;
   if (id === 'magnet') p.magnet *= 1.45;
   // bubbles / ink take effect from their level in world.js.

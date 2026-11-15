@@ -1,9 +1,9 @@
 // Everything the judge sees: the pool, the crab, the creatures, the HUD and the screens.
 // Criterion 1: goal, timer, score, HP, level, controls and restart are all VISIBLE here.
 // Criterion 4: one palette, big readable shapes, a scene that reads at a glance.
-import { BOSS, PAL, PLAYER, POOL, VIEW_H, VIEW_W, WIN_TIME, xpNeed } from './config.js';
+import { PAL, POOL, STAGES, STAGE_COUNT, VIEW_H, VIEW_W, WEAPONS, xpNeed } from './config.js';
 import { UPGRADE_DEFS } from './upgrades.js';
-import { fmtTime } from './state.js';
+import { shopOffers, weaponStats } from './weapons.js';
 
 export const SCREEN_TITLE = 'title';
 export const SCREEN_PLAY = 'play';
@@ -24,6 +24,19 @@ export function levelUpRowX(state) {
   return 290; // middle clear — centred
 }
 
+// The stage-clear screen's hit-boxes, shared with main.js so clicks always
+// match the drawn cards, shop offers and NEXT button. Cards: y 140–330.
+// Shop: two rows of three, y 372–468 and y 484–580. NEXT: y 606–650.
+export function stageClearLayout(state) {
+  const rowX = levelUpRowX(state);
+  const cards = (state.levelChoices || []).map((c, i) => ({ x: rowX + i * 240, y: 140, w: 210, h: 190 }));
+  const shop = [];
+  for (let i = 0; i < 6; i += 1) {
+    shop.push({ x: 140 + (i % 3) * 340, y: 372 + Math.floor(i / 3) * 112, w: 320, h: 96 });
+  }
+  return { cards, shop, next: { x: 480, y: 606, w: 320, h: 44 } };
+}
+
 function star(ctx, x, y, r, rot, color) {
   ctx.fillStyle = color; ctx.beginPath();
   for (let i = 0; i < 10; i += 1) {
@@ -34,7 +47,7 @@ function star(ctx, x, y, r, rot, color) {
   ctx.closePath(); ctx.fill();
 }
 
-function drawCrab(ctx, p, t) {
+function drawCrab(ctx, p, t, weapon, wStats) {
   const s = p.radius / 20; // v2: the crab is 1.5x v1 — every part scales with the radius
   // Soft shadow under the crab: it sits IN the pool, not on top of it.
   ctx.fillStyle = 'rgba(4,26,32,0.35)';
@@ -81,24 +94,35 @@ function drawCrab(ctx, p, t) {
     ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(21.5, sgn * 10, 2.8, 0, Math.PI * 2); ctx.fill();
   }
   ctx.restore();
-  // Claw-swing arc: a gold swoosh sweeping the arc the claws just hit.
-  if (p.swing > 0) {
+  // Claw-swing arc: a gold swoosh sweeping the arc the claws just hit. The arc
+  // comes from the equipped weapon's live stats, so a longer reach reads longer.
+  if (p.swing > 0 && wStats) {
     const prog = 1 - p.swing / 0.18; // 0 -> 1 across the swing
-    const r = p.clawRange * 0.8;
+    const r = wStats.range * 0.8, arc = wStats.arc || 1.6;
     ctx.save(); ctx.translate(p.x, p.y);
     ctx.globalAlpha = (1 - prog) * 0.16;
     ctx.fillStyle = PAL.gold;
     ctx.beginPath(); ctx.moveTo(0, 0);
-    ctx.arc(0, 0, p.clawRange, p.angle - PLAYER.clawArc, p.angle + PLAYER.clawArc); ctx.closePath(); ctx.fill();
+    ctx.arc(0, 0, wStats.range, p.angle - arc, p.angle + arc); ctx.closePath(); ctx.fill();
     ctx.globalAlpha = (1 - prog) * 0.85;
     ctx.strokeStyle = PAL.gold; ctx.lineWidth = 9; ctx.lineCap = 'round';
-    const lead = p.angle - PLAYER.clawArc + prog * PLAYER.clawArc * 2;
+    const lead = p.angle - arc + prog * arc * 2;
     ctx.beginPath(); ctx.arc(0, 0, r, lead - 0.55, lead + 0.15); ctx.stroke();
     ctx.restore();
   }
   if (p.flash > 0) { // hurt flash: a red ring
     ctx.strokeStyle = `rgba(255,93,115,${p.flash * 3})`; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(p.x, p.y, p.radius + 6, 0, Math.PI * 2); ctx.stroke();
+  }
+  // v4: the equipped weapon shows above the crab (bow ⌖ / blaster ✦) — the claw
+  // needs no marker, it IS the crab. The glyph is small and sits above the shell.
+  if (weapon && weapon !== 'claw') {
+    const glyph = weapon === 'bow' ? '⌖' : '✦';
+    ctx.fillStyle = 'rgba(6,42,51,0.8)';
+    ctx.beginPath(); ctx.arc(p.x, p.y - p.radius - 14, 13, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = weapon === 'bow' ? '#bfe8e0' : '#c9a7ff';
+    ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(glyph, p.x, p.y - p.radius - 8);
   }
 }
 
@@ -162,12 +186,12 @@ function drawEnemy(ctx, e, t, ang) {
       ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.moveTo(-e.r * 2.2, 0); ctx.lineTo(-e.r * 1.2, 0); ctx.stroke();
     }
-  } else if (e.type === 'gull' || e.type === 'heron') {
+  } else if (e.type === 'gull' || e.type === 'heron' || e.type === 'stormheron') {
     // Flying birds cast a soft shadow on the water below — height reads at once.
     ctx.fillStyle = 'rgba(4,26,32,0.22)';
     ctx.beginPath(); ctx.ellipse(0, e.r * 2.4, e.r * 1.1, e.r * 0.45, 0, 0, Math.PI * 2); ctx.fill();
     ctx.rotate(face);
-    const s = e.type === 'heron' ? 1.7 : 1;
+    const s = e.type === 'stormheron' ? 2.0 : e.type === 'heron' ? 1.7 : 1;
     ctx.scale(s, s);
     const flap = Math.sin(t * 10 + e.wob) * 0.7; // wings sweep up and down
     ctx.fillStyle = flash ? '#fff' : e.color;
@@ -180,10 +204,14 @@ function drawEnemy(ctx, e, t, ang) {
     ctx.fillStyle = flash ? '#fff' : '#ffd166';
     ctx.beginPath(); ctx.moveTo(e.r * 0.7, -3); ctx.lineTo(e.r * 1.5, 0); ctx.lineTo(e.r * 0.7, 3); ctx.closePath(); ctx.fill();
     ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(e.r * 0.5, -4, 2.5, 0, Math.PI * 2); ctx.fill();
-    if (e.type === 'heron') { // long legs trailing behind
+    if (e.type === 'heron' || e.type === 'stormheron') { // long legs trailing behind
       ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.moveTo(-e.r * 0.7, -6); ctx.lineTo(-e.r * 1.4, -2); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(-e.r * 0.7, 6); ctx.lineTo(-e.r * 1.4, 2); ctx.stroke();
+    }
+    if (e.type === 'stormheron') { // storm crest: a dark plume on the head
+      ctx.strokeStyle = '#4a5178'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(e.r * 0.3, -e.r * 0.5); ctx.lineTo(-e.r * 0.3, -e.r * 0.9); ctx.stroke();
     }
   } else { // guppy: a little fish with a wagging tail
     ctx.rotate(face);
@@ -206,7 +234,7 @@ function drawEnemy(ctx, e, t, ang) {
     ctx.fillStyle = '#ffd166'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
     ctx.fillText('★', e.x, e.y - e.r - 26);
   }
-  if (e.hp < e.maxHp && (e.elite || e.type === 'heron' || e.maxHp > 40)) {
+  if (e.hp < e.maxHp && (e.elite || e.boss || e.maxHp > 40)) {
     const w = e.r * 2;
     ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(e.x - w / 2, e.y - e.r - 10, w, 5);
     ctx.fillStyle = '#ff5d73'; ctx.fillRect(e.x - w / 2, e.y - e.r - 10, w * (e.hp / e.maxHp), 5);
@@ -320,8 +348,8 @@ export function createRenderer(canvas) {
     //   bottom bar y 620–704: level/XP left, cooldowns right, controls strip centre
     const p = state.player;
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-    // Top-left: HP bar with a heart + shell tier, each on its own line.
-    ctx.fillStyle = 'rgba(6,42,51,0.75)'; ctx.fillRect(18, 14, 250, 80);
+    // Top-left: HP bar with a heart + shell tier + the equipped weapon, each on its own line.
+    ctx.fillStyle = 'rgba(6,42,51,0.75)'; ctx.fillRect(18, 14, 250, 104);
     ctx.fillStyle = PAL.hp; ctx.font = 'bold 26px sans-serif';
     ctx.fillText('♥', 28, 44);
     ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(58, 26, 190, 18);
@@ -330,41 +358,50 @@ export function createRenderer(canvas) {
     ctx.fillText(`${Math.ceil(p.hp)} / ${p.maxHp} HP`, 58, 64);
     ctx.fillStyle = PAL.gold; ctx.font = 'bold 15px sans-serif';
     ctx.fillText(`SHELL ${'●'.repeat(p.shellTier + 1)}${'○'.repeat(3 - p.shellTier)}`, 58, 86);
-    // Top-centre: the win condition, always visible — countdown AND the goal,
+    // v4: the equipped weapon, with its level and the switch key. Owned weapons
+    // show as icons after the name, so the arsenal reads at a glance.
+    const wDef = WEAPONS[state.weapon];
+    const ownedIcons = ['claw', 'bow', 'blaster'].map((id) => (state.weapons[id] > 0 ? WEAPONS[id].icon : '·')).join(' ');
+    ctx.fillStyle = PAL.foam; ctx.font = 'bold 14px sans-serif';
+    ctx.fillText(`${wDef.icon} ${wDef.name} Lv${state.weapons[state.weapon]}  ·  ${ownedIcons}  ·  Q`, 28, 108);
+    // Top-centre: the stage, always visible — the stage number AND the goal,
     // written as an explicit WIN/LOSE line (the top entries all do this).
+    const remaining = (STAGES[state.stage - 1].budget - state.stageSpawned) + state.enemies.length;
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(6,42,51,0.75)'; ctx.fillRect(VIEW_W / 2 - 170, 14, 340, 80);
     ctx.fillStyle = PAL.text; ctx.font = 'bold 26px sans-serif';
-    ctx.fillText(state.time >= WIN_TIME ? 'HIGH TIDE!' : `HIGH TIDE IN ${fmtTime(state.time)}`, VIEW_W / 2, 40);
+    ctx.fillText(`STAGE ${state.stage} / ${STAGE_COUNT}`, VIEW_W / 2, 40);
     ctx.fillStyle = PAL.gold; ctx.font = 'bold 13px sans-serif';
-    ctx.fillText('WIN: SURVIVE TO HIGH TIDE · LOSE: HP = 0', VIEW_W / 2, 62);
+    ctx.fillText('WIN: CLEAR STAGE 10 · LOSE: HP = 0', VIEW_W / 2, 62);
     ctx.fillStyle = PAL.dim; ctx.font = 'bold 14px sans-serif';
-    ctx.fillText(`WAVE ${state.wave}  •  ${state.enemies.length} creatures`, VIEW_W / 2, 82);
-    // Boss countdown in the 15 s before the heron arrives — never a surprise.
+    ctx.fillText(state.boss ? `${state.boss.name} — DRIVE IT OFF!` : `${remaining} creatures left`, VIEW_W / 2, 82);
+    // Boss warning on a boss stage, before the heron arrives — never a surprise.
     // v3: its own dark pill in the boss strip, so it reads over any background.
-    if (!state.bossSpawned && state.time >= BOSS.spawnAt - 15) {
-      const warn = `⚠ THE GREAT HERON ARRIVES IN ${Math.ceil(BOSS.spawnAt - state.time)} ⚠`;
+    if (STAGES[state.stage - 1].boss && !state.bossSpawned && !state.boss) {
+      const warn = state.stage === STAGE_COUNT ? '⚠ THE STORM HERON IS COMING ⚠' : '⚠ THE GREAT HERON IS COMING ⚠';
       ctx.font = 'bold 17px sans-serif';
       const ww = ctx.measureText(warn).width + 40;
       ctx.fillStyle = 'rgba(6,42,51,0.85)'; ctx.fillRect(VIEW_W / 2 - ww / 2, 100, ww, 32);
       ctx.fillStyle = `rgba(255,93,115,${0.6 + 0.4 * Math.sin(t * 6)})`;
       ctx.fillText(warn, VIEW_W / 2, 122);
     }
-    // Boss bar under the timer while the Heron lives.
+    // Boss bar under the timer while a heron lives.
     if (state.boss) {
       ctx.fillStyle = 'rgba(6,42,51,0.75)'; ctx.fillRect(VIEW_W / 2 - 190, 104, 380, 26);
       ctx.fillStyle = '#e8e4d8'; ctx.font = 'bold 14px sans-serif';
-      ctx.fillText('THE GREAT HERON', VIEW_W / 2, 122);
+      ctx.fillText(state.boss.name, VIEW_W / 2, 122);
       ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(VIEW_W / 2 - 180, 126, 360, 8);
       ctx.fillStyle = '#ff5d73'; ctx.fillRect(VIEW_W / 2 - 180, 126, 360 * (state.boss.hp / state.boss.maxHp), 8);
     }
-    // Top-right: score, kills, best.
+    // Top-right: score, coins (the shop money — always visible), kills, best.
     ctx.textAlign = 'right';
-    ctx.fillStyle = 'rgba(6,42,51,0.75)'; ctx.fillRect(VIEW_W - 268, 14, 250, 62);
+    ctx.fillStyle = 'rgba(6,42,51,0.75)'; ctx.fillRect(VIEW_W - 268, 14, 250, 88);
     ctx.fillStyle = PAL.gold; ctx.font = 'bold 24px sans-serif';
     ctx.fillText(`SCORE ${state.score}`, VIEW_W - 28, 40);
+    ctx.fillStyle = PAL.gold; ctx.font = 'bold 17px sans-serif';
+    ctx.fillText(`◉ ${state.coins} COINS`, VIEW_W - 28, 64);
     ctx.fillStyle = PAL.text; ctx.font = 'bold 15px sans-serif';
-    ctx.fillText(`BEST ${state.best}  •  ${state.kills} slain`, VIEW_W - 28, 62);
+    ctx.fillText(`BEST ${state.best}  •  ${state.kills} slain`, VIEW_W - 28, 86);
     // Bottom-left: level + XP bar + ability slots (the 8 upgrade tracks, level inside each box).
     ctx.textAlign = 'left';
     ctx.fillStyle = 'rgba(6,42,51,0.75)'; ctx.fillRect(18, VIEW_H - 100, 420, 84);
@@ -410,7 +447,7 @@ export function createRenderer(canvas) {
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(6,42,51,0.75)'; ctx.fillRect(446, 676, 558, 24);
     ctx.fillStyle = PAL.foam; ctx.font = '13px sans-serif';
-    ctx.fillText('WASD move  ·  CLICK bolt  ·  SPACE dash  ·  P pause  ·  M mute', VIEW_W / 2, 693);
+    ctx.fillText('WASD move  ·  CLICK bolt  ·  SPACE dash  ·  Q weapon  ·  P pause  ·  M mute', VIEW_W / 2, 693);
     // Tutorial hint pill, bottom centre: one short line at a time, fading out.
     // Play phase only — on the level-up screen the cards own the player's attention.
     const hint = state.phase === 'play' && state.hints && state.hints.cur;
@@ -436,11 +473,11 @@ export function createRenderer(canvas) {
     ctx.fillText('TIDEKEEPER', VIEW_W / 2, 170);
     // Goal first, in gold: a new player reads the goal + controls in under 5 s.
     ctx.fillStyle = PAL.gold; ctx.font = 'bold 23px sans-serif';
-    ctx.fillText('★ SURVIVE 5:00 — WHEN THE TIDE COMES IN, YOU WIN ★', VIEW_W / 2, 222);
+    ctx.fillText('★ CLEAR 10 STAGES — BEAT THE HERONS, WIN THE POOL ★', VIEW_W / 2, 222);
     ctx.fillStyle = PAL.text; ctx.font = '19px sans-serif';
-    ctx.fillText('Slay creatures. Gather pearls. Level up.', VIEW_W / 2, 256);
-    // The three controls as chips, side by side.
-    const chips = ['WASD — MOVE', 'CLICK — BUBBLE BOLT', 'SPACE — DASH'];
+    ctx.fillText('Slay creatures. Gather pearls and coins. Buy better weapons.', VIEW_W / 2, 256);
+    // The four controls as chips, side by side.
+    const chips = ['WASD — MOVE', 'CLICK — BUBBLE BOLT', 'SPACE — DASH', 'Q — SWITCH WEAPON'];
     ctx.font = 'bold 16px sans-serif';
     const widths = chips.map((c) => ctx.measureText(c).width + 36);
     const gap = 16;
@@ -453,10 +490,10 @@ export function createRenderer(canvas) {
       x += widths[i] + gap;
     }
     ctx.fillStyle = PAL.dim; ctx.font = '16px sans-serif';
-    ctx.fillText('Your claws swing on their own — just get close.', VIEW_W / 2, 366);
+    ctx.fillText('Your weapons attack on their own — dodge, position, and buy better gear.', VIEW_W / 2, 366);
     // Scope line: what the game contains, in numbers (the top titles all list theirs).
     ctx.fillStyle = PAL.foam; ctx.font = '15px sans-serif';
-    ctx.fillText('6 creatures · elites every 45s · the Great Heron · 8 upgrades', VIEW_W / 2, 396);
+    ctx.fillText('10 stages · 2 boss herons · 3 weapons · shop after every stage · 8 upgrades', VIEW_W / 2, 396);
     const blink = state.shotMode || Math.floor(performance.now() / 500) % 2 === 0;
     if (blink) {
       ctx.fillStyle = PAL.gold; ctx.font = 'bold 30px sans-serif';
@@ -467,6 +504,48 @@ export function createRenderer(canvas) {
     // A crab and a jellyfish flank the title, so the cover shows the game at once.
     drawCrab(ctx, { ...state.player, x: 330, y: 470, angle: 0.3, iframes: 0, flash: 0, swing: 0 }, 0);
     drawEnemy(ctx, { type: 'jelly', x: 950, y: 470, r: 26, color: '#ff8fb0', dark: '#c94f78', hp: 1, maxHp: 1, flash: 0, wob: 0.5, elite: false }, 0, Math.PI);
+  }
+
+  // One card, drawn for both the level-up screen and the stage-clear screen.
+  // A weapon card (isWeapon) shows NEW WEAPON instead of a level line; an
+  // upgrade card shows its Lv jump. Compact cards are the stage-clear size.
+  function drawCard(d, x, y, w, h, i, state, opts) {
+    const { compact = false, dimmed = false, picked = false } = opts || {};
+    ctx.save();
+    if (dimmed) ctx.globalAlpha = 0.4;
+    ctx.fillStyle = '#0e5566'; ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = PAL.gold; ctx.lineWidth = picked ? 5 : 3;
+    ctx.strokeRect(x, y, w, h);
+    ctx.textAlign = 'center';
+    if (compact) {
+      ctx.fillStyle = PAL.xp; ctx.font = 'bold 40px sans-serif';
+      ctx.fillText(d.icon, x + w / 2, y + 52);
+      ctx.fillStyle = PAL.text; ctx.font = 'bold 18px sans-serif';
+      ctx.fillText(d.name, x + w / 2, y + 86);
+      ctx.fillStyle = PAL.dim; ctx.font = '15px sans-serif';
+      ctx.fillText(d.desc, x + w / 2, y + 110);
+      ctx.fillStyle = '#cfe8df'; ctx.font = 'italic 13px sans-serif';
+      ctx.fillText(d.what, x + w / 2, y + 132);
+      ctx.fillStyle = PAL.gold; ctx.font = 'bold 15px sans-serif';
+      ctx.fillText(picked ? '✓ PICKED' : d.isWeapon ? '★ NEW WEAPON ★' : `Lv ${state.ups[d.id]} → ${state.ups[d.id] + 1}`, x + w / 2, y + 162);
+      ctx.fillStyle = PAL.text; ctx.font = 'bold 14px sans-serif';
+      ctx.fillText(`[${i + 1}]`, x + w - 22, y + 22);
+    } else {
+      ctx.fillStyle = PAL.xp; ctx.font = 'bold 44px sans-serif';
+      ctx.fillText(d.icon, x + w / 2, y + 64);
+      ctx.fillStyle = PAL.text; ctx.font = 'bold 19px sans-serif';
+      ctx.fillText(d.name, x + w / 2, y + 104);
+      ctx.fillStyle = PAL.dim; ctx.font = '16px sans-serif';
+      ctx.fillText(d.desc, x + w / 2, y + 130);
+      // The plain-language line: what the upgrade actually does, in words.
+      ctx.fillStyle = '#cfe8df'; ctx.font = 'italic 14px sans-serif';
+      ctx.fillText(d.what, x + w / 2, y + 156);
+      ctx.fillStyle = PAL.gold; ctx.font = 'bold 16px sans-serif';
+      ctx.fillText(d.isWeapon ? '★ NEW WEAPON ★' : `Lv ${state.ups[d.id]} → ${state.ups[d.id] + 1}`, x + w / 2, y + 182);
+      ctx.fillStyle = PAL.text; ctx.font = 'bold 18px sans-serif';
+      ctx.fillText(`[ ${i + 1} ]`, x + w / 2, y + 208);
+    }
+    ctx.restore();
   }
 
   function drawLevelUp(state) {
@@ -483,24 +562,70 @@ export function createRenderer(canvas) {
     ctx.fillText('Press 1, 2 or 3 — or click a card.', VIEW_W / 2, 212);
     const cards = state.levelChoices || [];
     const rowX = levelUpRowX(state); // the row slides away from the crab/boss
+    cards.forEach((d, i) => drawCard(d, rowX + i * 240, 270, 210, 220, i, state));
+  }
+
+  // The stage-clear screen: pick 1 of 3 cards, then the shop, then the next
+  // stage. One screen, no HUD behind it — the title owns the top of the frame
+  // (the HUD's top panels would collide with it, as the v3 level-up title did
+  // with the boss bar). The empty pool and the crab still show through the dim.
+  function drawStageClear(state) {
+    const L = stageClearLayout(state);
+    ctx.fillStyle = 'rgba(6,42,51,0.62)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = PAL.gold; ctx.font = 'bold 38px sans-serif';
+    ctx.fillText(`★ STAGE ${state.stage} CLEAR! ★`, VIEW_W / 2, 64);
+    ctx.fillStyle = PAL.gold; ctx.font = 'bold 18px sans-serif';
+    ctx.fillText(`◉ ${state.coins} COINS — spend them before the next stage`
+      + (state.pickedCard ? `  ·  PICKED: ${state.pickedCard.name}` : ''), VIEW_W / 2, 96);
+    ctx.fillStyle = PAL.dim; ctx.font = '17px sans-serif';
+    ctx.fillText(state.stagePicked ? 'CARD PICKED — now shop, then head on!'
+      : 'PICK A CARD — press 1, 2 or 3, or click', VIEW_W / 2, 124);
+    const cards = state.levelChoices || [];
     cards.forEach((d, i) => {
-      const x = rowX + i * 240, y = 270, w = 210, h = 220;
-      ctx.fillStyle = '#0e5566'; ctx.fillRect(x, y, w, h);
-      ctx.strokeStyle = PAL.gold; ctx.lineWidth = 3; ctx.strokeRect(x, y, w, h);
-      ctx.fillStyle = PAL.xp; ctx.font = 'bold 44px sans-serif';
-      ctx.fillText(d.icon, x + w / 2, y + 64);
-      ctx.fillStyle = PAL.text; ctx.font = 'bold 19px sans-serif';
-      ctx.fillText(d.name, x + w / 2, y + 104);
-      ctx.fillStyle = PAL.dim; ctx.font = '16px sans-serif';
-      ctx.fillText(d.desc, x + w / 2, y + 130);
-      // The plain-language line: what the upgrade actually does, in words.
-      ctx.fillStyle = '#cfe8df'; ctx.font = 'italic 14px sans-serif';
-      ctx.fillText(d.what, x + w / 2, y + 156);
-      ctx.fillStyle = PAL.gold; ctx.font = 'bold 16px sans-serif';
-      ctx.fillText(`Lv ${state.ups[d.id]} → ${state.ups[d.id] + 1}`, x + w / 2, y + 182);
-      ctx.fillStyle = PAL.text; ctx.font = 'bold 18px sans-serif';
-      ctx.fillText(`[ ${i + 1} ]`, x + w / 2, y + 208);
+      const b = L.cards[i];
+      drawCard(d, b.x, b.y, b.w, b.h, i, state,
+        { compact: true, dimmed: state.stagePicked && state.pickedCard !== d, picked: state.pickedCard === d });
     });
+    // The shop: six real offers with real prices. Buyable = gold border,
+    // too poor = dim red price, maxed/full = grey.
+    ctx.textAlign = 'left';
+    ctx.fillStyle = PAL.gold; ctx.font = 'bold 20px sans-serif';
+    ctx.fillText('SHOP — click to buy', 140, 360);
+    const offers = shopOffers(state);
+    offers.forEach((o, i) => {
+      const b = L.shop[i];
+      ctx.fillStyle = o.state === 'buy' ? '#0e5566' : 'rgba(14,85,102,0.55)';
+      ctx.fillRect(b.x, b.y, b.w, b.h);
+      ctx.strokeStyle = o.state === 'buy' ? PAL.gold : 'rgba(159,196,189,0.4)';
+      ctx.lineWidth = o.state === 'buy' ? 2 : 1;
+      ctx.strokeRect(b.x, b.y, b.w, b.h);
+      ctx.fillStyle = o.state === 'max' ? PAL.dim : PAL.xp;
+      ctx.font = 'bold 28px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(o.icon, b.x + 30, b.y + 52);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = o.state === 'max' ? PAL.dim : PAL.text;
+      ctx.font = 'bold 16px sans-serif';
+      ctx.fillText(o.name, b.x + 58, b.y + 32);
+      ctx.fillStyle = PAL.dim; ctx.font = '13px sans-serif';
+      ctx.fillText(o.desc, b.x + 58, b.y + 56);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = o.state === 'buy' ? PAL.gold : o.state === 'poor' ? '#ff8fa0' : PAL.dim;
+      ctx.font = 'bold 16px sans-serif';
+      ctx.fillText(o.label, b.x + b.w - 14, b.y + 40); // the label is just the price — the name already shows the level
+      ctx.fillStyle = PAL.dim; ctx.font = '12px sans-serif';
+      ctx.fillText(o.state === 'buy' ? 'click to buy' : o.state === 'poor' ? 'kill more creatures' : '', b.x + b.w - 14, b.y + 62);
+    });
+    // NEXT STAGE: dim until a card is picked — the card choice is the point
+    // of the screen, and skipping it by accident would waste the reward.
+    const n = L.next;
+    ctx.fillStyle = state.stagePicked ? 'rgba(255,209,102,0.2)' : 'rgba(6,42,51,0.85)';
+    ctx.fillRect(n.x, n.y, n.w, n.h);
+    ctx.strokeStyle = state.stagePicked ? PAL.gold : 'rgba(159,196,189,0.5)';
+    ctx.lineWidth = 2; ctx.strokeRect(n.x, n.y, n.w, n.h);
+    ctx.fillStyle = state.stagePicked ? PAL.gold : PAL.dim;
+    ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(state.stagePicked ? `NEXT STAGE ${state.stage + 1} →  [Enter]` : 'PICK A CARD FIRST', VIEW_W / 2, n.y + 29);
   }
 
   function drawPaused() {
@@ -516,14 +641,14 @@ export function createRenderer(canvas) {
     const won = state.result === 'won';
     // Letter grade: the top entries all grade the run, and the grade gives the
     // player a reason to run again. S = win with 60+ HP, A = win, B = win nearly
-    // dead, C = lost after 4:00, D = lost earlier.
+    // dead, C = lost at stage 8+, D = lost earlier.
     const hp = Math.ceil(state.player.hp);
     let grade, gradeColor, nextGoal;
     if (won && hp >= 60) { grade = 'S'; gradeColor = '#ffd166'; nextGoal = 'NEXT GOAL: beat your best score'; }
     else if (won && hp > 25) { grade = 'A'; gradeColor = '#7fe0c3'; nextGoal = 'NEXT GOAL: finish with 60+ HP for grade S'; }
     else if (won) { grade = 'B'; gradeColor = '#8fb8ff'; nextGoal = 'NEXT GOAL: finish with 26+ HP for grade A'; }
-    else if (state.time >= 240) { grade = 'C'; gradeColor = '#ffab5e'; nextGoal = 'NEXT GOAL: survive to HIGH TIDE to win'; }
-    else { grade = 'D'; gradeColor = '#ff5d73'; nextGoal = 'NEXT GOAL: survive past 4:00 for grade C'; }
+    else if (state.stage >= 8) { grade = 'C'; gradeColor = '#ffab5e'; nextGoal = 'NEXT GOAL: clear stage 10 to win'; }
+    else { grade = 'D'; gradeColor = '#ff5d73'; nextGoal = 'NEXT GOAL: reach stage 8 for grade C'; }
     ctx.fillStyle = 'rgba(6,42,51,0.86)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     ctx.textAlign = 'center';
     ctx.fillStyle = won ? PAL.gold : PAL.hp; ctx.font = 'bold 64px sans-serif';
@@ -536,23 +661,28 @@ export function createRenderer(canvas) {
     ctx.fillText(`SCORE ${state.score}`, VIEW_W / 2, 305);
     ctx.fillStyle = PAL.text; ctx.font = '22px sans-serif';
     const mins = Math.floor(state.time / 60), secs = Math.floor(state.time % 60);
-    ctx.fillText(`${state.kills} slain  •  ${state.pearlsCollected} pearls  •  Level ${state.level}  •  ${mins}:${String(secs).padStart(2, '0')} survived`, VIEW_W / 2, 345);
-    ctx.fillText(`Damage dealt ${state.stats.damage}  •  Damage taken ${state.stats.taken}  •  Dashes ${state.stats.dashes}`, VIEW_W / 2, 375);
+    ctx.fillText(`${state.kills} slain  •  ${state.pearlsCollected} pearls  •  ${state.coinsEarned} coins  •  Stage ${state.stage}/10  •  Level ${state.level}  •  ${mins}:${String(secs).padStart(2, '0')}`, VIEW_W / 2, 345);
+    ctx.fillText(`Damage dealt ${state.stats.damage}  •  Damage taken ${state.stats.taken}  •  Dashes ${state.stats.dashes}  •  Spent ${state.stats.spent} ◉`, VIEW_W / 2, 375);
+    // v4: weapons recap — what the run bought and how far each weapon got.
+    const owned = ['claw', 'bow', 'blaster'].filter((id) => state.weapons[id] > 0)
+      .map((id) => `${WEAPONS[id].name} Lv${state.weapons[id]}`).join('  ·  ');
+    ctx.fillStyle = PAL.foam; ctx.font = '17px sans-serif';
+    ctx.fillText(`WEAPONS: ${owned}`, VIEW_W / 2, 402);
     // v3: build recap — the upgrades this run picked, in the HUD's own
     // icon+level language (the top entries' victory screens show one too).
     const built = UPGRADE_DEFS.filter((d) => state.ups[d.id] > 0)
       .map((d) => `${d.icon} Lv${state.ups[d.id]}`).join('  ·  ');
     ctx.fillStyle = PAL.foam; ctx.font = '17px sans-serif';
-    ctx.fillText(built ? `BUILD: ${built}` : 'BUILD: no upgrades yet', VIEW_W / 2, 402);
+    ctx.fillText(built ? `UPGRADES: ${built}` : 'UPGRADES: none yet', VIEW_W / 2, 426);
     ctx.fillStyle = PAL.xp; ctx.font = 'bold 19px sans-serif';
-    ctx.fillText(nextGoal, VIEW_W / 2, 430);
+    ctx.fillText(nextGoal, VIEW_W / 2, 454);
     ctx.fillStyle = state.score >= state.best && state.score > 0 ? PAL.gold : PAL.dim;
     ctx.font = 'bold 22px sans-serif';
-    ctx.fillText(state.score >= state.best && state.score > 0 ? '★ NEW BEST SCORE ★' : `BEST ${state.best}`, VIEW_W / 2, 462);
+    ctx.fillText(state.score >= state.best && state.score > 0 ? '★ NEW BEST SCORE ★' : `BEST ${state.best}`, VIEW_W / 2, 486);
     const blink = state.shotMode || Math.floor(performance.now() / 500) % 2 === 0;
     if (blink) {
       ctx.fillStyle = PAL.text; ctx.font = 'bold 28px sans-serif';
-      ctx.fillText('PRESS R  or  CLICK  to play again', VIEW_W / 2, 505);
+      ctx.fillText('PRESS R  or  CLICK  to play again', VIEW_W / 2, 529);
     }
   }
 
@@ -571,6 +701,15 @@ export function createRenderer(canvas) {
       }
       for (const pe of state.pearls) { // pearls bob and glint (fat ones are gold)
         const bobY = Math.sin(pe.bob) * 3;
+        if (pe.kind === 'coin') { // coins are gold discs with a darker rim — shop money, not XP
+          ctx.fillStyle = PAL.gold;
+          ctx.beginPath(); ctx.arc(pe.x, pe.y + bobY, 7, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = '#c9962e'; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(pe.x, pe.y + bobY, 7, 0, Math.PI * 2); ctx.stroke();
+          ctx.fillStyle = '#c9962e';
+          ctx.beginPath(); ctx.arc(pe.x, pe.y + bobY, 2.5, 0, Math.PI * 2); ctx.fill();
+          continue;
+        }
         ctx.fillStyle = pe.v >= 3 ? PAL.gold : PAL.pearl;
         ctx.beginPath(); ctx.arc(pe.x, pe.y + bobY, pe.v >= 3 ? 8 : 5, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = 'rgba(255,255,255,0.85)';
@@ -590,12 +729,23 @@ export function createRenderer(canvas) {
         }
       }
       for (const b of state.bolts) {
-        ctx.strokeStyle = 'rgba(191,232,224,0.8)'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(b.x, b.y, b.r + 4, 0, Math.PI * 2); ctx.stroke();
-        ctx.fillStyle = '#bfe8e0'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
+        if (b.kind === 'arrow') { // bow arrow: a long bubble dart with a bright head
+          const a = Math.atan2(b.vy, b.vx);
+          ctx.strokeStyle = 'rgba(191,232,224,0.8)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(b.x - Math.cos(a) * 16, b.y - Math.sin(a) * 16);
+          ctx.lineTo(b.x + Math.cos(a) * 8, b.y + Math.sin(a) * 8); ctx.stroke();
+          ctx.fillStyle = '#e8fffa'; ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI * 2); ctx.fill();
+        } else if (b.kind === 'pellet') { // blaster pellet: a violet ink blob
+          ctx.fillStyle = '#7b5cff'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.arc(b.x - 1.5, b.y - 1.5, 2, 0, Math.PI * 2); ctx.fill();
+        } else { // bubble bolt: a ringed bubble
+          ctx.strokeStyle = 'rgba(191,232,224,0.8)'; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(b.x, b.y, b.r + 4, 0, Math.PI * 2); ctx.stroke();
+          ctx.fillStyle = '#bfe8e0'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
+        }
       }
       for (const e of state.enemies) drawEnemy(ctx, e, t, Math.atan2(state.player.y - e.y, state.player.x - e.x));
-      if (state.phase !== 'title') drawCrab(ctx, state.player, t);
+      if (state.phase !== 'title') drawCrab(ctx, state.player, t, state.weapon, weaponStats(state));
       fx.draw(ctx);
       // Hurt vignette: red edges while the crab is flashing from a hit.
       if (state.player.flash > 0 && state.phase === 'play') {
@@ -612,6 +762,7 @@ export function createRenderer(canvas) {
       if (state.phase === 'play' || state.phase === 'paused' || state.phase === 'levelup') drawHud(state, t);
       if (state.phase === 'title') drawTitle(state);
       if (state.phase === 'levelup') drawLevelUp(state);
+      if (state.phase === 'stageclear') drawStageClear(state); // no HUD here — its own title owns the top
       if (state.phase === 'paused') drawPaused();
       if (state.phase === 'over') drawOver(state);
       ctx.setTransform(1, 0, 0, 1, 0, 0);

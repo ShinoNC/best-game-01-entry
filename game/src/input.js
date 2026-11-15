@@ -1,5 +1,7 @@
-// Keyboard + mouse, read once per frame. WASD/arrows move, Space/Shift dash,
-// mouse click fires a bubble bolt, 1/2/3 pick a level-up card, P/Esc pause, M mute, R restart.
+// Keyboard + mouse, read once per frame. WASD/arrows move, CLICK fires a bubble
+// bolt at the mouse, Space/Shift dash, Q switches weapon, 1/2/3 pick a card,
+// P/Esc pause, M mute, R restart. Weapons attack on their own — the mouse
+// never triggers them.
 export const ACTION_CONFIRM = 'confirm';
 export const ACTION_PAUSE = 'pause';
 export const ACTION_MUTE = 'mute';
@@ -53,6 +55,7 @@ export function createInput(canvas) {
     },
     mouse() { return { x: mouseX, y: mouseY }; },
     click() { const c = mouseClicked; mouseClicked = false; return c; },
+    switchPressed() { return this.wasPressed('q'); },
     endFrame() { pressed.clear(); },
   };
 }

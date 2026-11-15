@@ -1,17 +1,21 @@
 // TIDEKEEPER — boot and the one loop.
-// A hermit crab holds the rockpool until high tide (5:00). Slay creatures, gather
-// pearls, level up, survive. Fixed 60 Hz sim apart from rendering; seeded RNG.
-// Criterion 1: title -> play -> level-up -> win/lose -> restart, all real, all visible.
-// ?seed=N fixes the run. ?shot=start|play|elite|boss|levelup|end stages that scene for screenshots.
+// A hermit crab clears 10 stages of the rockpool, buys better weapons in the
+// shop after each stage, and drives off the herons at stages 5 and 10 to win.
+// Fixed 60 Hz sim apart from rendering; seeded RNG.
+// Criterion 1: title -> play -> level-up -> stage-clear (card + shop) ->
+// win/lose -> restart, all real, all visible.
+// ?seed=N fixes the run. ?shot=start|play|elite|boss|storm|levelup|stageclear|end
+// stages that scene for screenshots.
 import { BEST_KEY, VIEW_H, VIEW_W } from './config.js';
 import { createRandom } from './random.js';
 import { createState } from './state.js';
 import { createInput } from './input.js';
 import { createAudio } from './audio.js';
 import { createParticles } from './particles.js';
-import { createRenderer, levelUpRowX } from './render.js';
-import { STEP, stepWorld } from './world.js';
+import { createRenderer, levelUpRowX, stageClearLayout } from './render.js';
+import { STEP, nextStage, stepWorld } from './world.js';
 import { applyUpgrade } from './upgrades.js';
+import { applyStageCard, buyOffer, switchWeapon } from './weapons.js';
 import { stageShot } from './shots.js';
 
 const params = new URLSearchParams(window.location.search);
@@ -70,19 +74,26 @@ function toLogical(mx, my) {
   return { x: (mx - ox) / scale, y: (my - oy) / scale };
 }
 
+function inBox(m, b) { return m.x >= b.x && m.x <= b.x + b.w && m.y >= b.y && m.y <= b.y + b.h; }
+
 function handleMenus() {
   if (input.mutePressed()) { const m = audio.toggleMute(); status.textContent = m ? 'Muted' : 'Sound on'; }
   if (state.phase === 'title') {
     if (input.confirmPressed() || input.click()) {
       audio.unlock();
       state.phase = 'play';
-      state.banner = 'SURVIVE UNTIL HIGH TIDE — 5:00'; state.bannerT = 3;
-      status.textContent = 'The tide rises. Hold the pool!';
+      state.banner = 'STAGE 1 — SLAY THEM ALL'; state.bannerT = 3;
+      status.textContent = 'Clear 10 stages. The herons wait at stages 5 and 10!';
     }
     return;
   }
   if (state.phase === 'play') {
-    if (input.pausePressed()) { state.phase = 'paused'; status.textContent = 'Paused'; }
+    if (input.pausePressed()) { state.phase = 'paused'; status.textContent = 'Paused'; return; }
+    if (input.switchPressed()) {
+      const before = state.weapon;
+      switchWeapon(state);
+      if (state.weapon !== before) status.textContent = `Weapon: ${state.weapon}`;
+    }
     return;
   }
   if (state.phase === 'paused') {
@@ -103,6 +114,36 @@ function handleMenus() {
     }
     return;
   }
+  if (state.phase === 'stageclear') {
+    // 1/2/3 pick a card; Enter/Space advances (only after a card is picked).
+    const n = input.numberPressed();
+    if (n >= 1 && n <= (state.levelChoices || []).length && !state.stagePicked) { pickStageCard(n - 1); return; }
+    if (input.confirmPressed()) {
+      if (state.stagePicked) { nextStage(state, audio); status.textContent = `Stage ${state.stage}`; }
+      else status.textContent = 'Pick a card first!';
+      return;
+    }
+    if (input.click()) {
+      const m = toLogical(input.mouse().x, input.mouse().y);
+      const L = stageClearLayout(state); // hit-boxes follow the drawn screen
+      if (!state.stagePicked) {
+        for (let i = 0; i < L.cards.length; i += 1) {
+          if (inBox(m, L.cards[i])) { pickStageCard(i); return; }
+        }
+      }
+      for (let i = 0; i < L.shop.length; i += 1) {
+        if (inBox(m, L.shop[i])) {
+          if (buyOffer(state, i)) { audio.buy(); status.textContent = 'Bought!'; }
+          return;
+        }
+      }
+      if (inBox(m, L.next)) {
+        if (state.stagePicked) { nextStage(state, audio); status.textContent = `Stage ${state.stage}`; }
+        else status.textContent = 'Pick a card first!';
+      }
+    }
+    return;
+  }
   if (state.phase === 'over') {
     if (input.restartPressed() || input.click()) restart();
   }
@@ -116,14 +157,25 @@ function pickCard(i) {
   audio.pop();
 }
 
+// The stage-clear card: a weapon card owns + equips the weapon, an upgrade
+// card applies through the normal upgrade path. The screen stays up for the
+// shop afterwards — picking the card does not leave the screen.
+function pickStageCard(i) {
+  const c = state.levelChoices[i];
+  if (!c || state.stagePicked) return;
+  if (!applyStageCard(state, c)) applyUpgrade(state, c.id);
+  state.pickedCard = c; state.stagePicked = true;
+  audio.pop();
+}
+
 function restart() {
   const best = state.best;
   const fresh = Math.floor(Math.random() * 4294967296);
   state = createState(createRandom(fresh), fresh);
   state.best = best;
   state.phase = 'play';
-  state.banner = 'SURVIVE UNTIL HIGH TIDE — 5:00'; state.bannerT = 3;
+  state.banner = 'STAGE 1 — SLAY THEM ALL'; state.bannerT = 3;
   fx.clear();
   window.__tide = { state, fx, audio, step: (inp) => stepWorld(state, inp, STEP, fx, audio), STEP };
-  status.textContent = 'A new tide. Hold the pool!';
+  status.textContent = 'A new tide. Clear 10 stages!';
 }

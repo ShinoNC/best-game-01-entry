@@ -1,26 +1,35 @@
 // The fixed-step simulation: spawn, move, collide, collect, level, win, lose.
 // One step is 1/60 s; the renderer never touches this state, so replays are exact.
-import { ELITE, ENEMIES, POOL, WAVE_EVERY, WIN_TIME, xpNeed } from './config.js';
+import { ELITE, ENEMIES, POOL, STAGES, STAGE_COUNT, xpNeed } from './config.js';
 import { onEnemyKilled, updateEnemies, updateSpawner } from './enemies.js';
 import { hurtPlayer, updatePlayer } from './player.js';
 import { rollChoices } from './upgrades.js';
+import { rollStageChoices } from './weapons.js';
 import { updateHints } from './tutorial.js';
 
 export const STEP = 1 / 60;
 
 function dropPearls(state, e) {
-  // Big kills drop a few fat pearls; elites drop a shower; the heron drops a fortune.
-  const n = e.elite ? 4 : e.type === 'heron' ? 8 : e.xp;
+  // Big kills drop a few fat pearls; elites drop a shower; a boss drops a fortune.
+  const n = e.elite ? 4 : e.boss ? 8 : e.xp;
   for (let i = 0; i < n; i += 1) {
     state.pearls.push({
-      x: e.x + state.rng.range(-26, 26), y: e.y + state.rng.range(-26, 26),
-      v: e.type === 'heron' ? 3 : e.elite ? 2 : 1, vx: state.rng.range(-30, 30),
+      kind: 'pearl', x: e.x + state.rng.range(-26, 26), y: e.y + state.rng.range(-26, 26),
+      v: e.boss ? 3 : e.elite ? 2 : 1, vx: state.rng.range(-30, 30),
       vy: state.rng.range(-30, 30), life: 25, bob: state.rng.angle(),
     });
   }
-  // Elites also drop a heal; the heron drops a bomb.
+  // Coins are the shop currency: every kill pays, elites pay more, the heron pays most.
+  for (let i = 0; i < e.coins; i += 1) {
+    state.pearls.push({
+      kind: 'coin', x: e.x + state.rng.range(-30, 30), y: e.y + state.rng.range(-30, 30),
+      v: 1, vx: state.rng.range(-40, 40), vy: state.rng.range(-40, 40),
+      life: 25, bob: state.rng.angle(),
+    });
+  }
+  // Elites also drop a heal; a boss drops a bomb.
   if (e.elite) state.pickups.push({ x: e.x, y: e.y, kind: 'heal', life: 20 });
-  if (e.type === 'heron') state.pickups.push({ x: e.x, y: e.y, kind: 'bomb', life: 20 });
+  if (e.boss) state.pickups.push({ x: e.x, y: e.y, kind: 'bomb', life: 20 });
 }
 
 function killEnemy(state, e, fx, audio) {
@@ -38,12 +47,39 @@ export function gainXp(state, n, fx, audio) {
   state.score += n * 5;
   while (state.xp >= xpNeed(state.level)) {
     state.xp -= xpNeed(state.level); state.level += 1;
-    state.player.hp = Math.min(state.player.maxHp, state.player.hp + 15); // levelling up mends the shell
+    state.player.hp = Math.min(state.player.maxHp, state.player.hp + 10); // levelling up mends the shell a little
     state.levelChoices = rollChoices(state);
-    state.phase = 'levelup'; state.levelFlash = 1; // a gold flash marks the level-up
+    state.cardSource = 'level'; state.phase = 'levelup'; state.levelFlash = 1; // a gold flash marks the level-up
     fx.burst(state.player.x, state.player.y, '#7fe0c3', 20, 200);
     audio.level();
     return; // one level-up at a time; the rest waits for the next pearl
+  }
+}
+
+// Creatures left in this stage: unspawned budget + live enemies (minis count).
+export function stageRemaining(state) {
+  return (STAGES[state.stage - 1].budget - state.stageSpawned) + state.enemies.length;
+}
+
+// Advance to the next stage after the shop. Called from main.js; the sim calls
+// it too. Resets the stage counters and announces the stage.
+export function nextStage(state, audio) {
+  state.stage += 1;
+  state.stageSpawned = 0; state.stageEliteDone = false;
+  state.spawnT = 0.8; state.stagePicked = false; state.pickedCard = null;
+  state.levelChoices = null;
+  // The boss flags are per-stage: without this reset the stage-5 boss would
+  // suppress the stage-10 boss (bossSpawned stays true otherwise).
+  state.bossSpawned = false; state.boss = null;
+  state.phase = 'play';
+  if (state.stage === STAGE_COUNT) {
+    state.banner = '⚠ STAGE 10 — THE STORM HERON RETURNS! ⚠'; state.bannerT = 3;
+    if (audio) audio.elite();
+  } else if (state.stage === 5) {
+    state.banner = '⚠ STAGE 5 — THE GREAT HERON! ⚠'; state.bannerT = 3;
+    if (audio) audio.elite();
+  } else {
+    state.banner = `STAGE ${state.stage} — THE TIDE RISES`; state.bannerT = 2.5;
   }
 }
 
@@ -54,10 +90,26 @@ export function stepWorld(state, input, dt, fx, audio) {
 
   updateHints(state, dt); // the first-30-seconds tutorial, contextual and once-only
 
-  // Wave banners every 30 s — the tide visibly rising.
-  if (Math.floor(state.time / WAVE_EVERY) + 1 > state.wave) {
-    state.wave = Math.floor(state.time / WAVE_EVERY) + 1;
-    state.banner = `WAVE ${state.wave} — THE TIDE RISES`; state.bannerT = 2.5;
+  // The stage-clear beat: the budget is spent and the pool is empty. The crab
+  // keeps moving (the beat must not feel like a freeze), the banner plays for
+  // 1.2 s (the "STAGE CLEAR!" moment), then the card+shop screen.
+  if (state.stageClearT > 0) {
+    updatePlayer(state, input, dt, fx, audio);
+    state.stageClearT -= dt;
+    state.bannerT -= dt;
+    if (state.stageClearT <= 0) {
+      if (state.stage >= STAGE_COUNT) {
+        state.phase = 'over'; state.result = 'won';
+        state.score += 1000 + state.level * 100;
+        audio.win();
+      } else {
+        state.levelChoices = rollStageChoices(state);
+        state.cardSource = 'stage'; state.stagePicked = false;
+        state.phase = 'stageclear'; state.levelFlash = 1;
+        audio.clear();
+      }
+    }
+    return;
   }
   state.bannerT -= dt;
 
@@ -81,7 +133,7 @@ export function stepWorld(state, input, dt, fx, audio) {
     audio.pop();
   }
 
-  // Bubble bolts fly, pierce, and pop.
+  // Bolts fly, pierce, and pop — arrows and pellets use the same flight code.
   for (let i = state.bolts.length - 1; i >= 0; i -= 1) {
     const b = state.bolts[i]; b.life -= dt;
     b.x += b.vx * dt; b.y += b.vy * dt;
@@ -92,8 +144,8 @@ export function stepWorld(state, input, dt, fx, audio) {
         e.hp -= b.dmg; e.flash = 0.12; state.stats.damage += b.dmg;
         const ka = Math.atan2(e.y - b.y, e.x - b.x);
         e.x += Math.cos(ka) * 14; e.y += Math.sin(ka) * 14;
-        fx.text(e.x, e.y - e.r - 6, `${b.dmg}`, '#bfe8e0');
-        b.pierce -= 1; fx.burst(b.x, b.y, '#bfe8e0', 4, 100, 'bubble');
+        fx.text(e.x, e.y - e.r - 6, `${b.dmg}`, b.kind === 'pellet' ? '#c9a7ff' : '#bfe8e0');
+        b.pierce -= 1; fx.burst(b.x, b.y, b.kind === 'pellet' ? '#7b5cff' : '#bfe8e0', 4, 100, 'bubble');
         if (b.pierce < 0) dead = true;
       }
     }
@@ -121,21 +173,27 @@ export function stepWorld(state, input, dt, fx, audio) {
     }
   }
 
-  // Deaths: score, pearls, splits.
+  // Deaths: score, pearls, coins, splits.
   for (let i = state.enemies.length - 1; i >= 0; i -= 1) {
     if (state.enemies[i].hp <= 0) { killEnemy(state, state.enemies[i], fx, audio); state.enemies.splice(i, 1); }
   }
 
-  // Pearls drift toward the crab inside the magnet radius, then get eaten.
+  // Pearls and coins drift toward the crab inside the magnet radius, then get eaten.
   for (let i = state.pearls.length - 1; i >= 0; i -= 1) {
     const pe = state.pearls[i]; pe.life -= dt; pe.bob += dt * 3;
     pe.x += pe.vx * dt; pe.y += pe.vy * dt; pe.vx *= 0.96; pe.vy *= 0.96;
     const d = Math.hypot(p.x - pe.x, p.y - pe.y);
     if (d < p.magnet) { pe.x += ((p.x - pe.x) / (d || 1)) * 340 * dt; pe.y += ((p.y - pe.y) / (d || 1)) * 340 * dt; }
     if (d < p.radius + 10) {
-      state.pearls.splice(i, 1); state.pearlsCollected = (state.pearlsCollected || 0) + pe.v;
-      gainXp(state, pe.v, fx, audio); audio.pop();
-      if (state.phase !== 'play') return;
+      state.pearls.splice(i, 1);
+      if (pe.kind === 'coin') {
+        state.coins += pe.v; state.coinsEarned += pe.v; state.score += pe.v * 2;
+        audio.coin();
+      } else {
+        state.pearlsCollected = (state.pearlsCollected || 0) + pe.v;
+        gainXp(state, pe.v, fx, audio); audio.pop();
+        if (state.phase !== 'play') return;
+      }
     } else if (pe.life <= 0) state.pearls.splice(i, 1);
   }
 
@@ -152,16 +210,29 @@ export function stepWorld(state, input, dt, fx, audio) {
       state.pickups.splice(i, 1);
     } else if (pk.life <= 0) state.pickups.splice(i, 1);
   }
-  // A starfish heal drifts in every 50 s so long runs stay fair.
-  if (state.time > 50 && !state.healDroppedAt50) {
-    state.healDroppedAt50 = true;
-    state.pickups.push({ x: POOL.cx + 200, y: POOL.cy - 120, kind: 'heal', life: 30 });
-  }
 
-  // Win: the tide comes in at 5:00. Lose: handled in hurtPlayer.
-  if (state.time >= WIN_TIME && state.phase === 'play') {
-    state.phase = 'over'; state.result = 'won';
-    state.score += 1000 + state.level * 100;
-    audio.win();
+  // Stage clear: the budget is spent and the pool is empty. Start the clear beat.
+  if (state.stageSpawned >= STAGES[state.stage - 1].budget && state.enemies.length === 0
+      && state.stageClearT <= 0) {
+    state.stageClearT = 1.2;
+    state.score += 100 + state.stage * 50;
+    // Vacuum the leftovers: pearls and coins on the ground are collected at
+    // once, so a stage never ends with money left behind. (A vacuum level-up
+    // interrupts the beat with the level-up screen; the beat resumes after.)
+    let vacuumedCoins = 0;
+    for (const pe of state.pearls) {
+      if (pe.kind === 'coin') { state.coins += pe.v; state.coinsEarned += pe.v; state.score += pe.v * 2; vacuumedCoins += pe.v; }
+      else { state.pearlsCollected += pe.v; gainXp(state, pe.v, fx, audio); }
+    }
+    state.pearls.length = 0;
+    if (vacuumedCoins > 0) audio.coin();
+    if (state.stage >= STAGE_COUNT) {
+      state.banner = 'THE STORM HERON FALLS — HIGH TIDE!'; state.bannerT = 1.2;
+    } else if (state.stage === 5) {
+      state.banner = '★ STAGE 5 CLEAR — THE HERON IS DRIVEN OFF! ★'; state.bannerT = 1.2;
+    } else {
+      state.banner = `★ STAGE ${state.stage} CLEAR! ★`; state.bannerT = 1.2;
+    }
+    audio.clear();
   }
 }

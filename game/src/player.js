@@ -1,7 +1,12 @@
-// The crab: WASD/arrows move, claws auto-swing at the nearest creature in range,
-// click fires a bubble bolt at the mouse, Space/Shift dashes (with i-frames).
-// Criterion 2: movement + auto-attack + aimed bolt + dash are four different verbs.
+// The crab: WASD/arrows move, the equipped weapon attacks AUTOMATICALLY at the
+// nearest creature in range (the claw spins, the bow looses, the blaster bursts),
+// click fires a bubble bolt at the mouse, Space/Shift dashes (with i-frames),
+// Q switches weapon. The player's job is movement, positioning and dodging —
+// swarms WILL hit you if you cannot dodge, which is why weapons must grow
+// stronger. Criterion 2: move + auto-attack + aimed bolt + dash + weapon choice
+// are five verbs.
 import { PAL, PLAYER, POOL } from './config.js';
+import { weaponStats } from './weapons.js';
 
 function clampToPool(p) {
   const dx = (p.x - POOL.cx) / POOL.rx, dy = (p.y - POOL.cy) / POOL.ry;
@@ -18,9 +23,60 @@ export function nearestEnemy(state, x, y, range) {
   return best;
 }
 
+// One weapon attack, aimed at `aim` (the direction of the nearest creature).
+// Claw: a cleaving arc centred on the aim. Bow: one piercing arrow. Blaster:
+// a 3–4 pellet spread.
+function fireWeapon(state, aim, fx, audio) {
+  const p = state.player, w = weaponStats(state);
+  p.angle = aim;
+  p.weapCd = w.rate;
+  if (state.weapon === 'claw') {
+    p.swing = 0.18;
+    const inArc = state.enemies
+      .map((e) => ({ e, d: Math.hypot(e.x - p.x, e.y - p.y) }))
+      .filter(({ e, d }) => {
+        if (d > w.range + e.r) return false;
+        let da = Math.atan2(e.y - p.y, e.x - p.x) - aim;
+        while (da > Math.PI) da -= Math.PI * 2;
+        while (da < -Math.PI) da += Math.PI * 2;
+        return Math.abs(da) <= w.arc;
+      })
+      .sort((a, b) => a.d - b.d)
+      .slice(0, w.hits);
+    let hits = 0;
+    for (const { e } of inArc) {
+      const dmg = Math.round(w.dmg * (0.9 + state.rng.next() * 0.2));
+      e.hp -= dmg; e.flash = 0.12; state.stats.damage += dmg;
+      // Knockback: the claw shoves creatures away, so the crab is never simply swarmed.
+      const ka = Math.atan2(e.y - p.y, e.x - p.x);
+      const kb = e.elite ? 8 : 26;
+      e.x += Math.cos(ka) * kb; e.y += Math.sin(ka) * kb;
+      if (hits < 4) fx.text(e.x, e.y - e.r - 6, `${dmg}`, '#ffd166');
+      fx.burst(e.x, e.y, '#ffd166', 5, 150); // a visible puff on every claw hit
+      hits += 1;
+    }
+    audio.snap();
+  } else if (state.weapon === 'bow') {
+    state.bolts.push({ x: p.x + Math.cos(aim) * 28, y: p.y + Math.sin(aim) * 28,
+      vx: Math.cos(aim) * 640, vy: Math.sin(aim) * 640, dmg: Math.round(w.dmg),
+      pierce: w.pierce, r: 7, life: 1.1, kind: 'arrow' });
+    fx.bubbles(p.x + Math.cos(aim) * 28, p.y + Math.sin(aim) * 28, 2);
+    audio.bolt();
+  } else { // blaster: a tight spread of ink pellets
+    for (let i = 0; i < w.pellets; i += 1) {
+      const off = (i - (w.pellets - 1) / 2) * 0.14;
+      state.bolts.push({ x: p.x + Math.cos(aim) * 26, y: p.y + Math.sin(aim) * 26,
+        vx: Math.cos(aim + off) * 560, vy: Math.sin(aim + off) * 560, dmg: Math.round(w.dmg),
+        pierce: 0, r: 6, life: 0.9, kind: 'pellet' });
+    }
+    fx.burst(p.x + Math.cos(aim) * 26, p.y + Math.sin(aim) * 26, '#7b5cff', 3, 80);
+    audio.snap();
+  }
+}
+
 export function updatePlayer(state, input, dt, fx, audio) {
   const p = state.player;
-  p.clawCd -= dt; p.boltCd -= dt; p.dashCd -= dt; p.iframes -= dt; p.flash -= dt; p.swing -= dt;
+  p.weapCd -= dt; p.boltCd -= dt; p.dashCd -= dt; p.iframes -= dt; p.flash -= dt; p.swing -= dt;
   const mv = input.move();
   p.moving = (mv.x || mv.y || p.dashT > 0) ? 1 : Math.max(0, p.moving - dt * 5); // drives the walk cycle
   if (p.dashT > 0) { // dashing: keep the burst direction, ignore steering
@@ -43,38 +99,13 @@ export function updatePlayer(state, input, dt, fx, audio) {
     state.stats.dashes += 1;
     fx.bubbles(p.x, p.y, 8); audio.dash();
   }
-  // Auto-claw: a cleaving swipe that hits EVERY creature in range inside the arc,
-  // so the crab can hold a crowd instead of duelling it one by one.
-  const target = nearestEnemy(state, p.x, p.y, p.clawRange);
+  // Auto-attack: the equipped weapon fires on its own at the nearest creature
+  // in range — the claw spins, the bow looses, the blaster bursts. The crab
+  // turns to face its target, so the attack direction reads clearly.
+  const w = weaponStats(state);
+  const target = nearestEnemy(state, p.x, p.y, w.range);
   if (target) p.angle = Math.atan2(target.y - p.y, target.x - p.x);
-  if (target && p.clawCd <= 0) {
-    p.clawCd = p.clawRate; p.swing = 0.18;
-    // The swipe catches the nearest few creatures in the arc — never the whole crowd.
-    const inArc = state.enemies
-      .map((e) => ({ e, d: Math.hypot(e.x - p.x, e.y - p.y) }))
-      .filter(({ e, d }) => {
-        if (d > p.clawRange + e.r) return false;
-        let da = Math.atan2(e.y - p.y, e.x - p.x) - p.angle;
-        while (da > Math.PI) da -= Math.PI * 2;
-        while (da < -Math.PI) da += Math.PI * 2;
-        return Math.abs(da) <= PLAYER.clawArc;
-      })
-      .sort((a, b) => a.d - b.d)
-      .slice(0, 4);
-    let hits = 0;
-    for (const { e } of inArc) {
-      const dmg = Math.round(p.clawDamage * (0.9 + state.rng.next() * 0.2));
-      e.hp -= dmg; e.flash = 0.12; state.stats.damage += dmg;
-      // Knockback: the claw shoves creatures away, so the crab is never simply swarmed.
-      const ka = Math.atan2(e.y - p.y, e.x - p.x);
-      const kb = e.elite ? 8 : 26;
-      e.x += Math.cos(ka) * kb; e.y += Math.sin(ka) * kb;
-      if (hits < 4) fx.text(e.x, e.y - e.r - 6, `${dmg}`, '#ffd166');
-      fx.burst(e.x, e.y, '#ffd166', 5, 150); // a visible puff on every claw hit
-      hits += 1;
-    }
-    audio.snap();
-  }
+  if (target && p.weapCd <= 0) fireWeapon(state, p.angle, fx, audio);
   // Bubble bolt: click to shoot at the mouse, pierces two creatures.
   if (input.click() && p.boltCd <= 0) {
     const m = input.mouse();
@@ -82,7 +113,7 @@ export function updatePlayer(state, input, dt, fx, audio) {
     p.boltCd = PLAYER.boltCd;
     state.bolts.push({ x: p.x + Math.cos(a) * 24, y: p.y + Math.sin(a) * 24,
       vx: Math.cos(a) * PLAYER.boltSpeed, vy: Math.sin(a) * PLAYER.boltSpeed,
-      dmg: PLAYER.boltDamage + state.ups.claws * 3, pierce: 2, r: 9, life: 1.4 });
+      dmg: PLAYER.boltDamage + state.ups.claws * 3, pierce: 2, r: 9, life: 1.4, kind: 'bolt' });
     audio.bolt();
   }
 }

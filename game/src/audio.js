@@ -32,6 +32,9 @@ export function createAudio() {
     toggleMute() { muted = !muted; return muted; },
     get muted() { return muted; },
     pop() { tone(880, 0.09, 'sine', 0.12, 1400); },           // pearl collected
+    coin() { tone(1320, 0.07, 'sine', 0.10, 1760); },         // coin collected
+    buy() { tone(660, 0.08, 'triangle', 0.12); setTimeout(() => tone(990, 0.12, 'triangle', 0.12), 70); }, // shop purchase
+    clear() { [523, 659, 784].forEach((f, i) => setTimeout(() => tone(f, 0.14, 'triangle', 0.12), i * 80)); }, // stage clear
     snap() { noise(0.06, 0.16, 2600); tone(220, 0.05, 'square', 0.06, 140); }, // claw hit
     bolt() { tone(520, 0.12, 'sine', 0.10, 180); },          // bubble bolt
     hurt() { tone(140, 0.18, 'sawtooth', 0.16, 70); noise(0.12, 0.12, 500); }, // player hit

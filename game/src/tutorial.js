@@ -3,15 +3,17 @@
 // the verbs. Each hint shows once, fades after a few seconds, and only fires when
 // its moment arrives (an enemy approaches, a pearl drops, a crowd closes in).
 // Criterion 1: the goal and the controls are taught inside the game, not in a manual.
+// v4: weapons attack on their own — the tutorial teaches dodging and the Q
+// switch first, and teaches coins (shop money) alongside pearls (level-up XP).
 export const HINTS = [
   { id: 'move', text: 'WASD / ARROWS — move your crab', show: 5.0,
     cond: (s) => s.time > 0.5 },
-  { id: 'claws', text: 'Your claws swing on their own — just walk close!', show: 4.5,
+  { id: 'weapons', text: 'Your weapons attack on their own — dodge and position! (Q switches)', show: 4.5,
     cond: (s) => s.enemies.some((e) => Math.hypot(e.x - s.player.x, e.y - s.player.y) < 240) },
-  { id: 'bolt', text: 'CLICK — fire a bubble bolt at the mouse', show: 4.5,
-    cond: (s) => s.time > 7 },
   { id: 'pearls', text: 'Collect pearls to LEVEL UP and grow stronger', show: 4.5,
-    cond: (s) => s.pearls.length > 0 || s.pearlsCollected > 0 },
+    cond: (s) => s.pearls.some((pe) => pe.kind !== 'coin') || s.pearlsCollected > 0 },
+  { id: 'coins', text: 'Kills drop COINS — spend them in the shop after each stage', show: 4.5,
+    cond: (s) => s.coins > 0 || s.pearls.some((pe) => pe.kind === 'coin') },
   { id: 'dash', text: 'SPACE — dash out of danger! (briefly invincible)', show: 4.5,
     cond: (s) => s.enemies.filter((e) => Math.hypot(e.x - s.player.x, e.y - s.player.y) < 130).length >= 3 },
 ];

@@ -1,12 +1,14 @@
-// Deterministic screenshot scenes (?shot=start|play|elite|boss|levelup|end&seed=N).
+// Deterministic screenshot scenes (?shot=start|play|elite|boss|storm|levelup|stageclear|end&seed=N).
 // Each one plays the real rules forward from a fresh world, steered by an autopilot
 // that kites from danger, chases pearls and dashes when surrounded — so every frame
 // is what a real game looks like, and the same seed always gives the same frame.
-import { POOL, WIN_TIME, xpNeed } from './config.js';
+// The autopilot also picks stage cards (weapons first), shops, and advances stages.
+import { POOL, STAGE_COUNT, xpNeed } from './config.js';
 import { createRandom } from './random.js';
 import { createState } from './state.js';
-import { stepWorld } from './world.js';
+import { nextStage, stepWorld } from './world.js';
 import { applyUpgrade } from './upgrades.js';
+import { applyStageCard, autoShop } from './weapons.js';
 import { spawnEnemy } from './enemies.js';
 
 // The autopilot: flee the centroid of nearby threats, chase pearls, dash out of crowds.
@@ -52,95 +54,96 @@ function autopilotInput(state) {
 // Priority order for level-up picks in staged games (deterministic, no clicking).
 const PICK_ORDER = ['claws', 'tempo', 'shell', 'reach', 'bubbles', 'legs', 'ink', 'magnet'];
 
-function runUntil(state, targetTime, fx, audio) {
+// Pick the best offered stage card: a new weapon first (the most exciting draw),
+// then the highest-priority upgrade track.
+function pickStageCardAuto(state) {
+  const choices = state.levelChoices || [];
+  const weapon = choices.find((c) => c.isWeapon);
+  const pick = weapon
+    || PICK_ORDER.map((id) => choices.find((c) => c.id === id)).find(Boolean)
+    || choices[0];
+  if (!pick) return;
+  if (!applyStageCard(state, pick)) applyUpgrade(state, pick.id);
+  state.pickedCard = pick; state.stagePicked = true;
+}
+
+// Run the real sim until `pred(state)` is true, a run ends, or maxSteps is hit.
+// Level-ups and stage-clears are handled the way a player would handle them.
+function runUntil(state, pred, maxSteps, fx, audio) {
   let steps = 0;
-  while (state.phase === 'play' && state.time < targetTime && steps < 40000) {
-    // A fresh steering decision every step — a stale vector walks into the rim and dies.
-    stepWorld(state, autopilotInput(state), 1 / 60, fx, audio);
-    steps += 1;
+  while (steps < maxSteps) {
+    // The predicate is checked FIRST: a stage-clear or level-up the caller is
+    // looking for must be returned as-is, not auto-played past.
+    if (pred(state)) return true;
+    if (state.phase === 'over') return pred(state);
     if (state.phase === 'levelup' && state.levelChoices) {
-      // Pick the highest-priority offered upgrade, then resume.
       const pick = PICK_ORDER.map((id) => state.levelChoices.find((c) => c.id === id)).find(Boolean)
         || state.levelChoices[0];
       applyUpgrade(state, pick.id);
       state.levelChoices = null; state.phase = 'play';
+    } else if (state.phase === 'stageclear' && state.levelChoices) {
+      if (!state.stagePicked) pickStageCardAuto(state);
+      autoShop(state);
+      nextStage(state, audio);
+    } else if (state.phase === 'play') {
+      // A fresh steering decision every step — a stale vector walks into the rim and dies.
+      stepWorld(state, autopilotInput(state), 1 / 60, fx, audio);
+    } else {
+      return pred(state);
     }
+    steps += 1;
   }
-  return steps;
+  return pred(state);
 }
 
 export function stageShot(shot, seed, fx, audio) {
   if (shot === 'start') {
-    const s = createStateFromSeed(seed);
-    return s;
+    return createStateFromSeed(seed);
   }
   if (shot === 'play') {
     const s = createStateFromSeed(seed); s.phase = 'play';
-    runUntil(s, 120, fx, audio);
+    runUntil(s, (st) => st.time >= 120, 12000, fx, audio);
     return s;
   }
   if (shot === 'levelup') {
-    // v3: a REAL level-up during the boss fight — the 3 cards in front, the
-    // heron + boss bar behind them. Run with auto-pick past the 4:00 boss
-    // spawn, then trigger the level-up through the real gainXp path (one
-    // pearl short of the threshold, one pearl dropped on the crab), and
-    // compose the frame: crab + heron on the left, so the card row slides
-    // right and covers neither. The cards, the boss bar and the heron are
-    // all real game state; only their positions are staged for the frame.
-    for (let trySeed = seed; trySeed < seed + 6; trySeed += 1) {
-      const s = createStateFromSeed(trySeed); s.phase = 'play';
-      runUntil(s, 245, fx, audio);
-      if (s.phase !== 'play' || !s.boss) continue;
-      s.xp = xpNeed(s.level) - 1;
-      s.pearls.push({ x: s.player.x, y: s.player.y, v: 1, vx: 0, vy: 0, life: 25, bob: 0 });
-      let steps = 0;
-      while (s.phase === 'play' && steps < 60) {
-        stepWorld(s, autopilotInput(s), 1 / 60, fx, audio);
-        steps += 1;
-      }
-      if (s.phase === 'levelup' && s.levelChoices && s.levelChoices.length === 3) {
-        s.player.x = 300; s.player.y = 480; s.player.angle = 0;
-        const b = s.boss;
-        b.x = 210; b.y = 330; b.state = 'dive'; b.diveT = 0.4; // mid-swoop, left of the cards
-        b.hp = Math.min(b.hp, b.maxHp * 0.7); // the bar shows real damage, not a full bar
-        return s;
-      }
-    }
-    // Fallback: any real level-up will do — run to the first one after 60 s.
+    // A real level-up mid-fight: run to the first level-up after 60 s.
     const s = createStateFromSeed(seed); s.phase = 'play';
-    runUntil(s, 60, fx, audio);
-    let steps = 0;
-    while (s.phase === 'play' && steps < 12000) {
-      stepWorld(s, autopilotInput(s), 1 / 60, fx, audio);
-      steps += 1;
-    }
-    return s;
+    runUntil(s, (st) => st.phase === 'levelup' && st.time > 60, 20000, fx, audio);
+    if (s.phase === 'levelup') return s;
+    // Fallback: any level-up will do.
+    const s2 = createStateFromSeed(seed + 1); s2.phase = 'play';
+    runUntil(s2, (st) => st.phase === 'levelup', 20000, fx, audio);
+    return s2;
   }
   if (shot === 'elite') {
+    // A dense late fight: stage 6+, ten or more creatures on screen, an elite
+    // in frame below the banner.
     const s = createStateFromSeed(seed); s.phase = 'play';
-    runUntil(s, 200, fx, audio);
-    if (s.phase === 'play') { // make sure an elite is in frame for the shot
-      const hasElite = s.enemies.some((e) => e.elite);
-      if (!hasElite) {
-        const e = spawnEnemy(s, 'urchin', true);
-        e.x = s.player.x + 200; e.y = Math.min(s.player.y + 140, 560); // below the banner, in frame
-      }
+    runUntil(s, (st) => st.phase === 'play' && st.stage >= 6 && st.enemies.length >= 10, 30000, fx, audio);
+    if (s.phase === 'play') {
+      // An elite in frame, near the crab but clamped into the clear zone below
+      // the banner and above the bottom bar — never half-hidden behind the HUD.
+      let elite = s.enemies.find((e) => e.elite);
+      if (!elite) elite = spawnEnemy(s, 'urchin', true);
+      elite.x = Math.min(1030, Math.max(250, s.player.x - 200));
+      elite.y = Math.min(560, Math.max(200, s.player.y + 120));
       s.banner = '★ ELITE URCHIN — big pearls!'; s.bannerT = 2.5;
     }
     return s;
   }
-  if (shot === 'boss') {
-    // The Great Heron fight: try seeds until the autopilot is alive with the
-    // boss in the air, then stage the heron mid-swoop near the crab with a
-    // flock of gulls around it — the boss bar, the banner and the dive all
-    // in one frame. The boss spawns at 240 s; the shot is taken at 246 s.
-    for (let trySeed = seed; trySeed < seed + 6; trySeed += 1) {
+  if (shot === 'boss' || shot === 'storm') {
+    // A boss fight: stage 5's Great Heron, or stage 10's Storm Heron. Try seeds
+    // until the autopilot is alive with the boss in the air, then stage the bird
+    // mid-swoop near the crab with a flock of gulls around it — the boss bar,
+    // the banner and the dive all in one frame.
+    const wantStage = shot === 'storm' ? STAGE_COUNT : 5;
+    for (let trySeed = seed; trySeed < seed + 8; trySeed += 1) {
       const s = createStateFromSeed(trySeed); s.phase = 'play';
-      runUntil(s, 246, fx, audio);
-      if (s.phase === 'play' && s.boss) {
+      runUntil(s, (st) => st.phase === 'play' && st.stage === wantStage && st.boss, 40000, fx, audio);
+      if (s.phase === 'play' && s.boss && s.stage === wantStage) {
         const b = s.boss;
         // Dive in from the upper right of the crab — clamped into the clear
-        // zone below the HUD boxes and above the bottom bar, so the heron is
+        // zone below the HUD boxes and above the bottom bar, so the bird is
         // never hidden behind the timer or the boss bar.
         b.x = Math.min(1030, Math.max(250, s.player.x + 170));
         b.y = Math.min(560, Math.max(200, s.player.y - 130));
@@ -153,26 +156,60 @@ export function stageShot(shot, seed, fx, audio) {
           g.y = Math.min(600, Math.max(170, s.player.y + Math.sin(a) * 150));
           g.state = 'circle'; g.diveT = 0.8;
         }
-        s.banner = 'THE GREAT HERON — DRIVE IT OFF!'; s.bannerT = 2.5;
+        s.banner = shot === 'storm' ? 'THE STORM HERON — DRIVE IT OFF!' : 'THE GREAT HERON — DRIVE IT OFF!';
+        s.bannerT = 2.5;
         return s;
       }
     }
     // Fallback: the autopilot fell before the boss in every seed — take the
     // elite frame instead (still a dense late-game fight, never a blank shot).
     const s = createStateFromSeed(seed); s.phase = 'play';
-    runUntil(s, 200, fx, audio);
+    runUntil(s, (st) => st.phase === 'play' && st.stage >= 6 && st.enemies.length >= 10, 30000, fx, audio);
+    return s;
+  }
+  if (shot === 'stageclear') {
+    // The stage-clear screen after stage 3: three cards, the shop with real
+    // prices, and enough coins (~100) that some offers are buyable and some
+    // are not — the economy reads at a glance. The card is NOT picked yet, so
+    // the frame shows the choice itself. Prefer a seed whose draw includes a
+    // weapon card (the "NEW WEAPON" draw is the exciting one); the crab sits
+    // bottom-left so the card row stays centred, and the leftover damage
+    // numbers are cleared so they do not show through the dim over the shop.
+    let fallback = null;
+    for (let trySeed = seed; trySeed < seed + 6; trySeed += 1) {
+      const s = createStateFromSeed(trySeed); s.phase = 'play';
+      runUntil(s, (st) => st.phase === 'stageclear' && st.stage === 3, 30000, fx, audio);
+      if (s.phase === 'stageclear' && s.stage === 3 && s.levelChoices && s.levelChoices.length === 3) {
+        if (!fallback) fallback = s;
+        if (s.levelChoices.some((c) => c.isWeapon)) {
+          s.player.x = 200; s.player.y = 620; s.player.angle = 0;
+          fx.clear();
+          return s;
+        }
+      }
+    }
+    if (fallback) {
+      fallback.player.x = 200; fallback.player.y = 620; fallback.player.angle = 0;
+      fx.clear();
+      return fallback;
+    }
+    // Fallback: any stage-clear screen will do.
+    const s = createStateFromSeed(seed); s.phase = 'play';
+    runUntil(s, (st) => st.phase === 'stageclear', 20000, fx, audio);
+    s.player.x = 200; s.player.y = 620; s.player.angle = 0;
+    fx.clear();
     return s;
   }
   if (shot === 'end') {
-    // Try seeds until the autopilot survives to high tide; a real victory screen.
-    for (let trySeed = seed; trySeed < seed + 8; trySeed += 1) {
+    // Try seeds until the autopilot clears all 10 stages; a real victory screen.
+    for (let trySeed = seed; trySeed < seed + 10; trySeed += 1) {
       const s = createStateFromSeed(trySeed); s.phase = 'play';
-      runUntil(s, WIN_TIME + 1, fx, audio);
+      runUntil(s, (st) => st.phase === 'over', 40000, fx, audio);
       if (s.phase === 'over' && s.result === 'won') return s;
     }
     // Fallback: the autopilot fell — a real game-over screen is still a complete loop.
     const s = createStateFromSeed(seed); s.phase = 'play';
-    runUntil(s, WIN_TIME + 1, fx, audio);
+    runUntil(s, (st) => st.phase === 'over', 40000, fx, audio);
     if (s.phase === 'play') { s.phase = 'over'; s.result = 'lost'; s.player.hp = 0; }
     return s;
   }
