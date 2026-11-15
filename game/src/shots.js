@@ -1,4 +1,4 @@
-// Deterministic screenshot scenes (?shot=start|play|elite|end&seed=N).
+// Deterministic screenshot scenes (?shot=start|play|elite|boss|end&seed=N).
 // Each one plays the real rules forward from a fresh world, steered by an autopilot
 // that kites from danger, chases pearls and dashes when surrounded — so every frame
 // is what a real game looks like, and the same seed always gives the same frame.
@@ -96,6 +96,40 @@ export function stageShot(shot, seed, fx, audio) {
       }
       s.banner = '★ ELITE URCHIN — big pearls!'; s.bannerT = 2.5;
     }
+    return s;
+  }
+  if (shot === 'boss') {
+    // The Great Heron fight: try seeds until the autopilot is alive with the
+    // boss in the air, then stage the heron mid-swoop near the crab with a
+    // flock of gulls around it — the boss bar, the banner and the dive all
+    // in one frame. The boss spawns at 240 s; the shot is taken at 246 s.
+    for (let trySeed = seed; trySeed < seed + 6; trySeed += 1) {
+      const s = createStateFromSeed(trySeed); s.phase = 'play';
+      runUntil(s, 246, fx, audio);
+      if (s.phase === 'play' && s.boss) {
+        const b = s.boss;
+        // Dive in from the upper right of the crab — clamped into the clear
+        // zone below the HUD boxes and above the bottom bar, so the heron is
+        // never hidden behind the timer or the boss bar.
+        b.x = Math.min(1030, Math.max(250, s.player.x + 170));
+        b.y = Math.min(560, Math.max(200, s.player.y - 130));
+        b.state = 'dive'; b.diveT = 0.4; // mid-swoop when the frame is taken
+        b.hp = Math.min(b.hp, b.maxHp * 0.7); // the bar shows real damage, not a full bar
+        for (let i = 0; i < 3; i += 1) { // a flock of gulls joins the fight
+          const g = spawnEnemy(s, 'gull', false);
+          const a = 0.6 + i * 2.0;
+          g.x = Math.min(1160, Math.max(120, s.player.x + Math.cos(a) * 220));
+          g.y = Math.min(600, Math.max(170, s.player.y + Math.sin(a) * 150));
+          g.state = 'circle'; g.diveT = 0.8;
+        }
+        s.banner = 'THE GREAT HERON — DRIVE IT OFF!'; s.bannerT = 2.5;
+        return s;
+      }
+    }
+    // Fallback: the autopilot fell before the boss in every seed — take the
+    // elite frame instead (still a dense late-game fight, never a blank shot).
+    const s = createStateFromSeed(seed); s.phase = 'play';
+    runUntil(s, 200, fx, audio);
     return s;
   }
   if (shot === 'end') {

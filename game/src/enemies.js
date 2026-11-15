@@ -56,6 +56,12 @@ export function updateSpawner(state, dt, fx, audio) {
     state.banner = 'THE GREAT HERON ARRIVES!'; state.bannerT = 3;
     audio.boss(); fx.shake(0.6);
   }
+  // Warn 15 s before the boss, so the arrival is never a surprise.
+  if (!state.bossSpawned && !state.bossWarned && state.time >= BOSS.spawnAt - 15) {
+    state.bossWarned = true;
+    state.banner = '⚠ THE GREAT HERON APPROACHES! ⚠'; state.bannerT = 3;
+    audio.elite();
+  }
 }
 
 export function updateEnemies(state, dt) {

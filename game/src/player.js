@@ -22,9 +22,11 @@ export function updatePlayer(state, input, dt, fx, audio) {
   const p = state.player;
   p.clawCd -= dt; p.boltCd -= dt; p.dashCd -= dt; p.iframes -= dt; p.flash -= dt; p.swing -= dt;
   const mv = input.move();
+  p.moving = (mv.x || mv.y || p.dashT > 0) ? 1 : Math.max(0, p.moving - dt * 5); // drives the walk cycle
   if (p.dashT > 0) { // dashing: keep the burst direction, ignore steering
     p.dashT -= dt;
     p.x += p.dashVx * dt; p.y += p.dashVy * dt;
+    fx.bubbles(p.x, p.y, 1); // a bubble trail marks the dash path
     if (state.ups.ink > 0 && state.rng.chance(0.7)) {
       state.inks.push({ x: p.x, y: p.y, r: 26 + state.ups.ink * 6, life: 2.2, dmg: 6 + state.ups.ink * 4 });
     }
@@ -68,7 +70,7 @@ export function updatePlayer(state, input, dt, fx, audio) {
       const kb = e.elite ? 8 : 26;
       e.x += Math.cos(ka) * kb; e.y += Math.sin(ka) * kb;
       if (hits < 4) fx.text(e.x, e.y - e.r - 6, `${dmg}`, '#ffd166');
-      fx.burst(e.x, e.y, '#ffd166', 3, 120);
+      fx.burst(e.x, e.y, '#ffd166', 5, 150); // a visible puff on every claw hit
       hits += 1;
     }
     audio.snap();

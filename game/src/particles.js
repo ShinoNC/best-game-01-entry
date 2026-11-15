@@ -48,7 +48,9 @@ export function createParticles() {
       ctx.textAlign = 'center';
       for (const t of texts) {
         ctx.globalAlpha = Math.min(1, t.life / 0.4);
-        ctx.font = `bold ${t.big ? 22 : 15}px sans-serif`;
+        ctx.font = `bold ${t.big ? 24 : 16}px sans-serif`;
+        ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(4,26,32,0.9)'; // dark outline: readable over any background
+        ctx.strokeText(t.str, t.x, t.y);
         ctx.fillStyle = t.color;
         ctx.fillText(t.str, t.x, t.y);
       }

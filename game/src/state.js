@@ -4,12 +4,12 @@ import { PAL, PLAYER, POOL, WIN_TIME } from './config.js';
 
 export function createState(rng, seed) {
   const decor = [];
-  for (let i = 0; i < 46; i += 1) { // rocks, weed tufts and shells scattered in the pool
+  for (let i = 0; i < 60; i += 1) { // rocks, weed tufts and shells scattered in the pool
     const a = rng.angle(), rr = Math.sqrt(rng.next());
     decor.push({
       x: POOL.cx + Math.cos(a) * rr * POOL.rx * 0.94,
       y: POOL.cy + Math.sin(a) * rr * POOL.ry * 0.94,
-      kind: rng.pick(['rock', 'rock', 'weed', 'weed', 'shell', 'star']),
+      kind: rng.pick(['rock', 'rock', 'weed', 'weed', 'weed', 'shell', 'star']),
       s: rng.range(0.6, 1.6), rot: rng.angle(),
     });
   }
@@ -20,7 +20,7 @@ export function createState(rng, seed) {
       hp: PLAYER.hp, maxHp: PLAYER.hp, radius: PLAYER.radius,
       speed: PLAYER.speed, clawDamage: PLAYER.clawDamage, clawRate: PLAYER.clawRate,
       clawRange: PLAYER.clawRange, clawCd: 0, boltCd: 0, dashCd: 0, dashT: 0,
-      iframes: 0, magnet: PLAYER.magnet, shellTier: 0, flash: 0, swing: 0,
+      iframes: 0, magnet: PLAYER.magnet, shellTier: 0, flash: 0, swing: 0, moving: 0,
     },
     // Upgrade levels, one slot per track — the HUD shows these as ability slots.
     ups: { claws: 0, tempo: 0, reach: 0, shell: 0, legs: 0, bubbles: 0, ink: 0, magnet: 0 },
@@ -29,6 +29,9 @@ export function createState(rng, seed) {
     kills: 0, score: 0, wave: 1, spawnT: 0.8, eliteT: 45, bossSpawned: false,
     boss: null, banner: '', bannerT: 0, bubbleT: 6, result: null, best: 0,
     levelChoices: null, stats: { damage: 0, taken: 0, dashes: 0 },
+    // v2 clarity: the tutorial hint queue, the boss warning, the level-up flash.
+    hints: { idx: 0, cur: null, t: 0, wait: 0, done: [false, false, false, false, false] },
+    bossWarned: false, levelFlash: 0,
   };
 }
 

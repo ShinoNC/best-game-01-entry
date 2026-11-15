@@ -1,14 +1,16 @@
 // Level-up choices (criterion 2): every level the crab picks 1 of 3 upgrades.
 // Eight tracks, five levels each; each level is a real, visible change.
+// `what` is the plain-language line on the card — a new player must understand
+// the upgrade without knowing the numbers (v1 cards were numbers only).
 export const UPGRADE_DEFS = [
-  { id: 'claws', name: 'SHARPER CLAWS', icon: '✂', desc: '+20% claw damage', max: 5 },
-  { id: 'tempo', name: 'QUICK CLAWS', icon: '≫', desc: '+18% claw speed', max: 5 },
-  { id: 'reach', name: 'LONGER REACH', icon: '↔', desc: '+20% claw range', max: 5 },
-  { id: 'shell', name: 'STURDIER SHELL', icon: '⦿', desc: '+20 max HP, heal 20', max: 5 },
-  { id: 'legs', name: 'SWIFT LEGS', icon: '»', desc: '+12% move speed', max: 5 },
-  { id: 'bubbles', name: 'BUBBLE BURST', icon: '○', desc: 'A damaging ring every 6s', max: 5 },
-  { id: 'ink', name: 'INK TRAIL', icon: '✦', desc: 'Dash leaves burning ink', max: 5 },
-  { id: 'magnet', name: 'PEARL MAGNET', icon: '◎', desc: '+45% pearl pickup radius', max: 5 },
+  { id: 'claws', name: 'SHARPER CLAWS', icon: '✂', desc: '+20% claw damage', what: 'Your claws hit harder', max: 5 },
+  { id: 'tempo', name: 'QUICK CLAWS', icon: '≫', desc: '+18% claw speed', what: 'Your claws swing faster', max: 5 },
+  { id: 'reach', name: 'LONGER REACH', icon: '↔', desc: '+20% claw range', what: 'Your claws reach further', max: 5 },
+  { id: 'shell', name: 'STURDIER SHELL', icon: '⦿', desc: '+20 max HP, heal 20', what: 'More health, tougher shell', max: 5 },
+  { id: 'legs', name: 'SWIFT LEGS', icon: '»', desc: '+12% move speed', what: 'You move faster', max: 5 },
+  { id: 'bubbles', name: 'BUBBLE BURST', icon: '○', desc: 'A damaging ring every 6s', what: 'Bubbles burst around you', max: 5 },
+  { id: 'ink', name: 'INK TRAIL', icon: '✦', desc: 'Dash leaves burning ink', what: 'Dashing leaves burning ink', max: 5 },
+  { id: 'magnet', name: 'PEARL MAGNET', icon: '◎', desc: '+45% pearl pickup radius', what: 'Pearls fly to you', max: 5 },
 ];
 
 export function applyUpgrade(state, id) {

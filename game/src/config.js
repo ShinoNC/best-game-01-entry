@@ -17,10 +17,12 @@ export const PAL = {
 };
 
 export const PLAYER = {
-  radius: 20, speed: 245, hp: 100, clawDamage: 14, clawRate: 0.55,
-  clawRange: 120, clawArc: 1.6, boltDamage: 20, boltCd: 1.4, boltSpeed: 540,
+  radius: 30, speed: 245, hp: 100, clawDamage: 14, clawRate: 0.55,
+  clawRange: 140, clawArc: 1.6, boltDamage: 20, boltCd: 1.4, boltSpeed: 540,
   dashCd: 2.6, dashSpeed: 640, dashTime: 0.18, magnet: 75, iframes: 0.7,
 };
+// The crab is 1.5x the v1 size (radius 20 -> 30) so a first-time player can find
+// it at a glance; claw range grows with it so reach past the shell stays the same.
 
 // Enemy table. Behaviour: guppy swarms, jelly drifts, urchin tanks, starfish splits,
 // eel lunges, gull swoops (from 2:00). Elites are big gold versions; the Heron is the boss.

@@ -4,6 +4,7 @@ import { ELITE, ENEMIES, POOL, WAVE_EVERY, WIN_TIME, xpNeed } from './config.js'
 import { onEnemyKilled, updateEnemies, updateSpawner } from './enemies.js';
 import { hurtPlayer, updatePlayer } from './player.js';
 import { rollChoices } from './upgrades.js';
+import { updateHints } from './tutorial.js';
 
 export const STEP = 1 / 60;
 
@@ -24,8 +25,8 @@ function dropPearls(state, e) {
 
 function killEnemy(state, e, fx, audio) {
   state.kills += 1; state.score += e.score;
-  fx.burst(e.x, e.y, e.color, e.elite ? 18 : 10, e.elite ? 220 : 150);
-  fx.bubbles(e.x, e.y, e.elite ? 10 : 4);
+  fx.burst(e.x, e.y, e.color, e.elite ? 24 : 14, e.elite ? 260 : 190); // bigger death burst
+  fx.bubbles(e.x, e.y, e.elite ? 12 : 6);
   fx.text(e.x, e.y - e.r - 4, `+${e.score}`, '#f4f9ff');
   audio.die();
   onEnemyKilled(state, e, fx);
@@ -39,7 +40,7 @@ export function gainXp(state, n, fx, audio) {
     state.xp -= xpNeed(state.level); state.level += 1;
     state.player.hp = Math.min(state.player.maxHp, state.player.hp + 15); // levelling up mends the shell
     state.levelChoices = rollChoices(state);
-    state.phase = 'levelup';
+    state.phase = 'levelup'; state.levelFlash = 1; // a gold flash marks the level-up
     fx.burst(state.player.x, state.player.y, '#7fe0c3', 20, 200);
     audio.level();
     return; // one level-up at a time; the rest waits for the next pearl
@@ -50,6 +51,8 @@ export function stepWorld(state, input, dt, fx, audio) {
   if (state.phase !== 'play') return;
   state.time += dt;
   const p = state.player;
+
+  updateHints(state, dt); // the first-30-seconds tutorial, contextual and once-only
 
   // Wave banners every 30 s — the tide visibly rising.
   if (Math.floor(state.time / WAVE_EVERY) + 1 > state.wave) {

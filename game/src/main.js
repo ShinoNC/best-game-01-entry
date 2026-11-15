@@ -2,7 +2,7 @@
 // A hermit crab holds the rockpool until high tide (5:00). Slay creatures, gather
 // pearls, level up, survive. Fixed 60 Hz sim apart from rendering; seeded RNG.
 // Criterion 1: title -> play -> level-up -> win/lose -> restart, all real, all visible.
-// ?seed=N fixes the run. ?shot=start|play|elite|end stages that scene for screenshots.
+// ?seed=N fixes the run. ?shot=start|play|elite|boss|end stages that scene for screenshots.
 import { BEST_KEY, VIEW_H, VIEW_W } from './config.js';
 import { createRandom } from './random.js';
 import { createState } from './state.js';
@@ -51,6 +51,7 @@ if (shot) {
     requestAnimationFrame(frame);
     const dt = Math.min(0.25, (now - last) / 1000); last = now;
     handleMenus();
+    if (state.levelFlash > 0) state.levelFlash = Math.max(0, state.levelFlash - dt * 1.4);
     if (state.phase === 'play') {
       acc += dt;
       while (acc >= STEP) { stepWorld(state, input, STEP, fx, audio); acc -= STEP; if (state.phase !== 'play') break; }
