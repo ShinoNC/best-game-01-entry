@@ -92,7 +92,7 @@ export function stageShot(shot, seed, fx, audio) {
       const hasElite = s.enemies.some((e) => e.elite);
       if (!hasElite) {
         const e = spawnEnemy(s, 'urchin', true);
-        e.x = s.player.x + 220; e.y = s.player.y - 120;
+        e.x = s.player.x + 200; e.y = Math.min(s.player.y + 140, 560); // below the banner, in frame
       }
       s.banner = '★ ELITE URCHIN — big pearls!'; s.bannerT = 2.5;
     }
