@@ -24,6 +24,10 @@ export function updateHints(state, dt) {
     if (h.t <= 0) { h.done[h.idx] = true; h.idx += 1; h.cur = null; h.wait = 0; }
     return;
   }
+  // v3: a banner owns the screen while it shows — a new hint waits its turn
+  // instead of stacking a second text block over the first. The wait clock
+  // pauses too, so the 8 s skip never fires during a banner.
+  if (state.bannerT > 0) return;
   // Hints fire in order; a later one waits until the earlier ones have shown.
   // But a hint whose moment never comes is skipped after 8 s, so one stuck
   // hint can never block the rest of the tutorial. The LAST hint is never

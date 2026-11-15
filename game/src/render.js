@@ -9,6 +9,21 @@ export const SCREEN_TITLE = 'title';
 export const SCREEN_PLAY = 'play';
 export const SCREEN_OVER = 'over';
 
+// v3: the level-up card row slides to the half of the screen the crab (and the
+// boss, if it is in the way) is NOT on, so the cards never cover either of
+// them. Centered when the middle is clear. Shared with main.js so the click
+// hit-boxes always match the drawn cards.
+export function levelUpRowX(state) {
+  const inZone = (e) => e && e.x > 250 && e.x < 1030 && e.y > 230 && e.y < 530;
+  const crab = state.player, boss = state.boss;
+  const leftIn = (inZone(crab) && crab.x < 640) || (inZone(boss) && boss.x < 640);
+  const rightIn = (inZone(crab) && crab.x >= 640) || (inZone(boss) && boss.x >= 640);
+  if (leftIn && !rightIn) return 560; // crab/boss on the left — cards go right
+  if (rightIn && !leftIn) return 30; // crab/boss on the right — cards go left
+  if (leftIn && rightIn) return crab.x < 640 ? 560 : 30; // both sides busy: keep the crab clear
+  return 290; // middle clear — centred
+}
+
 function star(ctx, x, y, r, rot, color) {
   ctx.fillStyle = color; ctx.beginPath();
   for (let i = 0; i < 10; i += 1) {
@@ -186,8 +201,10 @@ function drawEnemy(ctx, e, t, ang) {
   if (e.elite) { // gold ring + star: elites are worth hunting
     ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(e.x, e.y, e.r + 7, 0, Math.PI * 2); ctx.stroke();
+    // v3: the star sits ABOVE the HP bar — in v2 both drew at the same height
+    // and the bar cut straight through the star.
     ctx.fillStyle = '#ffd166'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText('★', e.x, e.y - e.r - 12);
+    ctx.fillText('★', e.x, e.y - e.r - 26);
   }
   if (e.hp < e.maxHp && (e.elite || e.type === 'heron' || e.maxHp > 40)) {
     const w = e.r * 2;
@@ -277,17 +294,30 @@ export function createRenderer(canvas) {
         ctx.beginPath(); ctx.moveTo(0, 0);
         ctx.quadraticCurveTo(4, -20 * d.s, Math.sin(t * 1.2 + d.rot) * 8, -38 * d.s); ctx.stroke();
       } else if (d.kind === 'shell') {
-        ctx.fillStyle = '#e8b64c'; ctx.beginPath(); ctx.arc(0, 0, 7 * d.s, Math.PI, 0); ctx.fill();
-        ctx.strokeStyle = '#c9962e'; ctx.lineWidth = 1.5;
+        // v3: pale lavender, never gold — a gold shell read as a fat pearl.
+        ctx.fillStyle = '#d8cfe8'; ctx.beginPath(); ctx.arc(0, 0, 7 * d.s, Math.PI, 0); ctx.fill();
+        ctx.strokeStyle = '#a894c4'; ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.arc(0, 0, 4 * d.s, Math.PI, 0); ctx.stroke();
       } else {
-        star(ctx, 0, 0, 9 * d.s, d.rot, 'rgba(255,143,176,0.7)');
+        // v3: a sand dollar, not a starfish — a pink decor star read as a
+        // (motionless) enemy starfish at a glance. Pale disc, dark centre dot.
+        ctx.fillStyle = 'rgba(224,196,143,0.8)';
+        ctx.beginPath(); ctx.arc(0, 0, 8 * d.s, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(138,111,77,0.8)';
+        ctx.beginPath(); ctx.arc(0, 0, 2.5 * d.s, 0, Math.PI * 2); ctx.fill();
       }
       ctx.restore();
     }
   }
 
   function drawHud(state, t) {
+    // v3 HUD layout (VIEW 1280x720) — every element owns one region, none overlap:
+    //   top bar y 14–94: HP panel / timer+WIN-LOSE panel / score panel
+    //   boss strip y 100–134: boss bar (boss alive) OR countdown pill (15 s before) — never both
+    //   banner zone y 146–186: one banner at a time, dark backdrop, skipped on level-up
+    //   playfield y 200–610: damage numbers live here and nowhere else (see particles.js)
+    //   hint pill y 564–608, centred, play phase only, never while a banner shows
+    //   bottom bar y 620–704: level/XP left, cooldowns right, controls strip centre
     const p = state.player;
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
     // Top-left: HP bar with a heart + shell tier, each on its own line.
@@ -311,9 +341,14 @@ export function createRenderer(canvas) {
     ctx.fillStyle = PAL.dim; ctx.font = 'bold 14px sans-serif';
     ctx.fillText(`WAVE ${state.wave}  •  ${state.enemies.length} creatures`, VIEW_W / 2, 82);
     // Boss countdown in the 15 s before the heron arrives — never a surprise.
+    // v3: its own dark pill in the boss strip, so it reads over any background.
     if (!state.bossSpawned && state.time >= BOSS.spawnAt - 15) {
-      ctx.fillStyle = `rgba(255,93,115,${0.6 + 0.4 * Math.sin(t * 6)})`; ctx.font = 'bold 17px sans-serif';
-      ctx.fillText(`⚠ THE GREAT HERON ARRIVES IN ${Math.ceil(BOSS.spawnAt - state.time)} ⚠`, VIEW_W / 2, 114);
+      const warn = `⚠ THE GREAT HERON ARRIVES IN ${Math.ceil(BOSS.spawnAt - state.time)} ⚠`;
+      ctx.font = 'bold 17px sans-serif';
+      const ww = ctx.measureText(warn).width + 40;
+      ctx.fillStyle = 'rgba(6,42,51,0.85)'; ctx.fillRect(VIEW_W / 2 - ww / 2, 100, ww, 32);
+      ctx.fillStyle = `rgba(255,93,115,${0.6 + 0.4 * Math.sin(t * 6)})`;
+      ctx.fillText(warn, VIEW_W / 2, 122);
     }
     // Boss bar under the timer while the Heron lives.
     if (state.boss) {
@@ -357,20 +392,28 @@ export function createRenderer(canvas) {
     ctx.fillStyle = PAL.text; ctx.font = 'bold 15px sans-serif';
     ctx.fillText(p.dashCd <= 0 ? 'DASH READY  [Space]' : `DASH ${p.dashCd.toFixed(1)}s`, VIEW_W - 28, VIEW_H - 68);
     ctx.fillText(p.boltCd <= 0 ? 'BUBBLE BOLT READY  [Click]' : `BOLT ${p.boltCd.toFixed(1)}s`, VIEW_W - 28, VIEW_H - 42);
-    // Wave / elite banner, centre — below the boss bar while the Heron lives,
-    // so the two never overlap (they did in the first boss shot).
-    if (state.bannerT > 0) {
+    // Wave / elite banner in its own zone (y 146–186) with a dark backdrop and a
+    // gold frame — v2 drew bare gold text that damage numbers and the heron
+    // crossed freely. Skipped on the level-up screen, whose own title lives here.
+    if (state.bannerT > 0 && state.phase !== 'levelup') {
       ctx.textAlign = 'center'; ctx.globalAlpha = Math.min(1, state.bannerT);
-      ctx.fillStyle = PAL.gold; ctx.font = 'bold 30px sans-serif';
-      ctx.fillText(state.banner, VIEW_W / 2, state.boss ? 178 : 150);
+      ctx.font = 'bold 30px sans-serif';
+      const bw = ctx.measureText(state.banner).width + 56;
+      ctx.fillStyle = 'rgba(6,42,51,0.88)'; ctx.fillRect(VIEW_W / 2 - bw / 2, 146, bw, 40);
+      ctx.strokeStyle = PAL.gold; ctx.lineWidth = 2; ctx.strokeRect(VIEW_W / 2 - bw / 2, 146, bw, 40);
+      ctx.fillStyle = PAL.gold;
+      ctx.fillText(state.banner, VIEW_W / 2, 175);
       ctx.globalAlpha = 1;
     }
-    // Controls line, bottom centre — the top entries all show one on play shots.
+    // Controls strip, bottom centre — a dark bar between the two bottom panels,
+    // so the line reads over the bright sand rim (v2's bare dim text washed out).
     ctx.textAlign = 'center';
-    ctx.fillStyle = PAL.dim; ctx.font = '13px sans-serif';
-    ctx.fillText('WASD move  ·  CLICK bolt  ·  SPACE dash  ·  P pause  ·  M mute', VIEW_W / 2, VIEW_H - 30);
+    ctx.fillStyle = 'rgba(6,42,51,0.75)'; ctx.fillRect(446, 676, 558, 24);
+    ctx.fillStyle = PAL.foam; ctx.font = '13px sans-serif';
+    ctx.fillText('WASD move  ·  CLICK bolt  ·  SPACE dash  ·  P pause  ·  M mute', VIEW_W / 2, 693);
     // Tutorial hint pill, bottom centre: one short line at a time, fading out.
-    const hint = state.hints && state.hints.cur;
+    // Play phase only — on the level-up screen the cards own the player's attention.
+    const hint = state.phase === 'play' && state.hints && state.hints.cur;
     if (hint) {
       const remain = state.hints.t;
       const alpha = Math.min(1, remain / 0.5) * Math.min(1, (hint.show - remain) / 0.25);
@@ -427,15 +470,21 @@ export function createRenderer(canvas) {
   }
 
   function drawLevelUp(state) {
-    ctx.fillStyle = 'rgba(6,42,51,0.78)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    // v3: a lighter dim (0.62, was 0.78) so the fight behind the cards stays
+    // visible — the crab, the boss bar and the heron are part of the shot.
+    ctx.fillStyle = 'rgba(6,42,51,0.62)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     ctx.textAlign = 'center';
+    // v3: the title sits at y=180 (was 150) so its 40 px glyphs clear the boss
+    // bar (y 104–134) — in the first level-up-during-boss frame the title cut
+    // straight through "THE GREAT HERON". Cards move down with it (y 270).
     ctx.fillStyle = PAL.gold; ctx.font = 'bold 40px sans-serif';
-    ctx.fillText(`LEVEL ${state.level} — CHOOSE AN UPGRADE`, VIEW_W / 2, 150);
+    ctx.fillText(`LEVEL ${state.level} — CHOOSE AN UPGRADE`, VIEW_W / 2, 180);
     ctx.fillStyle = PAL.dim; ctx.font = '18px sans-serif';
-    ctx.fillText('Press 1, 2 or 3 — or click a card.', VIEW_W / 2, 184);
+    ctx.fillText('Press 1, 2 or 3 — or click a card.', VIEW_W / 2, 212);
     const cards = state.levelChoices || [];
+    const rowX = levelUpRowX(state); // the row slides away from the crab/boss
     cards.forEach((d, i) => {
-      const x = 290 + i * 240, y = 240, w = 210, h = 220;
+      const x = rowX + i * 240, y = 270, w = 210, h = 220;
       ctx.fillStyle = '#0e5566'; ctx.fillRect(x, y, w, h);
       ctx.strokeStyle = PAL.gold; ctx.lineWidth = 3; ctx.strokeRect(x, y, w, h);
       ctx.fillStyle = PAL.xp; ctx.font = 'bold 44px sans-serif';
@@ -489,11 +538,17 @@ export function createRenderer(canvas) {
     const mins = Math.floor(state.time / 60), secs = Math.floor(state.time % 60);
     ctx.fillText(`${state.kills} slain  •  ${state.pearlsCollected} pearls  •  Level ${state.level}  •  ${mins}:${String(secs).padStart(2, '0')} survived`, VIEW_W / 2, 345);
     ctx.fillText(`Damage dealt ${state.stats.damage}  •  Damage taken ${state.stats.taken}  •  Dashes ${state.stats.dashes}`, VIEW_W / 2, 375);
+    // v3: build recap — the upgrades this run picked, in the HUD's own
+    // icon+level language (the top entries' victory screens show one too).
+    const built = UPGRADE_DEFS.filter((d) => state.ups[d.id] > 0)
+      .map((d) => `${d.icon} Lv${state.ups[d.id]}`).join('  ·  ');
+    ctx.fillStyle = PAL.foam; ctx.font = '17px sans-serif';
+    ctx.fillText(built ? `BUILD: ${built}` : 'BUILD: no upgrades yet', VIEW_W / 2, 402);
     ctx.fillStyle = PAL.xp; ctx.font = 'bold 19px sans-serif';
-    ctx.fillText(nextGoal, VIEW_W / 2, 412);
+    ctx.fillText(nextGoal, VIEW_W / 2, 430);
     ctx.fillStyle = state.score >= state.best && state.score > 0 ? PAL.gold : PAL.dim;
     ctx.font = 'bold 22px sans-serif';
-    ctx.fillText(state.score >= state.best && state.score > 0 ? '★ NEW BEST SCORE ★' : `BEST ${state.best}`, VIEW_W / 2, 448);
+    ctx.fillText(state.score >= state.best && state.score > 0 ? '★ NEW BEST SCORE ★' : `BEST ${state.best}`, VIEW_W / 2, 462);
     const blink = state.shotMode || Math.floor(performance.now() / 500) % 2 === 0;
     if (blink) {
       ctx.fillStyle = PAL.text; ctx.font = 'bold 28px sans-serif';

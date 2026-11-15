@@ -2,14 +2,14 @@
 // A hermit crab holds the rockpool until high tide (5:00). Slay creatures, gather
 // pearls, level up, survive. Fixed 60 Hz sim apart from rendering; seeded RNG.
 // Criterion 1: title -> play -> level-up -> win/lose -> restart, all real, all visible.
-// ?seed=N fixes the run. ?shot=start|play|elite|boss|end stages that scene for screenshots.
+// ?seed=N fixes the run. ?shot=start|play|elite|boss|levelup|end stages that scene for screenshots.
 import { BEST_KEY, VIEW_H, VIEW_W } from './config.js';
 import { createRandom } from './random.js';
 import { createState } from './state.js';
 import { createInput } from './input.js';
 import { createAudio } from './audio.js';
 import { createParticles } from './particles.js';
-import { createRenderer } from './render.js';
+import { createRenderer, levelUpRowX } from './render.js';
 import { STEP, stepWorld } from './world.js';
 import { applyUpgrade } from './upgrades.js';
 import { stageShot } from './shots.js';
@@ -95,8 +95,9 @@ function handleMenus() {
     if (n >= 1 && n <= (state.levelChoices || []).length) { pickCard(n - 1); return; }
     if (input.click()) {
       const m = toLogical(input.mouse().x, input.mouse().y);
+      const rowX = levelUpRowX(state); // hit-boxes follow the drawn row (v3: it slides)
       (state.levelChoices || []).forEach((c, i) => {
-        const x = 290 + i * 240, y = 240;
+        const x = rowX + i * 240, y = 270;
         if (m.x >= x && m.x <= x + 210 && m.y >= y && m.y <= y + 220) pickCard(i);
       });
     }

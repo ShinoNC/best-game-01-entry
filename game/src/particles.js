@@ -1,12 +1,28 @@
 // Particles, floating damage numbers and screen shake — the juice (criterion 3).
 // Bubbles rise, shell shards fly, ink spreads; trauma decays and shakes the camera.
+// v3 layout rule: floating TEXT lives only in the clear playfield band (y 200–560,
+// x 40–1240). It never rises into the top HUD, the boss bar or the banner zone,
+// and never sinks into the hint pill (y 564–608) or behind the bottom panels —
+// v2 numbers floated over the timer, the boss bar and the banner text, which is
+// what "đè lên nhau" meant; the first v3 build still let numbers reach y 610,
+// where they showed through the hint pill during its fade-in.
+const TEXT_TOP = 200, TEXT_BOTTOM = 560, TEXT_LEFT = 40, TEXT_RIGHT = 1240;
 export function createParticles() {
   const parts = [], texts = [];
   let trauma = 0;
   return {
     add(p) { if (parts.length < 420) parts.push(p); },
     text(x, y, str, color, big) {
-      if (texts.length < 60) texts.push({ x, y, str, color, life: 0.9, big: !!big });
+      if (texts.length < 60) {
+        // Each number gets its own floor (200/213/226) and a small x nudge
+        // when it was moved: without the stagger, every number from the
+        // pool's top edge piled onto one y=200 line and overlapped each other.
+        const floor = TEXT_TOP + Math.floor(Math.random() * 3) * 13;
+        const cy = Math.max(floor, Math.min(TEXT_BOTTOM, y));
+        const moved = cy !== y;
+        texts.push({ x: Math.max(TEXT_LEFT, Math.min(TEXT_RIGHT, x + (moved ? (Math.random() * 2 - 1) * 14 : 0))),
+          y: cy, floor, str, color, life: 0.9, big: !!big });
+      }
     },
     burst(x, y, color, n, speed, kind) {
       for (let i = 0; i < n; i += 1) {
@@ -30,6 +46,7 @@ export function createParticles() {
       }
       for (let i = texts.length - 1; i >= 0; i -= 1) {
         const t = texts[i]; t.life -= dt; t.y -= 46 * dt;
+        t.y = Math.max(t.floor, t.y); // rising numbers stop at their own floor
         if (t.life <= 0) texts.splice(i, 1);
       }
     },

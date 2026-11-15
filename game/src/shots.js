@@ -1,8 +1,8 @@
-// Deterministic screenshot scenes (?shot=start|play|elite|boss|end&seed=N).
+// Deterministic screenshot scenes (?shot=start|play|elite|boss|levelup|end&seed=N).
 // Each one plays the real rules forward from a fresh world, steered by an autopilot
 // that kites from danger, chases pearls and dashes when surrounded — so every frame
 // is what a real game looks like, and the same seed always gives the same frame.
-import { POOL, WIN_TIME } from './config.js';
+import { POOL, WIN_TIME, xpNeed } from './config.js';
 import { createRandom } from './random.js';
 import { createState } from './state.js';
 import { stepWorld } from './world.js';
@@ -79,10 +79,41 @@ export function stageShot(shot, seed, fx, audio) {
     runUntil(s, 120, fx, audio);
     return s;
   }
-  if (shot === 'levelup') { // verification only: the first level-up choice screen
+  if (shot === 'levelup') {
+    // v3: a REAL level-up during the boss fight — the 3 cards in front, the
+    // heron + boss bar behind them. Run with auto-pick past the 4:00 boss
+    // spawn, then trigger the level-up through the real gainXp path (one
+    // pearl short of the threshold, one pearl dropped on the crab), and
+    // compose the frame: crab + heron on the left, so the card row slides
+    // right and covers neither. The cards, the boss bar and the heron are
+    // all real game state; only their positions are staged for the frame.
+    for (let trySeed = seed; trySeed < seed + 6; trySeed += 1) {
+      const s = createStateFromSeed(trySeed); s.phase = 'play';
+      runUntil(s, 245, fx, audio);
+      if (s.phase !== 'play' || !s.boss) continue;
+      s.xp = xpNeed(s.level) - 1;
+      s.pearls.push({ x: s.player.x, y: s.player.y, v: 1, vx: 0, vy: 0, life: 25, bob: 0 });
+      let steps = 0;
+      while (s.phase === 'play' && steps < 60) {
+        stepWorld(s, autopilotInput(s), 1 / 60, fx, audio);
+        steps += 1;
+      }
+      if (s.phase === 'levelup' && s.levelChoices && s.levelChoices.length === 3) {
+        s.player.x = 300; s.player.y = 480; s.player.angle = 0;
+        const b = s.boss;
+        b.x = 210; b.y = 330; b.state = 'dive'; b.diveT = 0.4; // mid-swoop, left of the cards
+        b.hp = Math.min(b.hp, b.maxHp * 0.7); // the bar shows real damage, not a full bar
+        return s;
+      }
+    }
+    // Fallback: any real level-up will do — run to the first one after 60 s.
     const s = createStateFromSeed(seed); s.phase = 'play';
     runUntil(s, 60, fx, audio);
-    if (s.phase === 'play') { s.levelChoices = s.levelChoices || null; }
+    let steps = 0;
+    while (s.phase === 'play' && steps < 12000) {
+      stepWorld(s, autopilotInput(s), 1 / 60, fx, audio);
+      steps += 1;
+    }
     return s;
   }
   if (shot === 'elite') {
