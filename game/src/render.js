@@ -584,11 +584,14 @@ export function createRenderer(canvas) {
       sx += 40;
     }
     ctx.textAlign = 'left';
-    // Bottom-right: dash cooldown.
+    // Bottom-right: dash + grab cooldowns, one line — the player reads both
+    // at a glance, and HOLDING! confirms a creature is in the claw.
     ctx.textAlign = 'right';
     ctx.fillStyle = 'rgba(6,42,51,0.75)'; ctx.fillRect(VIEW_W - 268, VIEW_H - 60, 250, 44);
     ctx.fillStyle = PAL.text; ctx.font = 'bold 15px sans-serif';
-    ctx.fillText(p.dashCd <= 0 ? 'DASH READY  [Space]' : `DASH ${p.dashCd.toFixed(1)}s`, VIEW_W - 28, VIEW_H - 32);
+    const dashTxt = p.dashCd <= 0 ? 'DASH READY' : `DASH ${p.dashCd.toFixed(1)}s`;
+    const grabTxt = p.grab ? 'HOLDING!' : p.grabCd <= 0 ? 'GRAB READY' : `GRAB ${p.grabCd.toFixed(1)}s`;
+    ctx.fillText(`${dashTxt} · ${grabTxt}`, VIEW_W - 28, VIEW_H - 32);
     // Minimap: the whole pool in one glance, bottom-right above the dash panel.
     drawMinimap(state, t);
     // Wave / elite banner in its own zone (y 146–186) with a dark backdrop and a
@@ -692,12 +695,12 @@ export function createRenderer(canvas) {
     ctx.fillStyle = PAL.dim; ctx.font = 'bold 13px sans-serif';
     ctx.fillText('HERONS — ONE EVERY 5 STAGES:', 64, 448);
     for (let i = 0; i < BOSSES.length; i += 1) {
-      const col = i % 3, row = Math.floor(i / 3);
-      const hx = 64 + col * 190, hy = 472 + row * 24;
+      const col = i % 2, row = Math.floor(i / 2);
+      const hx = 64 + col * 290, hy = 472 + row * 22;
       ctx.fillStyle = BOSSES[i].color;
       ctx.beginPath(); ctx.arc(hx + 5, hy - 4, 5, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = PAL.text; ctx.font = '13px sans-serif';
-      ctx.fillText(`${BOSSES[i].name} · ${BOSSES[i].stage}`, hx + 16, hy);
+      ctx.fillText(`${BOSSES[i].name} · ${BOSSES[i].stage} · ${BOSSES[i].hp} HP`, hx + 16, hy);
     }
     ctx.fillStyle = PAL.dim; ctx.font = '13px sans-serif';
     ctx.fillText('All your weapons attack on their own — dodge, position, and buy better gear.', 64, 540);
@@ -945,8 +948,8 @@ export function createRenderer(canvas) {
     let grade, gradeColor, nextGoal;
     if (won && hp >= 60) {
       grade = 'S'; gradeColor = '#ffd166';
-      nextGoal = diff === 'storm' ? 'NEXT GOAL: beat your best score'
-        : diff === 'calm' ? 'NEXT GOAL: win on NORMAL' : 'NEXT GOAL: win on STORM';
+      nextGoal = diff === 'hard' ? 'NEXT GOAL: beat your best score'
+        : diff === 'easy' ? 'NEXT GOAL: win on NORMAL' : 'NEXT GOAL: win on HARD';
     }
     else if (won && hp > 25) { grade = 'A'; gradeColor = '#7fe0c3'; nextGoal = 'NEXT GOAL: finish with 60+ HP for grade S'; }
     else if (won) { grade = 'B'; gradeColor = '#8fb8ff'; nextGoal = 'NEXT GOAL: finish with 26+ HP for grade A'; }

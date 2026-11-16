@@ -170,15 +170,15 @@ export const SHOP = [
 ];
 
 // Difficulties: real tuning, not labels. NORMAL is the balanced game (all
-// multipliers 1.0 — the sim's 28% win rate is measured on it); CALM softens
-// the tide for a first run; STORM is the merciless climb after a NORMAL win.
+// multipliers 1.0 — the sim's 28% win rate is measured on it); EASY softens
+// the tide for a first run; HARD is the merciless climb after a NORMAL win.
 // Best score is kept per difficulty, and the NEXT GOAL points up the ladder.
 export const DIFFICULTIES = {
-  calm: { label: 'CALM', desc: 'gentler foes', hp: 0.85, dmg: 0.8, speed: 0.97, bossHp: 0.9, bossDmg: 0.85 },
+  easy: { label: 'EASY', desc: 'gentler foes', hp: 0.85, dmg: 0.8, speed: 0.97, bossHp: 0.9, bossDmg: 0.85 },
   normal: { label: 'NORMAL', desc: 'the true tide', hp: 1, dmg: 1, speed: 1, bossHp: 1, bossDmg: 1 },
-  storm: { label: 'STORM', desc: 'merciless tide', hp: 1.1, dmg: 1.0, speed: 1.0, bossHp: 1.1, bossDmg: 1.0 },
+  hard: { label: 'HARD', desc: 'merciless tide', hp: 1.1, dmg: 1.0, speed: 1.0, bossHp: 1.1, bossDmg: 1.0 },
 };
-export const DIFF_ORDER = ['calm', 'normal', 'storm'];
+export const DIFF_ORDER = ['easy', 'normal', 'hard'];
 
 // Feats: eight named goals beyond winning, persisted across runs. A feat is
 // checked at run end (and at the moment it happens for the in-run ones);

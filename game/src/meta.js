@@ -21,7 +21,7 @@ function writeJson(key, value) {
   try { window.localStorage.setItem(key, JSON.stringify(value)); } catch { /* private mode */ }
 }
 
-// The meta record: { bests: { calm, normal, storm }, feats: [ids], runs: [...] }.
+// The meta record: { bests: { easy, normal, hard }, feats: [ids], runs: [...] }.
 // A legacy single best (pre-v8) is adopted as the NORMAL best once.
 export function readMeta() {
   const bests = readJson(BESTS_KEY, {});

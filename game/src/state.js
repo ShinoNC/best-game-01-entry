@@ -17,7 +17,7 @@ export function createState(rng, seed, difficulty = 'normal') {
   }
   return {
     rng, seed, decor, time: 0, phase: 'title',
-    difficulty, // 'calm' | 'normal' | 'storm' — set on the title, fixed for the run
+    difficulty, // 'easy' | 'normal' | 'hard' — set on the title, fixed for the run
     // Combo: chained kills raise the score multiplier (×1–×8). comboT counts
     // down from COMBO_WINDOW after every kill; at 0 the chain resets.
     combo: 0, comboT: 0,
