@@ -4,7 +4,7 @@
 // spends them on cards (weapons, weapon levels, skills). There is no level or XP.
 import { PAL, PLAYER, POOL } from './config.js';
 
-export function createState(rng, seed) {
+export function createState(rng, seed, difficulty = 'normal') {
   const decor = [];
   for (let i = 0; i < 60; i += 1) { // rocks, weed tufts and shells scattered in the pool
     const a = rng.angle(), rr = Math.sqrt(rng.next());
@@ -17,6 +17,10 @@ export function createState(rng, seed) {
   }
   return {
     rng, seed, decor, time: 0, phase: 'title',
+    difficulty, // 'calm' | 'normal' | 'storm' — set on the title, fixed for the run
+    // Combo: chained kills raise the score multiplier (×1–×8). comboT counts
+    // down from COMBO_WINDOW after every kill; at 0 the chain resets.
+    combo: 0, comboT: 0,
     player: {
       x: POOL.cx, y: POOL.cy + 40, px: POOL.cx, py: POOL.cy + 40, // px/py = position at the previous sim step (render interpolation)
       vx: 0, vy: 0, angle: -Math.PI / 2,
@@ -45,7 +49,11 @@ export function createState(rng, seed) {
     // clear bonus paid for this stage, and a transient message slot
     // (e.g. "NOT ENOUGH COINS") shown under the buttons.
     hand: [], rerolls: 0, clearBonus: 0, menuMsg: '', menuMsgT: 0,
-    stats: { damage: 0, taken: 0, dashes: 0, spent: 0, rerolls: 0 },
+    stats: { damage: 0, taken: 0, dashes: 0, spent: 0, rerolls: 0,
+      // Feat counters: bosses driven off, best combo reached, most coins held
+      // at once, and whether any stage was cleared without a scratch.
+      bossesDown: 0, bestCombo: 0, maxCoins: 0, cleanStage: false },
+    stageTaken: 0, // damage taken during the current stage (UNTOUCHED feat)
     // The tutorial hint queue and the boss warning.
     hints: { idx: 0, cur: null, t: 0, wait: 0, done: [false, false, false, false] },
     bossWarned: false,

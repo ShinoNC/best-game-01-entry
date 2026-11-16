@@ -173,3 +173,42 @@ export const SHOP = [
   { id: 'laser', kind: 'weapon', price: 130, up: [200, 260, 330, 420], name: 'LASER GUN', icon: '≋', desc: 'Fixed horizontal beam' },
   { id: 'claw', kind: 'weapon', price: 0, up: [60, 95, 140, 200], name: 'SHARPEN CLAWS', icon: '✂', desc: 'Claw +damage, +range' },
 ];
+
+// Difficulties: real tuning, not labels. NORMAL is the balanced game (all
+// multipliers 1.0 — the sim's 28% win rate is measured on it); CALM softens
+// the tide for a first run; STORM is the merciless climb after a NORMAL win.
+// Best score is kept per difficulty, and the NEXT GOAL points up the ladder.
+export const DIFFICULTIES = {
+  calm: { label: 'CALM', desc: 'gentler foes', hp: 0.85, dmg: 0.8, speed: 0.97, bossHp: 0.9, bossDmg: 0.85 },
+  normal: { label: 'NORMAL', desc: 'the true tide', hp: 1, dmg: 1, speed: 1, bossHp: 1, bossDmg: 1 },
+  storm: { label: 'STORM', desc: 'merciless tide', hp: 1.1, dmg: 1.0, speed: 1.0, bossHp: 1.1, bossDmg: 1.0 },
+};
+export const DIFF_ORDER = ['calm', 'normal', 'storm'];
+
+// Feats: eight named goals beyond winning, persisted across runs. A feat is
+// checked at run end (and at the moment it happens for the in-run ones);
+// the title shows the count, the end screen names the ones earned this run.
+export const FEATS = [
+  { id: 'firstblood', name: 'FIRST BLOOD', desc: 'Slay your first creature' },
+  { id: 'arsenal', name: 'FULL ARSENAL', desc: 'Own all 6 weapons in one run' },
+  { id: 'heron', name: 'HERON SLAYER', desc: 'Drive off a heron' },
+  { id: 'king', name: 'KINGSLAYER', desc: 'Beat the Heron King' },
+  { id: 'untouched', name: 'UNTOUCHED', desc: 'Clear a stage without a scratch' },
+  { id: 'rich', name: 'RICH CRAB', desc: 'Hold 500+ coins at once' },
+  { id: 'combo', name: 'COMBO ×8', desc: 'Reach combo ×8' },
+  { id: 'grades', name: 'GRADE S', desc: 'Finish with grade S' },
+];
+
+// The bestiary: display names for the six creatures (the herons are named in
+// BOSSES). Shown on the title so the judge sees the roster at a glance.
+export const CREATURE_NAMES = {
+  guppy: 'GUPPY', jelly: 'JELLY', urchin: 'URCHIN',
+  starfish: 'STARFISH', eel: 'EEL', gull: 'GULL',
+};
+export const CREATURE_ORDER = ['guppy', 'jelly', 'urchin', 'starfish', 'eel', 'gull'];
+
+// Combo: kills within 3 s of each other chain; every 4 chained kills raise
+// the score multiplier by one, up to ×8. Score-only — it never changes
+// survival, so the balance sim is unaffected.
+export const COMBO_WINDOW = 3.0;
+export const COMBO_MAX = 8;

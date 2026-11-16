@@ -1,18 +1,19 @@
 // Enemies: six behaviours + elites + six boss herons (every fifth stage).
 // Criterion 2: each type moves and threatens differently, so positioning matters.
-import { ELITE, ENEMIES, POOL, STAGES, bossForStage, dmgScale, hpScale, spawnWeights, speedScale } from './config.js';
+import { DIFFICULTIES, ELITE, ENEMIES, POOL, STAGES, bossForStage, dmgScale, hpScale, spawnWeights, speedScale } from './config.js';
 
 let nextId = 1;
 
 export function spawnEnemy(state, type, elite) {
   const def = ENEMIES[type];
+  const diff = DIFFICULTIES[state.difficulty || 'normal'];
   const a = state.rng.angle();
   const x = POOL.cx + Math.cos(a) * POOL.rx * 1.02;
   const y = POOL.cy + Math.sin(a) * POOL.ry * 1.02;
-  const hp = Math.round(def.hp * hpScale(state.stage) * (elite ? ELITE.hpMul : 1));
+  const hp = Math.round(def.hp * hpScale(state.stage) * diff.hp * (elite ? ELITE.hpMul : 1));
   const e = {
     id: nextId += 1, type, x, y, hp, maxHp: hp, r: def.r * (elite ? ELITE.sizeMul : 1),
-    speed: def.speed * speedScale(state.stage) * state.rng.range(0.9, 1.1), dmg: Math.round(def.dmg * dmgScale(state.stage) * (elite ? ELITE.dmgMul : 1)),
+    speed: def.speed * speedScale(state.stage) * diff.speed * state.rng.range(0.9, 1.1), dmg: Math.round(def.dmg * dmgScale(state.stage) * diff.dmg * (elite ? ELITE.dmgMul : 1)),
     score: elite ? ELITE.score : def.score,
     coins: elite ? ELITE.coins : def.coins,
     color: def.color, dark: def.dark, elite: !!elite,
@@ -34,12 +35,13 @@ function pickType(state) {
 function spawnBoss(state, fx, audio) {
   state.bossSpawned = true;
   const def = bossForStage(state.stage);
+  const diff = DIFFICULTIES[state.difficulty || 'normal'];
   const b = spawnEnemy(state, 'gull', true);
   b.type = def.type;
   b.boss = true;
   b.name = def.name;
-  b.hp = def.hp; b.maxHp = def.hp; b.r = def.r;
-  b.speed = def.speed; b.dmg = def.dmg; b.score = def.score;
+  b.hp = Math.round(def.hp * diff.bossHp); b.maxHp = b.hp; b.r = def.r;
+  b.speed = def.speed; b.dmg = Math.round(def.dmg * diff.bossDmg); b.score = def.score;
   b.coins = def.coins;
   // Each heron has its own plumage, dive speed and summons — the later birds
   // are bigger, faster-diving and call more gulls.
@@ -153,6 +155,7 @@ export function onEnemyKilled(state, e, fx) {
   }
   if (e.boss) {
     state.boss = null;
+    state.stats.bossesDown = (state.stats.bossesDown || 0) + 1;
     state.banner = `${e.name} IS DRIVEN OFF! +${e.score}`;
     state.bannerT = 3;
   }

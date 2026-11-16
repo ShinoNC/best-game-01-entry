@@ -200,6 +200,7 @@ export function hurtPlayer(state, dmg, fx, audio) {
   const real = Math.max(1, dmg - soaked);
   p.hp -= real; p.iframes = PLAYER.iframes; p.flash = 0.25;
   state.stats.taken += real;
+  state.stageTaken += real; // any damage this stage voids UNTOUCHED for it
   fx.shake(0.35); fx.text(p.x, p.y - 30, `-${real}`, PAL.hp, true);
   fx.burst(p.x, p.y, PAL.hp, 8, 160);
   audio.hurt();

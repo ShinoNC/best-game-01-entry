@@ -2,13 +2,24 @@
 // One step is 1/60 s; the renderer never touches this state, so replays are exact.
 // Coins are the only pickup: kills drop coins, and the stage-clear menu spends
 // them on cards. There is no level or XP — nothing interrupts play mid-stage.
-import { ENEMIES, POOL, STAGES, STAGE_COUNT, bossForStage } from './config.js';
+import { COMBO_MAX, COMBO_WINDOW, ENEMIES, POOL, STAGES, STAGE_COUNT, bossForStage } from './config.js';
 import { onEnemyKilled, updateEnemies, updateSpawner } from './enemies.js';
 import { hurtPlayer, nearestEnemy, updatePlayer } from './player.js';
 import { drawHand } from './cards.js';
 import { updateHints } from './tutorial.js';
 
 export const STEP = 1 / 60;
+
+// Score multiplier from the current kill chain: every 4 chained kills raise
+// it by one, up to ×8. The HUD shows it; the combo is score-only.
+export function comboMultFor(chain) {
+  return 1 + Math.min(COMBO_MAX - 1, Math.floor(chain / 4));
+}
+export function comboMult(state) { return comboMultFor(state.combo); }
+
+function noteCoins(state) {
+  if (state.coins > state.stats.maxCoins) state.stats.maxCoins = state.coins;
+}
 
 function dropCoins(state, e) {
   // Coins are the menu currency: every kill pays, elites pay more, the heron pays most.
@@ -25,10 +36,17 @@ function dropCoins(state, e) {
 }
 
 function killEnemy(state, e, fx, audio) {
-  state.kills += 1; state.score += e.score;
+  // Chain the combo: a kill within the window extends the chain, and the
+  // multiplier grows every 4 chained kills. The popup shows the multiplied
+  // score — the player sees the combo pay off on every kill.
+  state.kills += 1;
+  state.combo += 1; state.comboT = COMBO_WINDOW;
+  if (state.combo > state.stats.bestCombo) state.stats.bestCombo = state.combo;
+  const gained = e.score * comboMult(state);
+  state.score += gained;
   fx.burst(e.x, e.y, e.color, e.elite ? 24 : 14, e.elite ? 260 : 190); // bigger death burst
   fx.bubbles(e.x, e.y, e.elite ? 12 : 6);
-  fx.text(e.x, e.y - e.r - 4, `+${e.score}`, '#f4f9ff');
+  fx.text(e.x, e.y - e.r - 4, `+${gained}`, '#f4f9ff');
   audio.die();
   onEnemyKilled(state, e, fx);
   dropCoins(state, e);
@@ -46,6 +64,7 @@ export function nextStage(state, audio) {
   state.stageSpawned = 0; state.stageEliteDone = false;
   state.spawnT = 0.8;
   state.hand = []; state.rerolls = 0; state.clearBonus = 0; state.menuMsg = ''; state.menuMsgT = 0;
+  state.stageTaken = 0; state.combo = 0; state.comboT = 0; // fresh stage, fresh chain
   // The boss flags are per-stage: without this reset the stage-5 boss would
   // suppress the stage-10 boss (bossSpawned stays true otherwise).
   state.bossSpawned = false; state.boss = null;
@@ -90,6 +109,7 @@ export function stepWorld(state, input, dt, fx, audio) {
         // there most. Total over a run: ~2,900 coins.
         state.clearBonus = 40 + state.stage * 7;
         state.coins += state.clearBonus; state.coinsEarned += state.clearBonus;
+        noteCoins(state);
         state.score += state.clearBonus * 2;
         state.hand = drawHand(state);
         state.rerolls = 0; state.menuMsg = ''; state.menuMsgT = 0;
@@ -100,6 +120,12 @@ export function stepWorld(state, input, dt, fx, audio) {
     return;
   }
   state.bannerT -= dt;
+
+  // The combo chain decays: 3 s without a kill resets it to ×1.
+  if (state.comboT > 0) {
+    state.comboT -= dt;
+    if (state.comboT <= 0) state.combo = 0;
+  }
 
   updateSpawner(state, dt, fx, audio);
   updatePlayer(state, input, dt, fx, audio);
@@ -191,6 +217,7 @@ export function stepWorld(state, input, dt, fx, audio) {
     if (d < p.radius + 10) {
       state.drops.splice(i, 1);
       state.coins += pe.v; state.coinsEarned += pe.v; state.score += pe.v * 2;
+      noteCoins(state);
       audio.coin();
     } else if (pe.life <= 0) state.drops.splice(i, 1);
   }
@@ -214,6 +241,9 @@ export function stepWorld(state, input, dt, fx, audio) {
       && state.stageClearT <= 0) {
     state.stageClearT = 1.2;
     state.score += 100 + state.stage * 50;
+    // A stage cleared without a scratch counts toward the UNTOUCHED feat.
+    if (state.stageTaken === 0) state.stats.cleanStage = true;
+    state.combo = 0; state.comboT = 0; // the chain ends with the stage
     // Vacuum the leftovers: coins on the ground are collected at once, so a
     // stage never ends with money left behind.
     let vacuumedCoins = 0;
@@ -221,6 +251,7 @@ export function stepWorld(state, input, dt, fx, audio) {
       state.coins += pe.v; state.coinsEarned += pe.v; state.score += pe.v * 2; vacuumedCoins += pe.v;
     }
     state.drops.length = 0;
+    noteCoins(state);
     if (vacuumedCoins > 0) audio.coin();
     const clearedBoss = bossForStage(state.stage);
     if (state.stage >= STAGE_COUNT) {

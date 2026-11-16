@@ -8,16 +8,17 @@
 // win/lose -> restart, all real, all visible.
 // ?seed=N fixes the run. ?shot=start|play|elite|boss|storm|stageclear|end
 // stages that scene for screenshots.
-import { BEST_KEY } from './config.js';
+import { BEST_KEY, DIFF_ORDER } from './config.js';
 import { createRandom } from './random.js';
 import { createState } from './state.js';
 import { createInput } from './input.js';
 import { createAudio } from './audio.js';
 import { createParticles } from './particles.js';
-import { createRenderer, stageMenuLayout } from './render.js';
+import { createRenderer, stageMenuLayout, titleLayout } from './render.js';
 import { STEP, nextStage, stepWorld } from './world.js';
 import { REROLL_COST, autoBuy, buyCard, rerollHand } from './cards.js';
 import { stageShot } from './shots.js';
+import { featsEarnedThisRun, readMeta, recordRun } from './meta.js';
 
 const params = new URLSearchParams(window.location.search);
 const shot = params.get('shot');
@@ -34,8 +35,13 @@ const fx = createParticles();
 function readBest() {
   try { return Number.parseInt(window.localStorage.getItem(BEST_KEY) ?? '0', 10) || 0; } catch { return 0; }
 }
-function writeBest(v) {
-  try { window.localStorage.setItem(BEST_KEY, String(v)); } catch { /* private mode */ }
+
+// Attach the meta record (bests per difficulty, feats, last runs) to a state.
+// BEST is the max across difficulties — the HUD's single BEST line.
+function attachMeta(s) {
+  s.meta = readMeta();
+  s.best = Math.max(0, ...DIFF_ORDER.map((d) => s.meta.bests[d] || 0), readBest());
+  return s;
 }
 
 // Mouse mapping goes through the renderer's view transform — the single
@@ -52,14 +58,16 @@ function toScreen(lx, ly) {
 let state;
 if (shot) {
   state = stageShot(shot, seed, fx, audio);
-  state.best = readBest();
+  attachMeta(state);
+  // A staged end screen names the feats the staged run earned — computed
+  // against the stored set, never written (staging must not pollute history).
+  if (state.phase === 'over') state.featsEarned = featsEarnedThisRun(state, state.meta.feats);
   state.shotMode = true; // staged frames always show the blinking prompts, never a blank blink
   renderer.render(state, fx, state.time);
   renderer.render(state, fx, state.time);
   window.__shotReady = true;
 } else {
-  state = createState(createRandom(seed), seed);
-  state.best = readBest();
+  state = attachMeta(createState(createRandom(seed), seed));
   // Debug hook for playtests: the sim state, live, plus a manual step and the
   // menu layout / coordinate helpers the harness clicks with.
   window.__tide = { state, fx, audio, step: (inp) => stepWorld(state, inp, STEP, fx, audio), STEP,
@@ -84,7 +92,15 @@ if (shot) {
         while (acc >= STEP && steps < 4) { stepWorld(state, input, STEP, fx, audio); acc -= STEP; steps += 1; if (state.phase !== 'play') break; }
       }
       if (acc >= STEP) acc = 0;
-      if (state.phase === 'over' && state.score > state.best) { state.best = state.score; writeBest(state.best); }
+      // A finished run is recorded exactly once: best per difficulty, new
+      // feats, and the run history — the end screen reads all three.
+      if (state.phase === 'over' && !state.recorded) {
+        state.recorded = true;
+        const res = recordRun(state, state.meta || readMeta());
+        state.meta = res.meta;
+        state.featsEarned = res.earned;
+        state.best = Math.max(0, ...DIFF_ORDER.map((d) => res.meta.bests[d] || 0));
+      }
     }
     fx.update(dt);
     // The render interpolates between sim steps only while playing; a frozen
@@ -128,7 +144,33 @@ function doReroll() {
 function handleMenus() {
   if (input.mutePressed()) { const m = audio.toggleMute(); status.textContent = m ? 'Muted' : 'Sound on'; }
   if (state.phase === 'title') {
-    if (input.confirmPressed() || input.click()) {
+    // 1–3 select a difficulty; a click on a difficulty button selects it
+    // instead of starting — the run starts on Enter/Space or a click anywhere else.
+    const n = input.numberPressed();
+    if (n >= 1 && n <= DIFF_ORDER.length) {
+      state.difficulty = DIFF_ORDER[n - 1];
+      status.textContent = `Difficulty: ${state.difficulty}`;
+      menuPhase = 'title';
+      return;
+    }
+    if (input.click()) {
+      const m = toLogical(input.mouse().x, input.mouse().y);
+      const TL = titleLayout();
+      const hit = TL.diffs.find((b) => inBox(m, b));
+      if (hit) {
+        state.difficulty = hit.id;
+        status.textContent = `Difficulty: ${state.difficulty}`;
+        menuPhase = 'title';
+        return;
+      }
+      audio.unlock();
+      state.phase = 'play';
+      state.banner = 'STAGE 1 — SLAY THEM ALL'; state.bannerT = 3;
+      status.textContent = 'Clear 30 stages. A heron waits at every fifth stage!';
+      menuPhase = 'title';
+      return;
+    }
+    if (input.confirmPressed()) {
       audio.unlock();
       state.phase = 'play';
       state.banner = 'STAGE 1 — SLAY THEM ALL'; state.bannerT = 3;
@@ -175,9 +217,12 @@ function handleMenus() {
 
 function restart() {
   const best = state.best;
+  const meta = state.meta;
+  const difficulty = state.difficulty || 'normal';
   const fresh = Math.floor(Math.random() * 4294967296);
-  state = createState(createRandom(fresh), fresh);
+  state = createState(createRandom(fresh), fresh, difficulty);
   state.best = best;
+  state.meta = meta;
   state.phase = 'play';
   state.banner = 'STAGE 1 — SLAY THEM ALL'; state.bannerT = 3;
   fx.clear();

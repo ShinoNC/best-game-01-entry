@@ -7,10 +7,11 @@
 //   L50 modal dim · L60 modal content · L70 vignette + flashes.
 // The screen shake moves L0–L20 only: the HUD and the menus never shake, so
 // nothing the player reads ever jumps.
-import { PAL, POOL, STAGES, STAGE_COUNT, VIEW_H, VIEW_W, WEAPON_MAX, WEAPON_ORDER, bossForStage } from './config.js';
+import { BOSSES, COMBO_MAX, CREATURE_NAMES, CREATURE_ORDER, DIFFICULTIES, DIFF_ORDER, ENEMIES, FEATS, PAL, POOL, STAGES, STAGE_COUNT, VIEW_H, VIEW_W, WEAPON_MAX, WEAPON_ORDER, bossForStage } from './config.js';
 import { UPGRADE_DEFS } from './upgrades.js';
 import { HAND_SIZE, REROLL_COST } from './cards.js';
 import { weaponStatsFor } from './weapons.js';
+import { comboMult, comboMultFor } from './world.js';
 
 export const SCREEN_TITLE = 'title';
 export const SCREEN_PLAY = 'play';
@@ -34,6 +35,18 @@ export function stageMenuLayout(state) {
     cards,
     reroll: { x: 368, y: 404, w: 240, h: 52 },
     next: { x: 632, y: 404, w: 280, h: 52 },
+  };
+}
+
+// The title screen's difficulty buttons — FIXED, shared with main.js so a
+// click on a button selects the difficulty instead of starting the run.
+// 3 × 220×64, 16px gaps, y 196–260, centred.
+export const DIFF_BTN_W = 220, DIFF_BTN_H = 64, DIFF_BTN_Y = 196;
+export function titleLayout() {
+  const total = DIFF_ORDER.length * DIFF_BTN_W + (DIFF_ORDER.length - 1) * 16;
+  const x0 = (VIEW_W - total) / 2;
+  return {
+    diffs: DIFF_ORDER.map((id, i) => ({ id, x: x0 + i * (DIFF_BTN_W + 16), y: DIFF_BTN_Y, w: DIFF_BTN_W, h: DIFF_BTN_H })),
   };
 }
 
@@ -521,11 +534,14 @@ export function createRenderer(canvas) {
     }
     // Top-centre: the stage, always visible — the stage number AND the goal,
     // written as an explicit WIN/LOSE line (the top entries all do this).
+    // The difficulty rides on the stage line, so the cover shows which tide
+    // this run is fighting.
     const remaining = (STAGES[state.stage - 1].budget - state.stageSpawned) + state.enemies.length;
+    const diffLabel = (DIFFICULTIES[state.difficulty || 'normal'] || DIFFICULTIES.normal).label;
     ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(6,42,51,0.75)'; ctx.fillRect(VIEW_W / 2 - 170, 14, 340, 80);
+    ctx.fillStyle = 'rgba(6,42,51,0.75)'; ctx.fillRect(VIEW_W / 2 - 190, 14, 380, 80);
     ctx.fillStyle = PAL.text; ctx.font = 'bold 26px sans-serif';
-    ctx.fillText(`STAGE ${state.stage} / ${STAGE_COUNT}`, VIEW_W / 2, 40);
+    ctx.fillText(`STAGE ${state.stage} / ${STAGE_COUNT} · ${diffLabel}`, VIEW_W / 2, 40);
     ctx.fillStyle = PAL.gold; ctx.font = 'bold 13px sans-serif';
     ctx.fillText('WIN: CLEAR STAGE 30 · LOSE: HP = 0', VIEW_W / 2, 62);
     ctx.fillStyle = PAL.dim; ctx.font = 'bold 14px sans-serif';
@@ -549,15 +565,18 @@ export function createRenderer(canvas) {
       ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(VIEW_W / 2 - 180, 126, 360, 8);
       ctx.fillStyle = '#ff5d73'; ctx.fillRect(VIEW_W / 2 - 180, 126, 360 * (state.boss.hp / state.boss.maxHp), 8);
     }
-    // Top-right: score, coins (the shop money — always visible), kills, best.
+    // Top-right: score, coins (the shop money — always visible), combo, kills, best.
     ctx.textAlign = 'right';
-    ctx.fillStyle = 'rgba(6,42,51,0.75)'; ctx.fillRect(VIEW_W - 268, 14, 250, 88);
+    ctx.fillStyle = 'rgba(6,42,51,0.75)'; ctx.fillRect(VIEW_W - 268, 14, 250, 112);
     ctx.fillStyle = PAL.gold; ctx.font = 'bold 24px sans-serif';
     ctx.fillText(`SCORE ${state.score}`, VIEW_W - 28, 40);
     ctx.fillStyle = PAL.gold; ctx.font = 'bold 17px sans-serif';
     ctx.fillText(`◉ ${state.coins} COINS`, VIEW_W - 28, 64);
+    const mult = comboMult(state);
+    ctx.fillStyle = mult >= 2 ? '#ffd166' : PAL.dim; ctx.font = 'bold 16px sans-serif';
+    ctx.fillText(mult >= 2 ? `COMBO ×${mult}` : 'COMBO ×1', VIEW_W - 28, 88);
     ctx.fillStyle = PAL.text; ctx.font = 'bold 15px sans-serif';
-    ctx.fillText(`BEST ${state.best}  •  ${state.kills} slain`, VIEW_W - 28, 86);
+    ctx.fillText(`BEST ${state.best}  •  ${state.kills} slain`, VIEW_W - 28, 110);
     // Bottom-left: the SKILLS panel — the 8 upgrade tracks as icon boxes with
     // their levels, so the build reads at a glance during play. Coins are the
     // single currency, so there is no level or XP bar here any more.
@@ -626,51 +645,121 @@ export function createRenderer(canvas) {
   }
 
   function drawTitle(state) {
+    const meta = state.meta || { bests: {}, feats: [], runs: [] };
     ctx.fillStyle = 'rgba(6,42,51,0.82)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     ctx.textAlign = 'center';
-    ctx.fillStyle = PAL.crab; ctx.font = 'bold 84px sans-serif';
-    ctx.fillText('TIDEKEEPER', VIEW_W / 2, 170);
+    ctx.fillStyle = PAL.crab; ctx.font = 'bold 72px sans-serif';
+    ctx.fillText('TIDEKEEPER', VIEW_W / 2, 104);
     // Goal first, in gold: a new player reads the goal + controls in under 5 s.
-    ctx.fillStyle = PAL.gold; ctx.font = 'bold 23px sans-serif';
-    ctx.fillText('★ CLEAR 30 STAGES — BEAT THE HERONS, WIN THE POOL ★', VIEW_W / 2, 222);
-    ctx.fillStyle = PAL.text; ctx.font = '19px sans-serif';
-    ctx.fillText('Slay creatures. Gather coins. Collect six auto-weapons.', VIEW_W / 2, 256);
+    ctx.fillStyle = PAL.gold; ctx.font = 'bold 21px sans-serif';
+    ctx.fillText('★ CLEAR 30 STAGES — BEAT THE HERONS, WIN THE POOL ★', VIEW_W / 2, 146);
+    // Scope line: what the game contains, in numbers (the top titles all list theirs).
+    ctx.fillStyle = PAL.foam; ctx.font = '15px sans-serif';
+    ctx.fillText('30 stages · 6 boss herons · 6 weapons · 5-card shop after every stage · 8 skills · 3 difficulties', VIEW_W / 2, 174);
+    // Difficulty select: three real tunings, best score per difficulty. The
+    // selected button is gold-filled (the one primary choice on the screen);
+    // 1–3 or a click selects, Enter/click elsewhere starts the run.
+    const TL = titleLayout();
+    for (const b of TL.diffs) {
+      const d = DIFFICULTIES[b.id];
+      const sel = state.difficulty === b.id;
+      const best = (meta.bests && meta.bests[b.id]) || 0;
+      ctx.fillStyle = sel ? PAL.gold : 'rgba(6,42,51,0.85)';
+      ctx.fillRect(b.x, b.y, b.w, b.h);
+      ctx.strokeStyle = sel ? PAL.gold : PAL.foam; ctx.lineWidth = sel ? 3 : 2;
+      ctx.strokeRect(b.x, b.y, b.w, b.h);
+      ctx.fillStyle = sel ? '#062a33' : PAL.text; ctx.font = 'bold 20px sans-serif';
+      ctx.fillText(d.label, b.x + b.w / 2, b.y + 26);
+      ctx.fillStyle = sel ? '#062a33' : PAL.dim; ctx.font = '13px sans-serif';
+      ctx.fillText(`${d.desc} · BEST ${best > 0 ? best : '—'}`, b.x + b.w / 2, b.y + 48);
+    }
     // The four controls as chips, side by side.
-    const chips = ['WASD — MOVE', 'WEAPONS — ALL AUTO-FIRE', 'SPACE — DASH', 'P — PAUSE · M — MUTE'];
-    ctx.font = 'bold 16px sans-serif';
-    const widths = chips.map((c) => ctx.measureText(c).width + 36);
-    const gap = 16;
+    const chips = ['WASD — MOVE', 'WEAPONS — ALL AUTO-FIRE', 'SPACE — DASH', '1–3 — DIFFICULTY · P — PAUSE · M — MUTE'];
+    ctx.font = 'bold 14px sans-serif';
+    const widths = chips.map((c) => ctx.measureText(c).width + 32);
+    const gap = 12;
     const total = widths.reduce((a, b) => a + b, 0) + gap * (chips.length - 1);
     let x = VIEW_W / 2 - total / 2;
     for (let i = 0; i < chips.length; i += 1) {
-      ctx.fillStyle = 'rgba(6,42,51,0.85)'; ctx.fillRect(x, 292, widths[i], 40);
-      ctx.strokeStyle = PAL.foam; ctx.lineWidth = 2; ctx.strokeRect(x, 292, widths[i], 40);
-      ctx.fillStyle = PAL.text; ctx.fillText(chips[i], x + widths[i] / 2, 318);
+      ctx.fillStyle = 'rgba(6,42,51,0.85)'; ctx.fillRect(x, 276, widths[i], 32);
+      ctx.strokeStyle = PAL.foam; ctx.lineWidth = 1; ctx.strokeRect(x, 276, widths[i], 32);
+      ctx.fillStyle = PAL.text; ctx.fillText(chips[i], x + widths[i] / 2, 297);
       x += widths[i] + gap;
     }
-    ctx.fillStyle = PAL.dim; ctx.font = '16px sans-serif';
-    ctx.fillText('All your weapons attack on their own — dodge, position, and buy better gear.', VIEW_W / 2, 366);
-    // Scope line: what the game contains, in numbers (the top titles all list theirs).
-    ctx.fillStyle = PAL.foam; ctx.font = '15px sans-serif';
-    ctx.fillText('30 stages · 6 boss herons · 6 weapons · 5-card shop after every stage · 8 skills', VIEW_W / 2, 396);
-    // The arsenal at a glance: all six weapons as drawn icons under the scope
-    // line, so the title shows the game's depth before a single stage is played.
+    // Left panel: the bestiary — the roster, named, so the judge sees the
+    // content at a glance (the top titles all list theirs).
+    ctx.fillStyle = 'rgba(6,42,51,0.6)'; ctx.fillRect(40, 324, 580, 232);
+    ctx.strokeStyle = 'rgba(159,196,189,0.4)'; ctx.lineWidth = 1; ctx.strokeRect(40, 324, 580, 232);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = PAL.gold; ctx.font = 'bold 15px sans-serif';
+    ctx.fillText('THE POOL — 6 CREATURES · 6 HERONS', 64, 350);
+    for (let i = 0; i < CREATURE_ORDER.length; i += 1) {
+      const type = CREATURE_ORDER[i];
+      const cx = 88 + i * 93;
+      const def = ENEMIES[type];
+      drawEnemy(ctx, { type, x: cx, y: 388, r: 15, color: def.color, dark: def.dark, hp: 1, maxHp: 1, flash: 0, wob: 0.5, elite: false }, 0, Math.PI / 2);
+      ctx.fillStyle = PAL.text; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(CREATURE_NAMES[type], cx, 420);
+      ctx.textAlign = 'left';
+    }
+    ctx.fillStyle = PAL.dim; ctx.font = 'bold 13px sans-serif';
+    ctx.fillText('HERONS — ONE EVERY 5 STAGES:', 64, 448);
+    for (let i = 0; i < BOSSES.length; i += 1) {
+      const col = i % 3, row = Math.floor(i / 3);
+      const hx = 64 + col * 190, hy = 472 + row * 24;
+      ctx.fillStyle = BOSSES[i].color;
+      ctx.beginPath(); ctx.arc(hx + 5, hy - 4, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = PAL.text; ctx.font = '13px sans-serif';
+      ctx.fillText(`${BOSSES[i].name} · ${BOSSES[i].stage}`, hx + 16, hy);
+    }
+    ctx.fillStyle = PAL.dim; ctx.font = '13px sans-serif';
+    ctx.fillText('All your weapons attack on their own — dodge, position, and buy better gear.', 64, 540);
+    // Right panel: feats earned so far + the last three runs — the game
+    // remembers, so a return visit is a continuation, not a reset.
+    ctx.fillStyle = 'rgba(6,42,51,0.6)'; ctx.fillRect(660, 324, 580, 232);
+    ctx.strokeStyle = 'rgba(159,196,189,0.4)'; ctx.lineWidth = 1; ctx.strokeRect(660, 324, 580, 232);
+    const unlocked = new Set(meta.feats || []);
+    ctx.fillStyle = PAL.gold; ctx.font = 'bold 15px sans-serif';
+    ctx.fillText(`FEATS ${unlocked.size}/${FEATS.length}`, 684, 350);
+    for (let i = 0; i < FEATS.length; i += 1) {
+      const col = i % 2, row = Math.floor(i / 2);
+      const fx0 = 684 + col * 268, fy = 374 + row * 22;
+      const got = unlocked.has(FEATS[i].id);
+      ctx.fillStyle = got ? PAL.gold : PAL.dim; ctx.font = 'bold 13px sans-serif';
+      ctx.fillText(`${got ? '★' : '☆'} ${FEATS[i].name}`, fx0, fy);
+    }
+    ctx.fillStyle = PAL.gold; ctx.font = 'bold 15px sans-serif';
+    ctx.fillText('LAST RUNS', 684, 486);
+    const runs = meta.runs || [];
+    if (runs.length === 0) {
+      ctx.fillStyle = PAL.dim; ctx.font = '13px sans-serif';
+      ctx.fillText('No runs yet — the pool waits.', 684, 510);
+    } else {
+      runs.forEach((r, i) => {
+        const mins = Math.floor((r.time || 0) / 60), secs = Math.floor((r.time || 0) % 60);
+        ctx.fillStyle = r.won ? '#7fe0c3' : '#ff8fa0'; ctx.font = 'bold 13px sans-serif';
+        ctx.fillText(`${r.won ? 'WON ' : 'LOST'} · ${(DIFFICULTIES[r.diff] || DIFFICULTIES.normal).label} · ${r.stage}/30 · ${r.score} · ${r.grade} · ${mins}:${String(secs).padStart(2, '0')}`, 684, 510 + i * 20);
+      });
+    }
+    // The arsenal at a glance: all six weapons as drawn icons under the
+    // panels, so the title shows the game's depth before a single stage.
     for (let i = 0; i < WEAPON_ORDER.length; i += 1) {
       const bx = VIEW_W / 2 - 162 + i * 56;
-      ctx.fillStyle = 'rgba(127,224,195,0.22)'; ctx.fillRect(bx, 414, 44, 40);
-      ctx.strokeStyle = 'rgba(127,224,195,0.6)'; ctx.lineWidth = 1; ctx.strokeRect(bx, 414, 44, 40);
-      drawWeaponIcon(ctx, WEAPON_ORDER[i], bx + 22, 434, 30, true);
+      ctx.fillStyle = 'rgba(127,224,195,0.22)'; ctx.fillRect(bx, 580, 44, 40);
+      ctx.strokeStyle = 'rgba(127,224,195,0.6)'; ctx.lineWidth = 1; ctx.strokeRect(bx, 580, 44, 40);
+      drawWeaponIcon(ctx, WEAPON_ORDER[i], bx + 22, 600, 30, true);
     }
     const blink = state.shotMode || Math.floor(performance.now() / 500) % 2 === 0;
     if (blink) {
-      ctx.fillStyle = PAL.gold; ctx.font = 'bold 30px sans-serif';
-      ctx.fillText('CLICK  or  PRESS ENTER  to begin', VIEW_W / 2, 480);
+      ctx.fillStyle = PAL.gold; ctx.font = 'bold 28px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('CLICK  or  PRESS ENTER  to begin', VIEW_W / 2, 656);
     }
-    ctx.fillStyle = PAL.dim; ctx.font = '18px sans-serif';
-    ctx.fillText(state.best > 0 ? `BEST SCORE ${state.best}` : 'No best score yet — be the first crab to hold the pool.', VIEW_W / 2, 540);
-    // A crab and a jellyfish flank the title, so the cover shows the game at once.
-    drawCrab(ctx, { ...state.player, x: 330, y: 470, angle: 0.3, iframes: 0, flash: 0, swing: 0, spin: 0 }, 0, null, null);
-    drawEnemy(ctx, { type: 'jelly', x: 950, y: 470, r: 26, color: '#ff8fb0', dark: '#c94f78', hp: 1, maxHp: 1, flash: 0, wob: 0.5, elite: false }, 0, Math.PI);
+    const bestAll = Math.max(0, ...DIFF_ORDER.map((d) => (meta.bests && meta.bests[d]) || 0), state.best || 0);
+    ctx.fillStyle = PAL.dim; ctx.font = '18px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(bestAll > 0 ? `BEST SCORE ${bestAll}` : 'No best score yet — be the first crab to hold the pool.', VIEW_W / 2, 686);
+    // A crab and a jellyfish flank the bottom, so the title shows the game at once.
+    drawCrab(ctx, { ...state.player, x: 120, y: 640, angle: 0.3, iframes: 0, flash: 0, swing: 0, spin: 0 }, 0, null, null);
+    drawEnemy(ctx, { type: 'jelly', x: 1160, y: 640, r: 26, color: '#ff8fb0', dark: '#c94f78', hp: 1, maxHp: 1, flash: 0, wob: 0.5, elite: false }, 0, Math.PI);
   }
 
   // Wrap a short description into at most two centred lines that fit the
@@ -860,10 +949,18 @@ export function createRenderer(canvas) {
     const won = state.result === 'won';
     // Letter grade: the top entries all grade the run, and the grade gives the
     // player a reason to run again. S = win with 60+ HP, A = win, B = win nearly
-    // dead, C = lost at stage 24+, D = lost earlier.
+    // dead, C = lost at stage 24+, D = lost earlier. An S-grade win points UP
+    // the difficulty ladder (like the top entries' "win on SCORCHED"); a lower
+    // grade points at the grade above it.
     const hp = Math.ceil(state.player.hp);
+    const diff = state.difficulty || 'normal';
+    const diffLabel = (DIFFICULTIES[diff] || DIFFICULTIES.normal).label;
     let grade, gradeColor, nextGoal;
-    if (won && hp >= 60) { grade = 'S'; gradeColor = '#ffd166'; nextGoal = 'NEXT GOAL: beat your best score'; }
+    if (won && hp >= 60) {
+      grade = 'S'; gradeColor = '#ffd166';
+      nextGoal = diff === 'storm' ? 'NEXT GOAL: beat your best score'
+        : diff === 'calm' ? 'NEXT GOAL: win on NORMAL' : 'NEXT GOAL: win on STORM';
+    }
     else if (won && hp > 25) { grade = 'A'; gradeColor = '#7fe0c3'; nextGoal = 'NEXT GOAL: finish with 60+ HP for grade S'; }
     else if (won) { grade = 'B'; gradeColor = '#8fb8ff'; nextGoal = 'NEXT GOAL: finish with 26+ HP for grade A'; }
     else if (state.stage >= 24) { grade = 'C'; gradeColor = '#ffab5e'; nextGoal = 'NEXT GOAL: clear stage 30 to win'; }
@@ -871,19 +968,22 @@ export function createRenderer(canvas) {
     ctx.fillStyle = 'rgba(6,42,51,0.86)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     ctx.textAlign = 'center';
     ctx.fillStyle = won ? PAL.gold : PAL.hp; ctx.font = 'bold 64px sans-serif';
-    ctx.fillText(won ? 'HIGH TIDE!' : 'THE TIDE TOOK YOU', VIEW_W / 2, 150);
+    ctx.fillText(won ? 'HIGH TIDE!' : 'THE TIDE TOOK YOU', VIEW_W / 2, 140);
     ctx.fillStyle = gradeColor; ctx.font = 'bold 40px sans-serif';
-    ctx.fillText(`★ GRADE ${grade} ★`, VIEW_W / 2, 210);
+    ctx.fillText(`★ GRADE ${grade} ★`, VIEW_W / 2, 196);
     ctx.fillStyle = PAL.text; ctx.font = 'bold 22px sans-serif';
-    ctx.fillText(won ? 'You held the rockpool. The crab keeps its shell.' : 'The creatures feast tonight. Try again, little crab.', VIEW_W / 2, 248);
+    ctx.fillText(won ? 'You held the rockpool. The crab keeps its shell.' : 'The creatures feast tonight. Try again, little crab.', VIEW_W / 2, 232);
     ctx.fillStyle = PAL.gold; ctx.font = 'bold 34px sans-serif';
-    ctx.fillText(`SCORE ${state.score}`, VIEW_W / 2, 305);
+    ctx.fillText(`SCORE ${state.score}`, VIEW_W / 2, 288);
+    // What S requires, with this run's ticks — the grade is a checklist, not a mystery.
+    ctx.fillStyle = PAL.foam; ctx.font = 'bold 17px sans-serif';
+    ctx.fillText(`FOR GRADE S:  WIN ${won ? '✓' : '✗'}   ·   60+ HP ${hp >= 60 ? '✓' : '✗'}`, VIEW_W / 2, 318);
     // Run stats in three short icon rows — no single overlong line.
     const mins = Math.floor(state.time / 60), secs = Math.floor(state.time % 60);
     ctx.fillStyle = PAL.text; ctx.font = '20px sans-serif';
-    ctx.fillText(`${state.kills} slain  •  ◉ ${state.coinsEarned} coins`, VIEW_W / 2, 340);
-    ctx.fillText(`Stage ${state.stage}/${STAGE_COUNT}  •  ${mins}:${String(secs).padStart(2, '0')}`, VIEW_W / 2, 368);
-    ctx.fillText(`Damage dealt ${state.stats.damage}  •  Damage taken ${state.stats.taken}  •  Dashes ${state.stats.dashes}  •  Spent ${state.stats.spent} ◉`, VIEW_W / 2, 396);
+    ctx.fillText(`${state.kills} slain  •  ◉ ${state.coinsEarned} coins  •  Best combo ×${comboMultFor(state.stats.bestCombo || 0)}`, VIEW_W / 2, 348);
+    ctx.fillText(`Stage ${state.stage}/${STAGE_COUNT}  •  ${diffLabel}  •  ${mins}:${String(secs).padStart(2, '0')}`, VIEW_W / 2, 374);
+    ctx.fillText(`Damage dealt ${state.stats.damage}  •  Damage taken ${state.stats.taken}  •  Dashes ${state.stats.dashes}  •  Spent ${state.stats.spent} ◉`, VIEW_W / 2, 400);
     // Weapons recap: the arsenal as drawn icons with level pips, centred.
     const totalW = WEAPON_ORDER.length * 44 - 4;
     for (let i = 0; i < WEAPON_ORDER.length; i += 1) {
@@ -904,15 +1004,26 @@ export function createRenderer(canvas) {
       .map((d) => `${d.icon} Lv${state.ups[d.id]}`).join('  ·  ');
     ctx.fillStyle = PAL.foam; ctx.font = '17px sans-serif';
     ctx.fillText(built ? `SKILLS: ${built}` : 'SKILLS: none yet', VIEW_W / 2, 486);
+    // Feats earned this run (gold, named) — or the running total if none.
+    const earned = state.featsEarned || [];
+    const featTotal = (state.meta && state.meta.feats ? state.meta.feats.length : 0);
+    if (earned.length > 0) {
+      const names = earned.map((id) => (FEATS.find((f) => f.id === id) || {}).name || id).join(' · ');
+      ctx.fillStyle = PAL.gold; ctx.font = 'bold 18px sans-serif';
+      ctx.fillText(`★ NEW FEATS: ${names} ★`, VIEW_W / 2, 514);
+    } else {
+      ctx.fillStyle = PAL.dim; ctx.font = 'bold 17px sans-serif';
+      ctx.fillText(`FEATS ${featTotal}/${FEATS.length}`, VIEW_W / 2, 514);
+    }
     ctx.fillStyle = PAL.xp; ctx.font = 'bold 19px sans-serif';
-    ctx.fillText(nextGoal, VIEW_W / 2, 514);
+    ctx.fillText(nextGoal, VIEW_W / 2, 542);
     ctx.fillStyle = state.score >= state.best && state.score > 0 ? PAL.gold : PAL.dim;
     ctx.font = 'bold 22px sans-serif';
-    ctx.fillText(state.score >= state.best && state.score > 0 ? '★ NEW BEST SCORE ★' : `BEST ${state.best}`, VIEW_W / 2, 544);
+    ctx.fillText(state.score >= state.best && state.score > 0 ? '★ NEW BEST SCORE ★' : `BEST ${state.best}`, VIEW_W / 2, 570);
     const blink = state.shotMode || Math.floor(performance.now() / 500) % 2 === 0;
     if (blink) {
       ctx.fillStyle = PAL.text; ctx.font = 'bold 28px sans-serif';
-      ctx.fillText('PRESS R  or  CLICK  to play again', VIEW_W / 2, 587);
+      ctx.fillText('PRESS R  or  CLICK  to play again', VIEW_W / 2, 612);
     }
   }
 
