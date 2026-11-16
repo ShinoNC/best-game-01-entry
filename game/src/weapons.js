@@ -12,7 +12,7 @@ export function weaponStatsFor(state, id) {
   const lv = state.weapons[id];
   const def = WEAPONS[id].levels[Math.max(0, Math.min(WEAPON_MAX, lv) - 1)];
   return {
-    dmg: def.dmg * (1.10 ** state.ups.claws),
+    dmg: def.dmg * 1.14 * (1.10 ** state.ups.claws), // 1.14x base: the crab should feel powerful
     rate: def.rate * (0.90 ** state.ups.tempo),
     range: def.range * (1.2 ** state.ups.reach),
     arc: def.arc ?? 0, pierce: def.pierce ?? 0, pellets: def.pellets ?? 1,

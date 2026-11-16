@@ -192,8 +192,8 @@ export function stageShot(shot, seed, fx, audio) {
     return s;
   }
   if (shot === 'end') {
-    // Try seeds until the autopilot clears all 30 stages; prefer a GRADE S
-    // win (60+ HP left) — the strongest victory screen. Fall back to the
+    // Try seeds until the autopilot clears all 30 stages; prefer a win with
+    // 60+ HP left — the strongest victory screen. Fall back to the
     // best win found (highest HP), then to a real game-over screen.
     let bestWin = null;
     for (let trySeed = seed; trySeed < seed + 10; trySeed += 1) {

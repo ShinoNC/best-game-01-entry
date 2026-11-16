@@ -17,7 +17,7 @@ export function spawnEnemy(state, type, elite) {
     score: elite ? ELITE.score : def.score,
     coins: elite ? ELITE.coins : def.coins,
     color: def.color, dark: def.dark, elite: !!elite,
-    wob: state.rng.angle(), hitCd: 0, flash: 0, lungeT: 0, lungeCd: state.rng.range(1, 3),
+    wob: state.rng.angle(), hitCd: 0, flash: 0, lungeT: 0, windup: 0, lungeCd: state.rng.range(1, 3),
     diveT: 0, state: 'approach',
   };
   state.enemies.push(e);
@@ -106,10 +106,11 @@ export function updateEnemies(state, dt) {
     if (e.type === 'jelly') { // drifters wobble sideways as they close in
       const w = Math.sin(e.wob * 2.2) * 0.6;
       e.x += (nx - ny * w) * sp * dt; e.y += (ny + nx * w) * sp * dt;
-    } else if (e.type === 'eel') { // lunges: pause, telegraph, burst
+    } else if (e.type === 'eel') { // lunges: 0.4s wind-up (still + flashing), then burst
       e.lungeCd -= dt;
       if (e.lungeT > 0) { e.lungeT -= dt; e.x += nx * sp * 2.4 * dt; e.y += ny * sp * 2.4 * dt; }
-      else if (e.lungeCd <= 0 && d < 260) { e.lungeT = 0.45; e.lungeCd = 2.6; }
+      else if (e.windup > 0) { e.windup -= dt; if (e.windup <= 0) { e.lungeT = 0.45; e.lungeCd = 2.6; } }
+      else if (e.lungeCd <= 0 && d < 260) { e.windup = 0.4; }
       else { e.x += nx * sp * 0.55 * dt; e.y += ny * sp * 0.55 * dt; }
     } else if (e.type === 'gull' || e.type.endsWith('heron')) { // swoopers circle, then dive
       e.diveT -= dt;

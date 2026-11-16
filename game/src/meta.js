@@ -44,8 +44,6 @@ export function readMeta() {
 export function featsEarnedThisRun(state, unlocked) {
   const have = new Set(unlocked);
   const won = state.result === 'won';
-  const hp = Math.ceil(state.player.hp);
-  const gradeS = won && hp >= 60;
   const earned = [];
   const test = (id, ok) => { if (ok && !have.has(id)) earned.push(id); };
   test('firstblood', state.kills >= 1);
@@ -55,7 +53,6 @@ export function featsEarnedThisRun(state, unlocked) {
   test('untouched', !!state.stats.cleanStage);
   test('rich', (state.stats.maxCoins || 0) >= 500);
   test('combo', (state.stats.bestCombo || 0) >= 8);
-  test('grades', gradeS);
   return earned;
 }
 
@@ -67,11 +64,9 @@ export function recordRun(state, meta) {
   if (state.score > (bests[diff] || 0)) bests[diff] = state.score;
   const earned = featsEarnedThisRun(state, meta.feats);
   const feats = [...new Set([...meta.feats, ...earned])];
-  const hp = Math.ceil(state.player.hp);
-  const grade = state.result === 'won' ? (hp >= 60 ? 'S' : hp > 25 ? 'A' : 'B') : (state.stage >= 24 ? 'C' : 'D');
   const run = {
     won: state.result === 'won', stage: state.stage, score: state.score,
-    diff, grade, time: Math.round(state.time),
+    diff, time: Math.round(state.time),
   };
   const runs = [run, ...meta.runs].slice(0, 3);
   const next = { bests, feats, runs };

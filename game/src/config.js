@@ -69,21 +69,21 @@ export const STAGES = Array.from({ length: STAGE_COUNT }, (_, i) => {
 // Spawn director: weights shift with the stage, HP scales with the stage.
 export function spawnWeights(stage) {
   const w = { guppy: 10, jelly: 4, urchin: 2, starfish: 3, eel: 0, gull: 0 };
-  if (stage >= 2) w.eel = 3;
+  if (stage >= 2) w.eel = 2;
   if (stage >= 3) { w.urchin = 4; w.jelly = 6; }
   if (stage >= 5) w.gull = 4;
-  if (stage >= 7) { w.urchin = 6; w.eel = 5; w.guppy = 7; }
+  if (stage >= 7) { w.urchin = 6; w.eel = 3; w.guppy = 7; }
   if (stage >= 12) { w.jelly = 8; w.starfish = 5; }
-  if (stage >= 18) { w.urchin = 8; w.eel = 7; w.gull = 6; }
-  if (stage >= 24) { w.guppy = 5; w.jelly = 9; w.urchin = 10; w.eel = 8; w.gull = 7; w.starfish = 6; }
+  if (stage >= 18) { w.urchin = 8; w.eel = 4; w.gull = 6; }
+  if (stage >= 24) { w.guppy = 5; w.jelly = 9; w.urchin = 10; w.eel = 5; w.gull = 7; w.starfish = 6; }
   return w;
 }
 export function hpScale(stage) {
-  // Gentle early (0.55/stage to stage 15), steeper late (0.78/stage after):
+  // Gentle early (0.55/stage to stage 15), steeper late (1.10/stage after):
   // the player's power snowballs once the arsenal is complete, so the late
-  // game has to ramp harder to stay a filter. Stage 30: 20.4x enemy HP.
+  // game has to ramp harder to stay a filter. Stage 30: 25.2x enemy HP.
   if (stage <= 15) return 1 + (stage - 1) * 0.55;
-  return 1 + 14 * 0.55 + (stage - 15) * 0.78;
+  return 1 + 14 * 0.55 + (stage - 15) * 1.10;
 }
 export function dmgScale(stage) {
   // Same shape for damage: 0.14/stage to stage 15, 0.24/stage after.
@@ -175,7 +175,7 @@ export const DIFFICULTIES = {
 };
 export const DIFF_ORDER = ['easy', 'normal', 'hard'];
 
-// Feats: eight named goals beyond winning, persisted across runs. A feat is
+// Feats: seven named goals beyond winning, persisted across runs. A feat is
 // checked at run end (and at the moment it happens for the in-run ones);
 // the title shows the count, the end screen names the ones earned this run.
 export const FEATS = [
@@ -186,7 +186,6 @@ export const FEATS = [
   { id: 'untouched', name: 'UNTOUCHED', desc: 'Clear a stage without a scratch' },
   { id: 'rich', name: 'RICH CRAB', desc: 'Hold 500+ coins at once' },
   { id: 'combo', name: 'COMBO ×8', desc: 'Reach combo ×8' },
-  { id: 'grades', name: 'GRADE S', desc: 'Finish with grade S' },
 ];
 
 // The bestiary: display names for the six creatures (the herons are named in

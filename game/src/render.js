@@ -260,6 +260,7 @@ function drawEnemy(ctx, e, t, ang) {
     ctx.beginPath(); ctx.arc(0, 0, e.r * 0.25, 0, Math.PI * 2); ctx.fill();
   } else if (e.type === 'eel') {
     // A segmented body that wiggles as it swims; the head leads, fins trail.
+    if (e.windup > 0) ctx.translate(Math.sin(t * 60) * 2, Math.cos(t * 47) * 2); // tremble: the lunge is coming
     ctx.rotate(face);
     for (let i = 4; i >= 0; i -= 1) {
       const x = -e.r * 1.4 + i * e.r * 0.55;
@@ -273,6 +274,10 @@ function drawEnemy(ctx, e, t, ang) {
     if (e.lungeT > 0) { // mid-lunge: a white streak sells the burst
       ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.moveTo(-e.r * 2.2, 0); ctx.lineTo(-e.r * 1.2, 0); ctx.stroke();
+    }
+    if (e.windup > 0) { // winding up: a bright ring warns the player
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, e.r * 1.9, 0, Math.PI * 2); ctx.stroke();
     }
   } else if (e.type === 'gull' || e.type.endsWith('heron')) {
     // Flying birds cast a soft shadow on the water below — height reads at once.
@@ -733,7 +738,7 @@ export function createRenderer(canvas) {
       runs.forEach((r, i) => {
         const mins = Math.floor((r.time || 0) / 60), secs = Math.floor((r.time || 0) % 60);
         ctx.fillStyle = r.won ? '#7fe0c3' : '#ff8fa0'; ctx.font = 'bold 13px sans-serif';
-        ctx.fillText(`${r.won ? 'WON ' : 'LOST'} · ${(DIFFICULTIES[r.diff] || DIFFICULTIES.normal).label} · ${r.stage}/30 · ${r.score} · ${r.grade} · ${mins}:${String(secs).padStart(2, '0')}`, 684, 510 + i * 20);
+        ctx.fillText(`${r.won ? 'WON ' : 'LOST'} · ${(DIFFICULTIES[r.diff] || DIFFICULTIES.normal).label} · ${r.stage}/30 · ${r.score} · ${mins}:${String(secs).padStart(2, '0')}`, 684, 510 + i * 20);
       });
     }
     // The arsenal at a glance: all six weapons as drawn icons under the
@@ -942,37 +947,25 @@ export function createRenderer(canvas) {
 
   function drawOver(state) {
     const won = state.result === 'won';
-    // Letter grade: the top entries all grade the run, and the grade gives the
-    // player a reason to run again. S = win with 60+ HP, A = win, B = win nearly
-    // dead, C = lost at stage 24+, D = lost earlier. An S-grade win points UP
-    // the difficulty ladder (like the top entries' "win on SCORCHED"); a lower
-    // grade points at the grade above it.
-    const hp = Math.ceil(state.player.hp);
+    // Next goal: a win points UP the difficulty ladder; a loss points at the
+    // next milestone (stage 15, then the win itself). Score is the measure —
+    // no letter grade, the points already say how well the run went.
     const diff = state.difficulty || 'normal';
     const diffLabel = (DIFFICULTIES[diff] || DIFFICULTIES.normal).label;
-    let grade, gradeColor, nextGoal;
-    if (won && hp >= 60) {
-      grade = 'S'; gradeColor = '#ffd166';
+    let nextGoal;
+    if (won) {
       nextGoal = diff === 'hard' ? 'NEXT GOAL: beat your best score'
         : diff === 'easy' ? 'NEXT GOAL: win on NORMAL' : 'NEXT GOAL: win on HARD';
-    }
-    else if (won && hp > 25) { grade = 'A'; gradeColor = '#7fe0c3'; nextGoal = 'NEXT GOAL: finish with 60+ HP for grade S'; }
-    else if (won) { grade = 'B'; gradeColor = '#8fb8ff'; nextGoal = 'NEXT GOAL: finish with 26+ HP for grade A'; }
-    else if (state.stage >= 24) { grade = 'C'; gradeColor = '#ffab5e'; nextGoal = 'NEXT GOAL: clear stage 30 to win'; }
-    else { grade = 'D'; gradeColor = '#ff5d73'; nextGoal = 'NEXT GOAL: reach stage 24 for grade C'; }
+    } else if (state.stage >= 15) { nextGoal = 'NEXT GOAL: clear stage 30 to win'; }
+    else { nextGoal = 'NEXT GOAL: reach stage 15'; }
     ctx.fillStyle = 'rgba(6,42,51,0.86)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     ctx.textAlign = 'center';
     ctx.fillStyle = won ? PAL.gold : PAL.hp; ctx.font = 'bold 64px sans-serif';
     ctx.fillText(won ? 'HIGH TIDE!' : 'THE TIDE TOOK YOU', VIEW_W / 2, 140);
-    ctx.fillStyle = gradeColor; ctx.font = 'bold 40px sans-serif';
-    ctx.fillText(`★ GRADE ${grade} ★`, VIEW_W / 2, 196);
     ctx.fillStyle = PAL.text; ctx.font = 'bold 22px sans-serif';
-    ctx.fillText(won ? 'You held the rockpool. The crab keeps its shell.' : 'The creatures feast tonight. Try again, little crab.', VIEW_W / 2, 232);
+    ctx.fillText(won ? 'You held the rockpool. The crab keeps its shell.' : 'The creatures feast tonight. Try again, little crab.', VIEW_W / 2, 196);
     ctx.fillStyle = PAL.gold; ctx.font = 'bold 34px sans-serif';
     ctx.fillText(`SCORE ${state.score}`, VIEW_W / 2, 288);
-    // What S requires, with this run's ticks — the grade is a checklist, not a mystery.
-    ctx.fillStyle = PAL.foam; ctx.font = 'bold 17px sans-serif';
-    ctx.fillText(`FOR GRADE S:  WIN ${won ? '✓' : '✗'}   ·   60+ HP ${hp >= 60 ? '✓' : '✗'}`, VIEW_W / 2, 318);
     // Run stats in three short icon rows — no single overlong line.
     const mins = Math.floor(state.time / 60), secs = Math.floor(state.time % 60);
     ctx.fillStyle = PAL.text; ctx.font = '20px sans-serif';
