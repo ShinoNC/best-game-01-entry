@@ -1,40 +1,40 @@
 // Everything the judge sees: the pool, the crab, the creatures, the HUD and the screens.
-// Criterion 1: goal, timer, score, HP, level, controls and restart are all VISIBLE here.
+// Criterion 1: goal, timer, score, HP, controls and restart are all VISIBLE here.
 // Criterion 4: one palette, big readable shapes, a scene that reads at a glance.
-import { PAL, POOL, STAGES, STAGE_COUNT, VIEW_H, VIEW_W, WEAPON_MAX, WEAPON_ORDER, bossForStage, xpNeed } from './config.js';
+// Draw layers (a z-index scale, low to high — nothing draws out of order):
+//   L0 pool + decor · L10 world (inks, coins, pickups, bolts, enemies, crab)
+//   L20 particles + floating text · L30 HUD · L40 banners + hints (inside the HUD)
+//   L50 modal dim · L60 modal content · L70 vignette + flashes.
+// The screen shake moves L0–L20 only: the HUD and the menus never shake, so
+// nothing the player reads ever jumps.
+import { PAL, POOL, STAGES, STAGE_COUNT, VIEW_H, VIEW_W, WEAPON_MAX, WEAPON_ORDER, bossForStage } from './config.js';
 import { UPGRADE_DEFS } from './upgrades.js';
-import { shopOffers, weaponStatsFor } from './weapons.js';
+import { HAND_SIZE, REROLL_COST } from './cards.js';
+import { weaponStatsFor } from './weapons.js';
 
 export const SCREEN_TITLE = 'title';
 export const SCREEN_PLAY = 'play';
 export const SCREEN_OVER = 'over';
 
-// The level-up card row slides to the half of the screen the crab (and the
-// boss, if it is in the way) is NOT on, so the cards never cover either of
-// them. Centered when the middle is clear. Shared with main.js so the click
-// hit-boxes always match the drawn cards.
-export function levelUpRowX(state) {
-  const inZone = (e) => e && e.x > 250 && e.x < 1030 && e.y > 230 && e.y < 530;
-  const crab = state.player, boss = state.boss;
-  const leftIn = (inZone(crab) && crab.x < 640) || (inZone(boss) && boss.x < 640);
-  const rightIn = (inZone(crab) && crab.x >= 640) || (inZone(boss) && boss.x >= 640);
-  if (leftIn && !rightIn) return 560; // crab/boss on the left — cards go right
-  if (rightIn && !leftIn) return 30; // crab/boss on the right — cards go left
-  if (leftIn && rightIn) return crab.x < 640 ? 560 : 30; // both sides busy: keep the crab clear
-  return 290; // middle clear — centred
-}
-
-// The stage-clear screen's hit-boxes, shared with main.js so clicks always
-// match the drawn cards, shop offers and NEXT button. Cards: y 140–330.
-// Shop: two rows of three, y 372–468 and y 484–580. NEXT: y 606–650.
-export function stageClearLayout(state) {
-  const rowX = levelUpRowX(state);
-  const cards = (state.levelChoices || []).map((c, i) => ({ x: rowX + i * 240, y: 140, w: 210, h: 190 }));
-  const shop = [];
-  for (let i = 0; i < 6; i += 1) {
-    shop.push({ x: 140 + (i % 3) * 340, y: 372 + Math.floor(i / 3) * 112, w: 320, h: 96 });
-  }
-  return { cards, shop, next: { x: 480, y: 606, w: 320, h: 44 } };
+// The stage-clear menu's layout — FIXED and CENTRED, shared with main.js so
+// clicks always match the drawn cards and buttons. Nothing here slides or
+// shifts: the card row is centred on the hand size, the buttons are centred
+// as a pair. All spacing is on an 8px scale (gaps 16/24, padding 8).
+//   cards: 5 × 200×240, 16px gaps, y 140–380 (fewer cards centre the same way)
+//   buttons: REROLL 240×52 + 24 gap + NEXT 280×52, y 404–456
+//   hint/message line y 480 · build recap y 516–572 · next-stage line y 608
+export const MENU_CARD_W = 200, MENU_CARD_H = 240, MENU_CARD_GAP = 16, MENU_CARDS_Y = 140;
+export function stageMenuLayout(state) {
+  const hand = state.hand || [];
+  const n = hand.length;
+  const rowW = n * MENU_CARD_W + Math.max(0, n - 1) * MENU_CARD_GAP;
+  const x0 = (VIEW_W - rowW) / 2;
+  const cards = hand.map((c, i) => ({ x: x0 + i * (MENU_CARD_W + MENU_CARD_GAP), y: MENU_CARDS_Y, w: MENU_CARD_W, h: MENU_CARD_H }));
+  return {
+    cards,
+    reroll: { x: 368, y: 404, w: 240, h: 52 },
+    next: { x: 632, y: 404, w: 280, h: 52 },
+  };
 }
 
 function star(ctx, x, y, r, rot, color) {
@@ -324,15 +324,36 @@ function drawEnemy(ctx, e, t, ang) {
 
 export function createRenderer(canvas) {
   const ctx = canvas.getContext('2d');
+  // DPR-aware sizing: the backing store is device pixels (capped at 2x, so the
+  // game stays crisp on HiDPI screens without quadrupling the fill cost),
+  // while every coordinate in the game is CSS pixels. The view transform is
+  // computed from the CSS size with a 4px safety inset, so no edge pixel is
+  // ever lost to rounding — the game letterboxes, never crops.
+  let cssW = 0, cssH = 0, dpr = 1;
   function resize() {
-    canvas.width = innerWidth; canvas.height = innerHeight;
+    cssW = window.innerWidth; cssH = window.innerHeight;
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.round(cssW * dpr); canvas.height = Math.round(cssH * dpr);
   }
-  addEventListener('resize', resize); resize();
+  addEventListener('resize', resize);
+  addEventListener('orientationchange', resize);
+  resize();
+
+  // The letterbox transform in CSS pixels — the single source of truth, shared
+  // with main.js for mouse mapping (toLogical/toScreen).
+  function viewTransform() {
+    const scale = Math.min((cssW - 8) / VIEW_W, (cssH - 8) / VIEW_H);
+    return { scale, ox: (cssW - VIEW_W * scale) / 2, oy: (cssH - VIEW_H * scale) / 2, cssW, cssH, dpr };
+  }
 
   // Ambient bubbles: fixed pseudo-random table, positions a pure function of
   // time — deterministic, no state, they just rise forever.
   const ambBubbles = [];
   { let s = 1234567; for (let i = 0; i < 14; i += 1) { s = (s * 1103515245 + 12345) & 0x7fffffff; ambBubbles.push({ fx: (s % 1000) / 1000, fy: ((s >> 9) % 1000) / 1000, r: 2 + ((s >> 5) % 4), sp: 14 + ((s >> 7) % 22) }); } }
+
+  // The pool's water gradient is constant (logical coordinates), so it is
+  // created once and reused — creating a gradient every frame is pure waste.
+  let poolGrad = null;
 
   function drawPool(state, t) {
     // Layered sand: a beach ellipse under the water, darker at the edges.
@@ -341,9 +362,11 @@ export function createRenderer(canvas) {
     ctx.fillStyle = PAL.sand;
     ctx.beginPath(); ctx.ellipse(POOL.cx, POOL.cy, POOL.rx + 46, POOL.ry + 34, 0, 0, Math.PI * 2); ctx.fill();
     // Water gradient + sandy rim + foam ring: the arena reads as a rockpool.
-    const g = ctx.createRadialGradient(POOL.cx, POOL.cy, 60, POOL.cx, POOL.cy, POOL.rx);
-    g.addColorStop(0, PAL.water2); g.addColorStop(1, PAL.water);
-    ctx.fillStyle = g;
+    if (!poolGrad) {
+      poolGrad = ctx.createRadialGradient(POOL.cx, POOL.cy, 60, POOL.cx, POOL.cy, POOL.rx);
+      poolGrad.addColorStop(0, PAL.water2); poolGrad.addColorStop(1, PAL.water);
+    }
+    ctx.fillStyle = poolGrad;
     ctx.beginPath(); ctx.ellipse(POOL.cx, POOL.cy, POOL.rx, POOL.ry, 0, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = PAL.sand; ctx.lineWidth = 10;
     ctx.beginPath(); ctx.ellipse(POOL.cx, POOL.cy, POOL.rx + 4, POOL.ry + 4, 0, 0, Math.PI * 2); ctx.stroke();
@@ -403,7 +426,7 @@ export function createRenderer(canvas) {
         ctx.beginPath(); ctx.moveTo(0, 0);
         ctx.quadraticCurveTo(4, -20 * d.s, Math.sin(t * 1.2 + d.rot) * 8, -38 * d.s); ctx.stroke();
       } else if (d.kind === 'shell') {
-        // Pale lavender, never gold — a gold shell would read as a fat pearl.
+        // Pale lavender, never gold — a gold shell would read as a coin.
         ctx.fillStyle = '#d8cfe8'; ctx.beginPath(); ctx.arc(0, 0, 7 * d.s, Math.PI, 0); ctx.fill();
         ctx.strokeStyle = '#a894c4'; ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.arc(0, 0, 4 * d.s, Math.PI, 0); ctx.stroke();
@@ -424,10 +447,10 @@ export function createRenderer(canvas) {
     //   top bar y 14–94: HP panel (left, now taller: HP + shell + arsenal row,
     //     y 14–166) / timer+WIN-LOSE panel (centre) / score panel (right)
     //   boss strip y 100–134: boss bar (boss alive) OR countdown pill (15 s before) — never both
-    //   banner zone y 146–186: one banner at a time, dark backdrop, skipped on level-up
+    //   banner zone y 146–186: one banner at a time, dark backdrop
     //   playfield y 200–610: damage numbers live here and nowhere else (see particles.js)
     //   hint pill y 564–608, centred, play phase only, never while a banner shows
-    //   bottom bar y 620–704: level/XP left, cooldowns right, controls strip centre
+    //   bottom bar y 620–704: skills left, cooldowns right, controls strip centre
     const p = state.player;
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
     // Top-left: HP bar with a heart + shell tier + the arsenal row — every
@@ -494,14 +517,13 @@ export function createRenderer(canvas) {
     ctx.fillText(`◉ ${state.coins} COINS`, VIEW_W - 28, 64);
     ctx.fillStyle = PAL.text; ctx.font = 'bold 15px sans-serif';
     ctx.fillText(`BEST ${state.best}  •  ${state.kills} slain`, VIEW_W - 28, 86);
-    // Bottom-left: level + XP bar + ability slots (the 8 upgrade tracks, level inside each box).
+    // Bottom-left: the SKILLS panel — the 8 upgrade tracks as icon boxes with
+    // their levels, so the build reads at a glance during play. Coins are the
+    // single currency, so there is no level or XP bar here any more.
     ctx.textAlign = 'left';
     ctx.fillStyle = 'rgba(6,42,51,0.75)'; ctx.fillRect(18, VIEW_H - 100, 420, 84);
-    ctx.fillStyle = PAL.xp; ctx.font = 'bold 16px sans-serif';
-    ctx.fillText(`LEVEL ${state.level}`, 28, VIEW_H - 74);
-    ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(110, VIEW_H - 86, 200, 10);
-    ctx.fillStyle = PAL.xp; ctx.fillRect(110, VIEW_H - 86, 200 * (state.xp / xpNeed(state.level)), 10);
-    ctx.fillText(`${state.xp}/${xpNeed(state.level)} pearls`, 318, VIEW_H - 74);
+    ctx.fillStyle = PAL.dim; ctx.font = 'bold 13px sans-serif';
+    ctx.fillText('SKILLS', 28, VIEW_H - 78);
     let sx = 28;
     for (const d of UPGRADE_DEFS) {
       const lv = state.ups[d.id];
@@ -522,8 +544,7 @@ export function createRenderer(canvas) {
     ctx.fillText(p.dashCd <= 0 ? 'DASH READY  [Space]' : `DASH ${p.dashCd.toFixed(1)}s`, VIEW_W - 28, VIEW_H - 32);
     // Wave / elite banner in its own zone (y 146–186) with a dark backdrop and a
     // gold frame, so damage numbers and the heron never cross the text.
-    // Skipped on the level-up screen, whose own title lives here.
-    if (state.bannerT > 0 && state.phase !== 'levelup') {
+    if (state.bannerT > 0) {
       ctx.textAlign = 'center'; ctx.globalAlpha = Math.min(1, state.bannerT);
       ctx.font = 'bold 30px sans-serif';
       const bw = ctx.measureText(state.banner).width + 56;
@@ -540,7 +561,7 @@ export function createRenderer(canvas) {
     ctx.fillStyle = PAL.foam; ctx.font = '13px sans-serif';
     ctx.fillText('WASD move  ·  SPACE dash  ·  P pause  ·  M mute', VIEW_W / 2, 693);
     // Tutorial hint pill, bottom centre: an icon plus one short line, fading
-    // out. Play phase only — on the level-up screen the cards own the player's
+    // out. Play phase only — on the menu screen the cards own the player's
     // attention.
     const hint = state.phase === 'play' && state.hints && state.hints.cur;
     if (hint) {
@@ -570,7 +591,7 @@ export function createRenderer(canvas) {
     ctx.fillStyle = PAL.gold; ctx.font = 'bold 23px sans-serif';
     ctx.fillText('★ CLEAR 30 STAGES — BEAT THE HERONS, WIN THE POOL ★', VIEW_W / 2, 222);
     ctx.fillStyle = PAL.text; ctx.font = '19px sans-serif';
-    ctx.fillText('Slay creatures. Gather pearls and coins. Collect six auto-weapons.', VIEW_W / 2, 256);
+    ctx.fillText('Slay creatures. Gather coins. Collect six auto-weapons.', VIEW_W / 2, 256);
     // The four controls as chips, side by side.
     const chips = ['WASD — MOVE', 'WEAPONS — ALL AUTO-FIRE', 'SPACE — DASH', 'P — PAUSE · M — MUTE'];
     ctx.font = 'bold 16px sans-serif';
@@ -588,7 +609,7 @@ export function createRenderer(canvas) {
     ctx.fillText('All your weapons attack on their own — dodge, position, and buy better gear.', VIEW_W / 2, 366);
     // Scope line: what the game contains, in numbers (the top titles all list theirs).
     ctx.fillStyle = PAL.foam; ctx.font = '15px sans-serif';
-    ctx.fillText('30 stages · 6 boss herons · 6 weapons · shop after every stage · 8 upgrades', VIEW_W / 2, 396);
+    ctx.fillText('30 stages · 6 boss herons · 6 weapons · 5-card shop after every stage · 8 skills', VIEW_W / 2, 396);
     const blink = state.shotMode || Math.floor(performance.now() / 500) % 2 === 0;
     if (blink) {
       ctx.fillStyle = PAL.gold; ctx.font = 'bold 30px sans-serif';
@@ -601,118 +622,178 @@ export function createRenderer(canvas) {
     drawEnemy(ctx, { type: 'jelly', x: 950, y: 470, r: 26, color: '#ff8fb0', dark: '#c94f78', hp: 1, maxHp: 1, flash: 0, wob: 0.5, elite: false }, 0, Math.PI);
   }
 
-  // One card, drawn for both the level-up screen and the stage-clear screen.
-  // Pictures first: a weapon card shows its drawn icon, an upgrade card its
-  // glyph; the level reads as pips (filled = owned, gold = the level this
-  // card adds), not as a sentence. Compact cards are the stage-clear size.
-  function drawCard(d, x, y, w, h, i, state, opts) {
-    const { compact = false, dimmed = false, picked = false } = opts || {};
-    const wid = d.isWeapon ? d.id.split(':')[1] : null;
-    const lv = wid ? state.weapons[wid] : (state.ups[d.id] || 0);
+  // Wrap a short description into at most two centred lines that fit the
+  // card — text is never clipped by a fixed box, it reflows instead.
+  function wrapDesc(text, maxW) {
+    const words = text.split(' ');
+    const out = [];
+    let cur = '';
+    for (const w of words) {
+      const test = cur ? `${cur} ${w}` : w;
+      if (ctx.measureText(test).width > maxW && cur) { out.push(cur); cur = w; }
+      else cur = test;
+    }
+    if (cur) out.push(cur);
+    return out.slice(0, 2);
+  }
+
+  // One menu card: tag, picture, name, description, level pips, price. The
+  // STATES are distinct by more than colour: an affordable card has a gold
+  // border and a gold price; an unaffordable one is dimmed with a RED price
+  // plus a "NEED N MORE" line in words; a bought card keeps its place in the
+  // row (the row never reflows) with a green border and a "✓ BOUGHT" stamp.
+  // A hovered card gets a thick gold frame — the visible focus indicator.
+  function drawMenuCard(card, x, y, w, h, i, state, hovered) {
+    const poor = !card.bought && state.coins < card.price;
+    const need = card.price - state.coins;
     ctx.save();
-    if (dimmed) ctx.globalAlpha = 0.4;
+    if (card.bought) ctx.globalAlpha = 0.6;
+    else if (poor) ctx.globalAlpha = 0.85;
     ctx.fillStyle = '#0e5566'; ctx.fillRect(x, y, w, h);
-    ctx.strokeStyle = PAL.gold; ctx.lineWidth = picked ? 5 : 3;
+    ctx.strokeStyle = card.bought ? '#7fe0c3' : hovered ? PAL.gold : poor ? 'rgba(159,196,189,0.4)' : PAL.gold;
+    ctx.lineWidth = hovered && !card.bought ? 4 : 2;
     ctx.strokeRect(x, y, w, h);
+    if (hovered && !card.bought) { // a second frame: the focus ring reads at a glance
+      ctx.strokeStyle = 'rgba(255,209,102,0.45)'; ctx.lineWidth = 2;
+      ctx.strokeRect(x - 3, y - 3, w + 6, h + 6);
+    }
     ctx.textAlign = 'center';
-    const cy = compact ? y + 48 : y + 60;
-    if (wid) drawWeaponIcon(ctx, wid, x + w / 2, cy, compact ? 46 : 52, true);
+    // Tag (top) + key badge (top-right): both own their own corner, they never meet.
+    ctx.fillStyle = card.kind === 'weapon' ? PAL.gold : PAL.dim;
+    ctx.font = 'bold 12px sans-serif';
+    ctx.fillText(card.tag, x + w / 2, y + 22);
+    ctx.fillStyle = PAL.dim; ctx.font = 'bold 14px sans-serif';
+    ctx.fillText(`[${i + 1}]`, x + w - 24, y + 22);
+    // Picture first: a weapon card shows its drawn icon, a skill card its glyph.
+    if (card.kind === 'weapon' || card.kind === 'wup') drawWeaponIcon(ctx, card.wid, x + w / 2, y + 62, 48, true);
     else {
-      ctx.fillStyle = PAL.xp; ctx.font = `bold ${compact ? 40 : 44}px sans-serif`;
-      ctx.fillText(d.icon, x + w / 2, cy + 14);
+      ctx.fillStyle = card.kind === 'repair' ? '#ff8fb0' : PAL.xp;
+      ctx.font = 'bold 40px sans-serif';
+      ctx.fillText(card.icon, x + w / 2, y + 78);
     }
     // The name shrinks one step if it would overflow the card.
     ctx.fillStyle = PAL.text;
     ctx.font = 'bold 18px sans-serif';
-    if (ctx.measureText(d.name).width > w - 20) ctx.font = 'bold 15px sans-serif';
-    ctx.fillText(d.name, x + w / 2, compact ? y + 86 : y + 104);
-    ctx.fillStyle = PAL.dim; ctx.font = `${compact ? 15 : 16}px sans-serif`;
-    ctx.fillText(d.desc, x + w / 2, compact ? y + 110 : y + 130);
-    drawPips(ctx, x + w / 2, compact ? y + 136 : y + 158, lv, !picked);
-    ctx.fillStyle = PAL.gold; ctx.font = `bold ${compact ? 15 : 16}px sans-serif`;
-    ctx.fillText(picked ? '✓ PICKED' : d.isWeapon ? '★ NEW WEAPON ★' : '', x + w / 2, compact ? y + 162 : y + 182);
-    ctx.fillStyle = PAL.text; ctx.font = `bold ${compact ? 14 : 18}px sans-serif`;
-    if (compact) ctx.fillText(`[${i + 1}]`, x + w - 22, y + 22);
-    else ctx.fillText(`[ ${i + 1} ]`, x + w / 2, y + 208);
+    if (ctx.measureText(card.name).width > w - 20) ctx.font = 'bold 15px sans-serif';
+    ctx.fillText(card.name, x + w / 2, y + 108);
+    // Description, wrapped to at most two lines.
+    ctx.fillStyle = PAL.dim; ctx.font = '14px sans-serif';
+    const dl = wrapDesc(card.desc, w - 24);
+    dl.forEach((ln, li) => ctx.fillText(ln, x + w / 2, y + 132 + li * 18));
+    // Level pips: filled = owned, gold = the level this card adds.
+    if (card.kind !== 'repair') drawPips(ctx, x + w / 2, y + 168, card.lv, !card.bought);
+    // Price — or the bought stamp, or the shortfall in words (never colour alone).
+    if (card.bought) {
+      ctx.fillStyle = '#7fe0c3'; ctx.font = 'bold 18px sans-serif';
+      ctx.fillText('✓ BOUGHT', x + w / 2, y + 206);
+    } else {
+      ctx.fillStyle = poor ? '#ff8fa0' : PAL.gold; ctx.font = 'bold 22px sans-serif';
+      ctx.fillText(`◉ ${card.price}`, x + w / 2, y + 206);
+      if (poor) {
+        ctx.fillStyle = '#ff8fa0'; ctx.font = 'bold 13px sans-serif';
+        ctx.fillText(`NEED ${need} MORE`, x + w / 2, y + 228);
+      }
+    }
     ctx.restore();
   }
 
-  function drawLevelUp(state) {
-    // A lighter dim (0.62) so the fight behind the cards stays visible —
-    // the crab, the boss bar and the heron are part of the shot.
-    ctx.fillStyle = 'rgba(6,42,51,0.62)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  // The stage-clear menu: the ONLY menu in the game, shown only between
+  // stages. Five cards with coin prices, a reroll button, and ONE primary
+  // CTA — NEXT — the only gold-filled button on the screen. The layout is
+  // fixed and centred (see stageMenuLayout); nothing slides. A darker dim
+  // (0.78) makes the menu the screen, not an overlay on the fight.
+  function drawStageMenu(state, hover) {
+    const L = stageMenuLayout(state);
+    ctx.fillStyle = 'rgba(6,42,51,0.78)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     ctx.textAlign = 'center';
-    // The title sits at y=180 so its 40 px glyphs clear the boss bar
-    // (y 104–134). Cards sit below it (y 270).
-    ctx.fillStyle = PAL.gold; ctx.font = 'bold 40px sans-serif';
-    ctx.fillText(`LEVEL ${state.level} — CHOOSE AN UPGRADE`, VIEW_W / 2, 180);
-    ctx.fillStyle = PAL.dim; ctx.font = '18px sans-serif';
-    ctx.fillText('Press 1, 2 or 3 — or click a card.', VIEW_W / 2, 212);
-    const cards = state.levelChoices || [];
-    const rowX = levelUpRowX(state); // the row slides away from the crab/boss
-    cards.forEach((d, i) => drawCard(d, rowX + i * 240, 270, 210, 220, i, state));
-  }
-
-  // The stage-clear screen: pick 1 of 3 cards, then the shop, then the next
-  // stage. One screen, no HUD behind it — the title owns the top of the frame
-  // (the HUD's top panels would collide with it). The empty pool and the
-  // crab still show through the dim.
-  function drawStageClear(state) {
-    const L = stageClearLayout(state);
-    ctx.fillStyle = 'rgba(6,42,51,0.62)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-    ctx.textAlign = 'center';
-    ctx.fillStyle = PAL.gold; ctx.font = 'bold 38px sans-serif';
-    ctx.fillText(`★ STAGE ${state.stage} CLEAR! ★`, VIEW_W / 2, 64);
-    ctx.fillStyle = PAL.gold; ctx.font = 'bold 18px sans-serif';
-    ctx.fillText(`◉ ${state.coins} COINS — spend them before the next stage`
-      + (state.pickedCard ? `  ·  PICKED: ${state.pickedCard.name}` : ''), VIEW_W / 2, 96);
-    ctx.fillStyle = PAL.dim; ctx.font = '17px sans-serif';
-    ctx.fillText(state.stagePicked ? 'CARD PICKED — now shop, then head on!'
-      : 'PICK A CARD — press 1, 2 or 3, or click', VIEW_W / 2, 124);
-    const cards = state.levelChoices || [];
-    cards.forEach((d, i) => {
+    ctx.fillStyle = PAL.gold; ctx.font = 'bold 36px sans-serif';
+    ctx.fillText(`★ STAGE ${state.stage} CLEAR! ★`, VIEW_W / 2, 68);
+    const mins = Math.floor(state.time / 60), secs = Math.floor(state.time % 60);
+    ctx.fillStyle = PAL.dim; ctx.font = '16px sans-serif';
+    ctx.fillText(`${state.kills} slain  •  ${mins}:${String(secs).padStart(2, '0')}  •  +${state.clearBonus} CLEAR BONUS`, VIEW_W / 2, 96);
+    ctx.fillStyle = PAL.gold; ctx.font = 'bold 28px sans-serif';
+    ctx.fillText(`◉ ${state.coins} COINS`, VIEW_W / 2, 124);
+    const hand = state.hand || [];
+    if (hand.length === 0) {
+      // Empty state: everything is owned and maxed and the shell is whole.
+      ctx.fillStyle = PAL.foam; ctx.font = 'bold 22px sans-serif';
+      ctx.fillText('BUILD COMPLETE — NOTHING LEFT TO BUY', VIEW_W / 2, 260);
+    }
+    hand.forEach((c, i) => {
       const b = L.cards[i];
-      drawCard(d, b.x, b.y, b.w, b.h, i, state,
-        { compact: true, dimmed: state.stagePicked && state.pickedCard !== d, picked: state.pickedCard === d });
+      const hovered = hover && hover.x >= b.x && hover.x <= b.x + b.w && hover.y >= b.y && hover.y <= b.y + b.h;
+      drawMenuCard(c, b.x, b.y, b.w, b.h, i, state, hovered);
     });
-    // The shop: six real offers with real prices. Buyable = gold border,
-    // too poor = red price, maxed/full = grey. Every offer owns fixed slots:
-    // icon left, name + description + level pips in the middle, price alone
-    // on the right — no two texts share a line, so nothing runs together.
-    ctx.textAlign = 'left';
-    ctx.fillStyle = PAL.gold; ctx.font = 'bold 20px sans-serif';
-    ctx.fillText('SHOP — click to buy', 140, 360);
-    const offers = shopOffers(state);
-    offers.forEach((o, i) => {
-      const b = L.shop[i];
-      ctx.fillStyle = o.state === 'buy' ? '#0e5566' : 'rgba(14,85,102,0.55)';
-      ctx.fillRect(b.x, b.y, b.w, b.h);
-      ctx.strokeStyle = o.state === 'buy' ? PAL.gold : 'rgba(159,196,189,0.4)';
-      ctx.lineWidth = o.state === 'buy' ? 2 : 1;
-      ctx.strokeRect(b.x, b.y, b.w, b.h);
-      drawWeaponIcon(ctx, o.id, b.x + 34, b.y + 48, 44, o.state !== 'max');
-      ctx.textAlign = 'left';
-      ctx.fillStyle = o.state === 'max' ? PAL.dim : PAL.text;
-      ctx.font = 'bold 16px sans-serif';
-      ctx.fillText(o.name, b.x + 64, b.y + 30);
-      ctx.fillStyle = PAL.dim; ctx.font = '13px sans-serif';
-      ctx.fillText(o.desc, b.x + 64, b.y + 54);
-      drawPips(ctx, b.x + 64 + 24, b.y + 78, state.weapons[o.id], o.state === 'buy');
-      ctx.textAlign = 'right';
-      ctx.fillStyle = o.state === 'buy' ? PAL.gold : o.state === 'poor' ? '#ff8fa0' : PAL.dim;
-      ctx.font = 'bold 16px sans-serif';
-      ctx.fillText(o.label, b.x + b.w - 14, b.y + 40);
-    });
-    // NEXT STAGE: dim until a card is picked — the card choice is the point
-    // of the screen, and skipping it by accident would waste the reward.
+    // REROLL (secondary, outline) and NEXT (the one primary CTA, gold-filled).
+    // Reroll is disabled below 10 coins: dimmed, grey, no key hint.
+    const r = L.reroll;
+    const canReroll = state.coins >= REROLL_COST;
+    const rHover = hover && hover.x >= r.x && hover.x <= r.x + r.w && hover.y >= r.y && hover.y <= r.y + r.h;
+    ctx.fillStyle = canReroll ? '#0e5566' : 'rgba(6,42,51,0.85)';
+    ctx.globalAlpha = canReroll ? 1 : 0.45;
+    ctx.fillRect(r.x, r.y, r.w, r.h);
+    ctx.strokeStyle = canReroll ? (rHover ? PAL.gold : PAL.foam) : 'rgba(159,196,189,0.5)';
+    ctx.lineWidth = 2; ctx.strokeRect(r.x, r.y, r.w, r.h);
+    ctx.fillStyle = canReroll ? PAL.text : PAL.dim;
+    ctx.font = 'bold 18px sans-serif';
+    ctx.fillText(`REROLL — ${REROLL_COST} ◉  [R]`, r.x + r.w / 2, r.y + 33);
+    ctx.globalAlpha = 1;
     const n = L.next;
-    ctx.fillStyle = state.stagePicked ? 'rgba(255,209,102,0.2)' : 'rgba(6,42,51,0.85)';
+    const nHover = hover && hover.x >= n.x && hover.x <= n.x + n.w && hover.y >= n.y && hover.y <= n.y + n.h;
+    ctx.fillStyle = nHover ? '#ffd97a' : PAL.gold;
     ctx.fillRect(n.x, n.y, n.w, n.h);
-    ctx.strokeStyle = state.stagePicked ? PAL.gold : 'rgba(159,196,189,0.5)';
-    ctx.lineWidth = 2; ctx.strokeRect(n.x, n.y, n.w, n.h);
-    ctx.fillStyle = state.stagePicked ? PAL.gold : PAL.dim;
-    ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText(state.stagePicked ? `NEXT STAGE ${state.stage + 1} →  [Enter]` : 'PICK A CARD FIRST', VIEW_W / 2, n.y + 29);
+    ctx.fillStyle = '#062a33'; ctx.font = 'bold 20px sans-serif';
+    ctx.fillText(`NEXT STAGE ${state.stage + 1} →  [Enter]`, n.x + n.w / 2, n.y + 33);
+    // One line under the buttons: an error message replaces the hint while it
+    // shows, so the layout never shifts when a message appears.
+    if (state.menuMsgT > 0 && state.menuMsg) {
+      ctx.fillStyle = '#ff8fa0'; ctx.font = 'bold 16px sans-serif';
+      ctx.fillText(state.menuMsg, VIEW_W / 2, 480);
+    } else {
+      ctx.fillStyle = PAL.dim; ctx.font = '15px sans-serif';
+      ctx.fillText('CLICK A CARD OR PRESS 1–5 TO BUY  •  R REROLLS  •  ENTER CONTINUES', VIEW_W / 2, 480);
+    }
+    // Build recap: the arsenal and the skills in one centred row, in the
+    // HUD's own icon language — the player sees the whole build while shopping.
+    ctx.fillStyle = PAL.dim; ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('YOUR BUILD', VIEW_W / 2, 516);
+    let bx = 324;
+    for (let i = 0; i < WEAPON_ORDER.length; i += 1) {
+      const id = WEAPON_ORDER[i];
+      const lv = state.weapons[id];
+      ctx.fillStyle = lv > 0 ? 'rgba(127,224,195,0.22)' : 'rgba(255,255,255,0.08)';
+      ctx.fillRect(bx, 528, 40, 44);
+      ctx.strokeStyle = lv > 0 ? 'rgba(127,224,195,0.6)' : 'rgba(255,255,255,0.15)';
+      ctx.lineWidth = 1; ctx.strokeRect(bx, 528, 40, 44);
+      drawWeaponIcon(ctx, id, bx + 20, 545, 28, lv > 0);
+      for (let j = 0; j < WEAPON_MAX; j += 1) {
+        ctx.fillStyle = j < lv ? '#7fe0c3' : 'rgba(255,255,255,0.25)';
+        ctx.beginPath(); ctx.arc(bx + 8 + j * 6, 566, 2.5, 0, Math.PI * 2); ctx.fill();
+      }
+      bx += 48;
+    }
+    ctx.strokeStyle = 'rgba(159,196,189,0.4)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(bx + 4, 532); ctx.lineTo(bx + 4, 568); ctx.stroke();
+    bx += 24;
+    for (const d of UPGRADE_DEFS) {
+      const lv = state.ups[d.id];
+      ctx.fillStyle = lv > 0 ? 'rgba(127,224,195,0.9)' : 'rgba(255,255,255,0.18)';
+      ctx.fillRect(bx, 528, 34, 44);
+      ctx.fillStyle = lv > 0 ? '#062a33' : '#9fc4bd'; ctx.font = 'bold 16px sans-serif';
+      ctx.fillText(d.icon, bx + 17, 546);
+      ctx.fillStyle = lv > 0 ? '#062a33' : PAL.dim; ctx.font = 'bold 10px sans-serif';
+      ctx.fillText(lv > 0 ? `Lv${lv}` : '—', bx + 17, 561);
+      bx += 42;
+    }
+    // What comes next: a boss stage is never a surprise.
+    const nextBoss = bossForStage(state.stage + 1);
+    if (nextBoss) {
+      ctx.fillStyle = '#ff5d73'; ctx.font = 'bold 17px sans-serif';
+      ctx.fillText(`⚠ BOSS NEXT — ${nextBoss.name} ⚠`, VIEW_W / 2, 608);
+    } else {
+      ctx.fillStyle = PAL.dim; ctx.font = '15px sans-serif';
+      ctx.fillText(`NEXT: STAGE ${state.stage + 1}`, VIEW_W / 2, 608);
+    }
   }
 
   function drawPaused() {
@@ -749,8 +830,8 @@ export function createRenderer(canvas) {
     // Run stats in three short icon rows — no single overlong line.
     const mins = Math.floor(state.time / 60), secs = Math.floor(state.time % 60);
     ctx.fillStyle = PAL.text; ctx.font = '20px sans-serif';
-    ctx.fillText(`${state.kills} slain  •  ○ ${state.pearlsCollected} pearls  •  ◉ ${state.coinsEarned} coins`, VIEW_W / 2, 340);
-    ctx.fillText(`Stage ${state.stage}/${STAGE_COUNT}  •  Level ${state.level}  •  ${mins}:${String(secs).padStart(2, '0')}`, VIEW_W / 2, 368);
+    ctx.fillText(`${state.kills} slain  •  ◉ ${state.coinsEarned} coins`, VIEW_W / 2, 340);
+    ctx.fillText(`Stage ${state.stage}/${STAGE_COUNT}  •  ${mins}:${String(secs).padStart(2, '0')}`, VIEW_W / 2, 368);
     ctx.fillText(`Damage dealt ${state.stats.damage}  •  Damage taken ${state.stats.taken}  •  Dashes ${state.stats.dashes}  •  Spent ${state.stats.spent} ◉`, VIEW_W / 2, 396);
     // Weapons recap: the arsenal as drawn icons with level pips, centred.
     const totalW = WEAPON_ORDER.length * 44 - 4;
@@ -766,12 +847,12 @@ export function createRenderer(canvas) {
         ctx.beginPath(); ctx.arc(bx + 8 + j * 6, 450, 2.5, 0, Math.PI * 2); ctx.fill();
       }
     }
-    // Build recap — the upgrades this run picked, in the HUD's own
+    // Build recap — the skills this run bought, in the HUD's own
     // icon+level language (the top entries' victory screens show one too).
     const built = UPGRADE_DEFS.filter((d) => state.ups[d.id] > 0)
       .map((d) => `${d.icon} Lv${state.ups[d.id]}`).join('  ·  ');
     ctx.fillStyle = PAL.foam; ctx.font = '17px sans-serif';
-    ctx.fillText(built ? `UPGRADES: ${built}` : 'UPGRADES: none yet', VIEW_W / 2, 486);
+    ctx.fillText(built ? `SKILLS: ${built}` : 'SKILLS: none yet', VIEW_W / 2, 486);
     ctx.fillStyle = PAL.xp; ctx.font = 'bold 19px sans-serif';
     ctx.fillText(nextGoal, VIEW_W / 2, 514);
     ctx.fillStyle = state.score >= state.best && state.score > 0 ? PAL.gold : PAL.dim;
@@ -785,33 +866,35 @@ export function createRenderer(canvas) {
   }
 
   return {
-    render(state, fx, t) {
-      const scale = Math.min(canvas.width / VIEW_W, canvas.height / VIEW_H);
-      const ox = (canvas.width - VIEW_W * scale) / 2, oy = (canvas.height - VIEW_H * scale) / 2;
+    viewTransform,
+    render(state, fx, t, alpha = 1, hover = null) {
+      // Re-measure if the window changed since the last resize event (a cheap
+      // number compare — catches zoom and docked-devtools resizes).
+      if (window.innerWidth !== cssW || window.innerHeight !== cssH) resize();
+      const { scale, ox, oy } = viewTransform();
+      const s = scale * dpr; // device-pixel scale for the transform
+      const oxd = ox * dpr, oyd = oy * dpr;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = PAL.deep; ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.setTransform(scale, 0, 0, scale, ox + fx.shakeX * scale, oy + fx.shakeY * scale);
+      // L0–L20: the world, with the screen shake. Interpolated positions keep
+      // the crab and the creatures smooth between 60 Hz sim steps.
+      const a = Math.max(0, Math.min(1, alpha));
+      const lerp = (prev, cur) => prev + (cur - prev) * a;
+      ctx.setTransform(s, 0, 0, s, oxd + fx.shakeX * s, oyd + fx.shakeY * s);
       drawPool(state, t);
       // Ink pools under everything that swims.
       for (const ink of state.inks) {
         ctx.fillStyle = `rgba(123,92,255,${Math.min(0.55, ink.life / 2)})`;
         ctx.beginPath(); ctx.arc(ink.x, ink.y, ink.r, 0, Math.PI * 2); ctx.fill();
       }
-      for (const pe of state.pearls) { // pearls bob and glint (fat ones are gold)
+      for (const pe of state.drops) { // coins bob and glint — the menu money
         const bobY = Math.sin(pe.bob) * 3;
-        if (pe.kind === 'coin') { // coins are gold discs with a darker rim — shop money, not XP
-          ctx.fillStyle = PAL.gold;
-          ctx.beginPath(); ctx.arc(pe.x, pe.y + bobY, 7, 0, Math.PI * 2); ctx.fill();
-          ctx.strokeStyle = '#c9962e'; ctx.lineWidth = 2;
-          ctx.beginPath(); ctx.arc(pe.x, pe.y + bobY, 7, 0, Math.PI * 2); ctx.stroke();
-          ctx.fillStyle = '#c9962e';
-          ctx.beginPath(); ctx.arc(pe.x, pe.y + bobY, 2.5, 0, Math.PI * 2); ctx.fill();
-          continue;
-        }
-        ctx.fillStyle = pe.v >= 3 ? PAL.gold : PAL.pearl;
-        ctx.beginPath(); ctx.arc(pe.x, pe.y + bobY, pe.v >= 3 ? 8 : 5, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = 'rgba(255,255,255,0.85)';
-        ctx.beginPath(); ctx.arc(pe.x - 1.5, pe.y + bobY - 1.5, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = PAL.gold;
+        ctx.beginPath(); ctx.arc(pe.x, pe.y + bobY, 7, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#c9962e'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(pe.x, pe.y + bobY, 7, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#c9962e';
+        ctx.beginPath(); ctx.arc(pe.x, pe.y + bobY, 2.5, 0, Math.PI * 2); ctx.fill();
       }
       for (const pk of state.pickups) {
         if (pk.kind === 'heal') star(ctx, pk.x, pk.y, 14, t, '#ff8fb0');
@@ -828,28 +911,33 @@ export function createRenderer(canvas) {
       }
       for (const b of state.bolts) {
         if (b.kind === 'arrow') { // bow arrow: a long bubble dart with a bright head
-          const a = Math.atan2(b.vy, b.vx);
+          const ba = Math.atan2(b.vy, b.vx);
           ctx.strokeStyle = 'rgba(191,232,224,0.8)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
-          ctx.beginPath(); ctx.moveTo(b.x - Math.cos(a) * 16, b.y - Math.sin(a) * 16);
-          ctx.lineTo(b.x + Math.cos(a) * 8, b.y + Math.sin(a) * 8); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(b.x - Math.cos(ba) * 16, b.y - Math.sin(ba) * 16);
+          ctx.lineTo(b.x + Math.cos(ba) * 8, b.y + Math.sin(ba) * 8); ctx.stroke();
           ctx.fillStyle = '#e8fffa'; ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI * 2); ctx.fill();
         } else if (b.kind === 'pellet') { // blaster pellet: a violet ink blob
           ctx.fillStyle = '#7b5cff'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
           ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.arc(b.x - 1.5, b.y - 1.5, 2, 0, Math.PI * 2); ctx.fill();
         } else if (b.kind === 'homing') { // homing shell: a lavender spiral shell, spinning
-          const a = Math.atan2(b.vy, b.vx);
+          const ba = Math.atan2(b.vy, b.vx);
           ctx.strokeStyle = 'rgba(216,207,232,0.6)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
-          ctx.beginPath(); ctx.moveTo(b.x - Math.cos(a) * 18, b.y - Math.sin(a) * 18);
-          ctx.lineTo(b.x - Math.cos(a) * 8, b.y - Math.sin(a) * 8); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(b.x - Math.cos(ba) * 18, b.y - Math.sin(ba) * 18);
+          ctx.lineTo(b.x - Math.cos(ba) * 8, b.y - Math.sin(ba) * 8); ctx.stroke();
           ctx.fillStyle = '#d8cfe8'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
           ctx.strokeStyle = '#a894c4'; ctx.lineWidth = 2;
           ctx.beginPath(); ctx.arc(b.x, b.y, b.r * 0.55, t * 6, t * 6 + Math.PI * 1.5); ctx.stroke();
           ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.x - 2, b.y - 2, 2, 0, Math.PI * 2); ctx.fill();
         }
       }
-      for (const e of state.enemies) drawEnemy(ctx, e, t, Math.atan2(state.player.y - e.y, state.player.x - e.x));
+      for (const e of state.enemies) {
+        const ix = lerp(e.px ?? e.x, e.x), iy = lerp(e.py ?? e.y, e.y);
+        drawEnemy(ctx, { ...e, x: ix, y: iy }, t, Math.atan2(state.player.y - iy, state.player.x - ix));
+      }
       if (state.phase !== 'title') {
-        drawCrab(ctx, state.player, t, weaponStatsFor(state, 'claw'),
+        const p = state.player;
+        drawCrab(ctx, { ...p, x: lerp(p.px ?? p.x, p.x), y: lerp(p.py ?? p.y, p.y) }, t,
+          weaponStatsFor(state, 'claw'),
           state.weapons.spin > 0 ? weaponStatsFor(state, 'spin') : null);
       }
       fx.draw(ctx);
@@ -860,15 +948,12 @@ export function createRenderer(canvas) {
         vg.addColorStop(1, `rgba(255,45,85,${state.player.flash * 1.6})`);
         ctx.fillStyle = vg; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
       }
-      // Level-up flash: a gold wash as the new level lands.
-      if (state.levelFlash > 0) {
-        ctx.fillStyle = `rgba(255,209,102,${state.levelFlash * 0.16})`;
-        ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-      }
-      if (state.phase === 'play' || state.phase === 'paused' || state.phase === 'levelup') drawHud(state, t);
+      // L30–L70: the HUD and the screens, on the CLEAN transform — no shake,
+      // so nothing the player reads ever jumps.
+      ctx.setTransform(s, 0, 0, s, oxd, oyd);
+      if (state.phase === 'play' || state.phase === 'paused') drawHud(state, t);
       if (state.phase === 'title') drawTitle(state);
-      if (state.phase === 'levelup') drawLevelUp(state);
-      if (state.phase === 'stageclear') drawStageClear(state); // no HUD here — its own title owns the top
+      if (state.phase === 'stageclear') drawStageMenu(state, hover); // no HUD here — its own title owns the top
       if (state.phase === 'paused') drawPaused();
       if (state.phase === 'over') drawOver(state);
       ctx.setTransform(1, 0, 0, 1, 0, 0);

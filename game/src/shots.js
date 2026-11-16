@@ -1,17 +1,16 @@
-// Deterministic screenshot scenes (?shot=start|play|elite|boss|storm|levelup|stageclear|end&seed=N).
+// Deterministic screenshot scenes (?shot=start|play|elite|boss|storm|stageclear|end&seed=N).
 // Each one plays the real rules forward from a fresh world, steered by an autopilot
-// that kites from danger, chases pearls and dashes when surrounded — so every frame
+// that kites from danger, chases coins and dashes when surrounded — so every frame
 // is what a real game looks like, and the same seed always gives the same frame.
-// The autopilot also picks stage cards (weapons first), shops, and advances stages.
-import { POOL, STAGE_COUNT, xpNeed } from './config.js';
+// The autopilot also shops in the stage-clear menu (autoBuy) and advances stages.
+import { POOL, STAGE_COUNT } from './config.js';
 import { createRandom } from './random.js';
 import { createState } from './state.js';
 import { nextStage, stepWorld } from './world.js';
-import { applyUpgrade } from './upgrades.js';
-import { applyStageCard, autoShop } from './weapons.js';
+import { autoBuy } from './cards.js';
 import { spawnEnemy } from './enemies.js';
 
-// The autopilot: flee the centroid of nearby threats, chase pearls, dash out of crowds.
+// The autopilot: flee the centroid of nearby threats, chase coins, dash out of crowds.
 function autopilotInput(state) {
   const p = state.player;
   let mx = 0, my = 0, fx = 0, fy = 0;
@@ -23,12 +22,12 @@ function autopilotInput(state) {
   if (near > 0 && (fx || fy)) { // kite away from the crowd
     mx = fx; my = fy;
   } else {
-    let pearl = null, pd = 1e9; // otherwise chase the nearest pearl
-    for (const pe of state.pearls) {
+    let coin = null, pd = 1e9; // otherwise chase the nearest coin
+    for (const pe of state.drops) {
       const d = Math.hypot(pe.x - p.x, pe.y - p.y);
-      if (d < pd) { pd = d; pearl = pe; }
+      if (d < pd) { pd = d; coin = pe; }
     }
-    if (pearl) { mx = (pearl.x - p.x) / (pd || 1); my = (pearl.y - p.y) / (pd || 1); }
+    if (coin) { mx = (coin.x - p.x) / (pd || 1); my = (coin.y - p.y) / (pd || 1); }
     else { mx = (POOL.cx - p.x) / 400; my = (POOL.cy - p.y) / 400; }
   }
   // Near the pool's edge, steer back toward open water instead of hugging the rim.
@@ -43,39 +42,17 @@ function autopilotInput(state) {
   };
 }
 
-// Priority order for level-up picks in staged games (deterministic, no clicking).
-const PICK_ORDER = ['claws', 'tempo', 'shell', 'reach', 'bubbles', 'legs', 'ink', 'magnet'];
-
-// Pick the best offered stage card: a new weapon first (the most exciting draw),
-// then the highest-priority upgrade track.
-function pickStageCardAuto(state) {
-  const choices = state.levelChoices || [];
-  const weapon = choices.find((c) => c.isWeapon);
-  const pick = weapon
-    || PICK_ORDER.map((id) => choices.find((c) => c.id === id)).find(Boolean)
-    || choices[0];
-  if (!pick) return;
-  if (!applyStageCard(state, pick)) applyUpgrade(state, pick.id);
-  state.pickedCard = pick; state.stagePicked = true;
-}
-
 // Run the real sim until `pred(state)` is true, a run ends, or maxSteps is hit.
-// Level-ups and stage-clears are handled the way a player would handle them.
+// Stage-clears are handled the way a player would handle them (shop, then advance).
 function runUntil(state, pred, maxSteps, fx, audio) {
   let steps = 0;
   while (steps < maxSteps) {
-    // The predicate is checked FIRST: a stage-clear or level-up the caller is
-    // looking for must be returned as-is, not auto-played past.
+    // The predicate is checked FIRST: a stage-clear the caller is looking for
+    // must be returned as-is, not auto-played past.
     if (pred(state)) return true;
     if (state.phase === 'over') return pred(state);
-    if (state.phase === 'levelup' && state.levelChoices) {
-      const pick = PICK_ORDER.map((id) => state.levelChoices.find((c) => c.id === id)).find(Boolean)
-        || state.levelChoices[0];
-      if (pick) applyUpgrade(state, pick.id);
-      state.levelChoices = null; state.phase = 'play';
-    } else if (state.phase === 'stageclear' && state.levelChoices) {
-      if (!state.stagePicked) pickStageCardAuto(state);
-      autoShop(state);
+    if (state.phase === 'stageclear') {
+      autoBuy(state);
       nextStage(state, audio);
     } else if (state.phase === 'play') {
       // A fresh steering decision every step — a stale vector walks into the rim and dies.
@@ -101,16 +78,6 @@ export function stageShot(shot, seed, fx, audio) {
     runUntil(s, (st) => st.time >= 120, 12000, fx, audio);
     return s;
   }
-  if (shot === 'levelup') {
-    // A real level-up mid-fight: run to the first level-up after 60 s.
-    const s = createStateFromSeed(seed); s.phase = 'play';
-    runUntil(s, (st) => st.phase === 'levelup' && st.time > 60, 20000, fx, audio);
-    if (s.phase === 'levelup') return s;
-    // Fallback: any level-up will do.
-    const s2 = createStateFromSeed(seed + 1); s2.phase = 'play';
-    runUntil(s2, (st) => st.phase === 'levelup', 20000, fx, audio);
-    return s2;
-  }
   if (shot === 'elite') {
     // A dense late fight: stage 12+, ten or more creatures on screen, an elite
     // in frame below the banner — by then the crab owns several weapons, so
@@ -124,7 +91,7 @@ export function stageShot(shot, seed, fx, audio) {
       if (!elite) elite = spawnEnemy(s, 'urchin', true);
       elite.x = Math.min(1030, Math.max(250, s.player.x - 200));
       elite.y = Math.min(560, Math.max(200, s.player.y + 120));
-      s.banner = '★ ELITE URCHIN — big pearls!'; s.bannerT = 2.5;
+      s.banner = '★ ELITE URCHIN — big coins!'; s.bannerT = 2.5;
       // The frame shows the whole arsenal firing at once: the laser beam and
       // the spin ring are mid-blast when the frame is taken (the staged state
       // is static, so the timers hold until the screenshot).
@@ -173,22 +140,22 @@ export function stageShot(shot, seed, fx, audio) {
     return s;
   }
   if (shot === 'stageclear') {
-    // The stage-clear screen after stage 3: three cards, the shop with real
-    // prices, and enough coins (~100) that some offers are buyable and some
-    // are not — the economy reads at a glance. The card is NOT picked yet, so
-    // the frame shows the choice itself. Prefer a seed whose draw includes a
-    // weapon card (the "NEW WEAPON" draw is the exciting one); the crab sits
-    // bottom-left so the card row stays centred, and the leftover damage
-    // numbers are cleared so they do not show through the dim over the shop.
+    // The stage-clear menu after stage 3: five cards with coin prices, the
+    // reroll and NEXT buttons, and enough coins (~150) that some cards are
+    // buyable and some are not — the economy reads at a glance. Prefer a seed
+    // whose hand includes a weapon card (the "NEW WEAPON" draw is the
+    // exciting one); the crab sits bottom-left so the menu stays centred, and
+    // the leftover damage numbers are cleared so they do not show through the
+    // dim over the menu.
     let fallback = null;
     for (let trySeed = seed; trySeed < seed + 6; trySeed += 1) {
       const s = createStateFromSeed(trySeed); s.phase = 'play';
       runUntil(s, (st) => st.phase === 'stageclear' && st.stage === 3, 30000, fx, audio);
-      if (s.phase === 'stageclear' && s.stage === 3 && s.levelChoices && s.levelChoices.length === 3) {
+      if (s.phase === 'stageclear' && s.stage === 3 && s.hand && s.hand.length >= 3) {
         if (!fallback) fallback = s;
-        if (s.levelChoices.some((c) => c.isWeapon)) {
+        if (s.hand.some((c) => c.kind === 'weapon')) {
           s.player.x = 200; s.player.y = 620; s.player.angle = 0;
-          s.coins = Math.max(s.coins, 150); // some offers affordable, some not — the economy reads at a glance
+          s.coins = Math.max(s.coins, 150); // some cards affordable, some not — the economy reads at a glance
           fx.clear();
           return s;
         }

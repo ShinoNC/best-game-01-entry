@@ -1,27 +1,19 @@
-// The fixed-step simulation: spawn, move, collide, collect, level, win, lose.
+// The fixed-step simulation: spawn, move, collide, collect, win, lose.
 // One step is 1/60 s; the renderer never touches this state, so replays are exact.
-import { ELITE, ENEMIES, POOL, STAGES, STAGE_COUNT, bossForStage, xpNeed } from './config.js';
+// Coins are the only pickup: kills drop coins, and the stage-clear menu spends
+// them on cards. There is no level or XP — nothing interrupts play mid-stage.
+import { ENEMIES, POOL, STAGES, STAGE_COUNT, bossForStage } from './config.js';
 import { onEnemyKilled, updateEnemies, updateSpawner } from './enemies.js';
 import { hurtPlayer, nearestEnemy, updatePlayer } from './player.js';
-import { rollChoices } from './upgrades.js';
-import { rollStageChoices } from './weapons.js';
+import { drawHand } from './cards.js';
 import { updateHints } from './tutorial.js';
 
 export const STEP = 1 / 60;
 
-function dropPearls(state, e) {
-  // Big kills drop a few fat pearls; elites drop a shower; a boss drops a fortune.
-  const n = e.elite ? 4 : e.boss ? 8 : e.xp;
-  for (let i = 0; i < n; i += 1) {
-    state.pearls.push({
-      kind: 'pearl', x: e.x + state.rng.range(-26, 26), y: e.y + state.rng.range(-26, 26),
-      v: e.boss ? 3 : e.elite ? 2 : 1, vx: state.rng.range(-30, 30),
-      vy: state.rng.range(-30, 30), life: 25, bob: state.rng.angle(),
-    });
-  }
-  // Coins are the shop currency: every kill pays, elites pay more, the heron pays most.
+function dropCoins(state, e) {
+  // Coins are the menu currency: every kill pays, elites pay more, the heron pays most.
   for (let i = 0; i < e.coins; i += 1) {
-    state.pearls.push({
+    state.drops.push({
       kind: 'coin', x: e.x + state.rng.range(-30, 30), y: e.y + state.rng.range(-30, 30),
       v: 1, vx: state.rng.range(-40, 40), vy: state.rng.range(-40, 40),
       life: 25, bob: state.rng.angle(),
@@ -39,27 +31,7 @@ function killEnemy(state, e, fx, audio) {
   fx.text(e.x, e.y - e.r - 4, `+${e.score}`, '#f4f9ff');
   audio.die();
   onEnemyKilled(state, e, fx);
-  dropPearls(state, e);
-}
-
-export function gainXp(state, n, fx, audio) {
-  state.xp += n;
-  state.score += n * 5;
-  while (state.xp >= xpNeed(state.level)) {
-    state.xp -= xpNeed(state.level); state.level += 1;
-    state.player.hp = Math.min(state.player.maxHp, state.player.hp + 10); // levelling up mends the shell a little
-    state.levelChoices = rollChoices(state);
-    if (state.levelChoices.length === 0) {
-      // Every track is maxed: the level still lands (score + heal), but there
-      // is no card to pick, so no level-up screen opens.
-      state.levelChoices = null;
-      return;
-    }
-    state.cardSource = 'level'; state.phase = 'levelup'; state.levelFlash = 1; // a gold flash marks the level-up
-    fx.burst(state.player.x, state.player.y, '#7fe0c3', 20, 200);
-    audio.level();
-    return; // one level-up at a time; the rest waits for the next pearl
-  }
+  dropCoins(state, e);
 }
 
 // Creatures left in this stage: unspawned budget + live enemies (minis count).
@@ -67,13 +39,13 @@ export function stageRemaining(state) {
   return (STAGES[state.stage - 1].budget - state.stageSpawned) + state.enemies.length;
 }
 
-// Advance to the next stage after the shop. Called from main.js; the sim calls
+// Advance to the next stage after the menu. Called from main.js; the sim calls
 // it too. Resets the stage counters and announces the stage.
 export function nextStage(state, audio) {
   state.stage += 1;
   state.stageSpawned = 0; state.stageEliteDone = false;
-  state.spawnT = 0.8; state.stagePicked = false; state.pickedCard = null;
-  state.levelChoices = null;
+  state.spawnT = 0.8;
+  state.hand = []; state.rerolls = 0; state.clearBonus = 0; state.menuMsg = ''; state.menuMsgT = 0;
   // The boss flags are per-stage: without this reset the stage-5 boss would
   // suppress the stage-10 boss (bossSpawned stays true otherwise).
   state.bossSpawned = false; state.boss = null;
@@ -91,12 +63,17 @@ export function stepWorld(state, input, dt, fx, audio) {
   if (state.phase !== 'play') return;
   state.time += dt;
   const p = state.player;
+  // Snapshot positions BEFORE the step: the renderer interpolates between
+  // these and the new positions, so motion stays smooth on high-refresh
+  // displays where one render frame is shorter than one sim step.
+  p.px = p.x; p.py = p.y;
+  for (const e of state.enemies) { e.px = e.x; e.py = e.y; }
 
   updateHints(state, dt); // the first-30-seconds tutorial, contextual and once-only
 
   // The stage-clear beat: the budget is spent and the pool is empty. The crab
   // keeps moving (the beat must not feel like a freeze), the banner plays for
-  // 1.2 s (the "STAGE CLEAR!" moment), then the card+shop screen.
+  // 1.2 s (the "STAGE CLEAR!" moment), then the menu screen.
   if (state.stageClearT > 0) {
     updatePlayer(state, input, dt, fx, audio);
     state.stageClearT -= dt;
@@ -104,12 +81,19 @@ export function stepWorld(state, input, dt, fx, audio) {
     if (state.stageClearT <= 0) {
       if (state.stage >= STAGE_COUNT) {
         state.phase = 'over'; state.result = 'won';
-        state.score += 1000 + state.level * 100;
+        state.score += 1000 + state.stage * 100;
         audio.win();
       } else {
-        state.levelChoices = rollStageChoices(state);
-        state.cardSource = 'stage'; state.stagePicked = false;
-        state.phase = 'stageclear'; state.levelFlash = 1;
+        // The clear bonus: every cleared stage pays coins on top of the kills
+        // (25 + 5 per stage), so the menu always has something to spend — the
+        // early game is the tightest, and a coin-only economy needs the boost
+        // there most. Total over a run: ~2,900 coins.
+        state.clearBonus = 40 + state.stage * 7;
+        state.coins += state.clearBonus; state.coinsEarned += state.clearBonus;
+        state.score += state.clearBonus * 2;
+        state.hand = drawHand(state);
+        state.rerolls = 0; state.menuMsg = ''; state.menuMsgT = 0;
+        state.phase = 'stageclear';
         audio.clear();
       }
     }
@@ -193,28 +177,22 @@ export function stepWorld(state, input, dt, fx, audio) {
     }
   }
 
-  // Deaths: score, pearls, coins, splits.
+  // Deaths: score, coins, splits.
   for (let i = state.enemies.length - 1; i >= 0; i -= 1) {
     if (state.enemies[i].hp <= 0) { killEnemy(state, state.enemies[i], fx, audio); state.enemies.splice(i, 1); }
   }
 
-  // Pearls and coins drift toward the crab inside the magnet radius, then get eaten.
-  for (let i = state.pearls.length - 1; i >= 0; i -= 1) {
-    const pe = state.pearls[i]; pe.life -= dt; pe.bob += dt * 3;
+  // Coins drift toward the crab inside the magnet radius, then get eaten.
+  for (let i = state.drops.length - 1; i >= 0; i -= 1) {
+    const pe = state.drops[i]; pe.life -= dt; pe.bob += dt * 3;
     pe.x += pe.vx * dt; pe.y += pe.vy * dt; pe.vx *= 0.96; pe.vy *= 0.96;
     const d = Math.hypot(p.x - pe.x, p.y - pe.y);
     if (d < p.magnet) { pe.x += ((p.x - pe.x) / (d || 1)) * 340 * dt; pe.y += ((p.y - pe.y) / (d || 1)) * 340 * dt; }
     if (d < p.radius + 10) {
-      state.pearls.splice(i, 1);
-      if (pe.kind === 'coin') {
-        state.coins += pe.v; state.coinsEarned += pe.v; state.score += pe.v * 2;
-        audio.coin();
-      } else {
-        state.pearlsCollected = (state.pearlsCollected || 0) + pe.v;
-        gainXp(state, pe.v, fx, audio); audio.pop();
-        if (state.phase !== 'play') return;
-      }
-    } else if (pe.life <= 0) state.pearls.splice(i, 1);
+      state.drops.splice(i, 1);
+      state.coins += pe.v; state.coinsEarned += pe.v; state.score += pe.v * 2;
+      audio.coin();
+    } else if (pe.life <= 0) state.drops.splice(i, 1);
   }
 
   // Pickups: heal star, bomb bubble, magnet shell.
@@ -224,9 +202,9 @@ export function stepWorld(state, input, dt, fx, audio) {
       if (pk.kind === 'heal') { p.hp = Math.min(p.maxHp, p.hp + 25); fx.text(p.x, p.y - 30, '+25 ♥', '#ff8fb0', true); audio.heal(); }
       if (pk.kind === 'bomb') {
         fx.burst(p.x, p.y, '#ffd166', 30, 320); fx.shake(0.5); audio.die();
-        for (const e of state.enemies) if (Math.hypot(e.x - p.x, e.y - p.y) < 180) { e.hp -= 70; e.flash = 0.15; }
+        for (const e of state.enemies) if (Math.hypot(e.x - p.x, p.y - p.y) < 180) { e.hp -= 70; e.flash = 0.15; }
       }
-      if (pk.kind === 'magnet') { for (const pe of state.pearls) { pe.x = p.x; pe.y = p.y; } }
+      if (pk.kind === 'magnet') { for (const pe of state.drops) { pe.x = p.x; pe.y = p.y; } }
       state.pickups.splice(i, 1);
     } else if (pk.life <= 0) state.pickups.splice(i, 1);
   }
@@ -236,15 +214,13 @@ export function stepWorld(state, input, dt, fx, audio) {
       && state.stageClearT <= 0) {
     state.stageClearT = 1.2;
     state.score += 100 + state.stage * 50;
-    // Vacuum the leftovers: pearls and coins on the ground are collected at
-    // once, so a stage never ends with money left behind. (A vacuum level-up
-    // interrupts the beat with the level-up screen; the beat resumes after.)
+    // Vacuum the leftovers: coins on the ground are collected at once, so a
+    // stage never ends with money left behind.
     let vacuumedCoins = 0;
-    for (const pe of state.pearls) {
-      if (pe.kind === 'coin') { state.coins += pe.v; state.coinsEarned += pe.v; state.score += pe.v * 2; vacuumedCoins += pe.v; }
-      else { state.pearlsCollected += pe.v; gainXp(state, pe.v, fx, audio); }
+    for (const pe of state.drops) {
+      state.coins += pe.v; state.coinsEarned += pe.v; state.score += pe.v * 2; vacuumedCoins += pe.v;
     }
-    state.pearls.length = 0;
+    state.drops.length = 0;
     if (vacuumedCoins > 0) audio.coin();
     const clearedBoss = bossForStage(state.stage);
     if (state.stage >= STAGE_COUNT) {

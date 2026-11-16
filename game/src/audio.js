@@ -31,9 +31,10 @@ export function createAudio() {
     unlock() { ensure(); },
     toggleMute() { muted = !muted; return muted; },
     get muted() { return muted; },
-    pop() { tone(880, 0.09, 'sine', 0.12, 1400); },           // pearl collected
+    pop() { tone(880, 0.09, 'sine', 0.12, 1400); },           // bubble burst / spin blast
     coin() { tone(1320, 0.07, 'sine', 0.10, 1760); },         // coin collected
-    buy() { tone(660, 0.08, 'triangle', 0.12); setTimeout(() => tone(990, 0.12, 'triangle', 0.12), 70); }, // shop purchase
+    buy() { tone(660, 0.08, 'triangle', 0.12); setTimeout(() => tone(990, 0.12, 'triangle', 0.12), 70); }, // card purchase
+    reroll() { tone(990, 0.06, 'triangle', 0.10); setTimeout(() => tone(1320, 0.08, 'triangle', 0.10), 60); }, // reroll the hand
     clear() { [523, 659, 784].forEach((f, i) => setTimeout(() => tone(f, 0.14, 'triangle', 0.12), i * 80)); }, // stage clear
     snap() { noise(0.06, 0.16, 2600); tone(220, 0.05, 'square', 0.06, 140); }, // claw hit
     bolt() { tone(520, 0.12, 'sine', 0.10, 180); },          // bubble bolt
@@ -41,7 +42,6 @@ export function createAudio() {
     die() { noise(0.25, 0.18, 900); tone(300, 0.22, 'triangle', 0.10, 60); },  // enemy pops
     dash() { noise(0.16, 0.12, 1800); },                     // dash whoosh
     heal() { tone(660, 0.12, 'sine', 0.10, 990); },          // heal pickup
-    level() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.14, 'triangle', 0.12), i * 70)); },
     elite() { tone(196, 0.3, 'sawtooth', 0.12, 392); },      // elite warning
     boss() { tone(1200, 0.5, 'sawtooth', 0.12, 300); noise(0.4, 0.10, 700); }, // heron screech
     win() { [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => tone(f, 0.22, 'triangle', 0.12), i * 110)); },

@@ -1,6 +1,6 @@
 // First-30-seconds tutorial: sequential, contextual, non-blocking hints.
 // Each hint shows once, fades after a few seconds, and only fires when its
-// moment arrives (an enemy approaches, a pearl drops, a crowd closes in).
+// moment arrives (an enemy approaches, a coin drops, a crowd closes in).
 // Every hint is an icon plus a short line — the picture carries the meaning.
 // Criterion 1: the goal and the controls are taught inside the game, not in a manual.
 export const HINTS = [
@@ -8,10 +8,8 @@ export const HINTS = [
     cond: (s) => s.time > 0.5 },
   { id: 'weapons', icon: '✂', text: 'ALL WEAPONS FIRE ON THEIR OWN — DODGE!', show: 4.5,
     cond: (s) => s.enemies.some((e) => Math.hypot(e.x - s.player.x, e.y - s.player.y) < 240) },
-  { id: 'pearls', icon: '○', text: 'PEARLS = LEVEL UP', show: 4.5,
-    cond: (s) => s.pearls.some((pe) => pe.kind !== 'coin') || s.pearlsCollected > 0 },
-  { id: 'coins', icon: '◉', text: 'COINS = SHOP AFTER EACH STAGE', show: 4.5,
-    cond: (s) => s.coins > 0 || s.pearls.some((pe) => pe.kind === 'coin') },
+  { id: 'coins', icon: '◉', text: 'COINS — BUY CARDS AFTER EACH STAGE', show: 4.5,
+    cond: (s) => s.coins > 0 || s.drops.length > 0 },
   { id: 'dash', icon: '»', text: 'SPACE — DASH OUT OF DANGER!', show: 4.5,
     cond: (s) => s.enemies.filter((e) => Math.hypot(e.x - s.player.x, e.y - s.player.y) < 130).length >= 3 },
 ];
@@ -39,7 +37,7 @@ export function updateHints(state, dt) {
   if (h.idx < HINTS.length - 1 && h.wait > 8) { h.done[h.idx] = true; h.idx += 1; h.wait = 0; }
 }
 
-// How far through the tutorial the player is (0–5), for the playtest report.
+// How far through the tutorial the player is (0–4), for the playtest report.
 export function hintsShown(state) {
   return state.hints ? state.hints.done.filter(Boolean).length : 0;
 }

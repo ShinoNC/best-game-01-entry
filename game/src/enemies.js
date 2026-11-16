@@ -13,7 +13,7 @@ export function spawnEnemy(state, type, elite) {
   const e = {
     id: nextId += 1, type, x, y, hp, maxHp: hp, r: def.r * (elite ? ELITE.sizeMul : 1),
     speed: def.speed * speedScale(state.stage) * state.rng.range(0.9, 1.1), dmg: Math.round(def.dmg * dmgScale(state.stage) * (elite ? ELITE.dmgMul : 1)),
-    xp: elite ? ELITE.xp : def.xp, score: elite ? ELITE.score : def.score,
+    score: elite ? ELITE.score : def.score,
     coins: elite ? ELITE.coins : def.coins,
     color: def.color, dark: def.dark, elite: !!elite,
     wob: state.rng.angle(), hitCd: 0, flash: 0, lungeT: 0, lungeCd: state.rng.range(1, 3),
@@ -39,7 +39,7 @@ function spawnBoss(state, fx, audio) {
   b.boss = true;
   b.name = def.name;
   b.hp = def.hp; b.maxHp = def.hp; b.r = def.r;
-  b.speed = def.speed; b.dmg = def.dmg; b.score = def.score; b.xp = def.xp;
+  b.speed = def.speed; b.dmg = def.dmg; b.score = def.score;
   b.coins = def.coins;
   // Each heron has its own plumage, dive speed and summons — the later birds
   // are bigger, faster-diving and call more gulls.
@@ -71,7 +71,7 @@ export function updateSpawner(state, dt, fx, audio) {
     state.stageEliteDone = true;
     const type = state.rng.pick(['urchin', 'jelly', 'eel', 'starfish']);
     const e = spawnEnemy(state, type, true);
-    state.banner = `★ ELITE ${type.toUpperCase()} — big pearls!`; state.bannerT = 2.5;
+    state.banner = `★ ELITE ${type.toUpperCase()} — big coins!`; state.bannerT = 2.5;
     fx.burst(e.x, e.y, '#ffd166', 14, 180); audio.elite();
   }
   if (plan.boss && !state.bossSpawned && state.stageSpawned >= plan.budget / 2) {

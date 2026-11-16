@@ -1,6 +1,11 @@
 // Keyboard + mouse, read once per frame. WASD/arrows move, Space/Shift dash,
-// 1/2/3 pick a card, P/Esc pause, M mute, R restart. Weapons attack on their
-// own — the mouse never triggers them; clicks only work the menus.
+// 1–5 buy a menu card, R rerolls the hand, P/Esc pause, M mute, R restart (on
+// the pause / game-over screens). Weapons attack on their own — the mouse
+// never triggers them; clicks only work the menus.
+// Mouse coordinates are CSS pixels (the canvas is 100% of the viewport, so
+// clientX minus the rect edge IS the CSS-pixel position). The renderer maps
+// CSS pixels to logical game units, so the mapping stays exact at any
+// devicePixelRatio — the backing store may be denser, the coordinates are not.
 export const ACTION_CONFIRM = 'confirm';
 export const ACTION_PAUSE = 'pause';
 export const ACTION_MUTE = 'mute';
@@ -16,18 +21,23 @@ export function createInput(canvas) {
     keys.add(e.key.toLowerCase());
   };
   const up = (e) => keys.delete(e.key.toLowerCase());
+  const clearAll = () => { keys.clear(); pressed.clear(); };
   addEventListener('keydown', down);
   addEventListener('keyup', up);
-  addEventListener('blur', () => keys.clear());
+  // Losing focus (alt-tab, a notification) clears BOTH sets: a movement key
+  // held across the blur must not stick, and a key pressed while blurred must
+  // not fire a menu action when focus returns.
+  addEventListener('blur', clearAll);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) clearAll(); });
   canvas.addEventListener('pointermove', (e) => {
     const r = canvas.getBoundingClientRect();
-    mouseX = (e.clientX - r.left) * (canvas.width / r.width);
-    mouseY = (e.clientY - r.top) * (canvas.height / r.height);
+    mouseX = e.clientX - r.left;
+    mouseY = e.clientY - r.top;
   });
   canvas.addEventListener('pointerdown', (e) => {
     const r = canvas.getBoundingClientRect();
-    mouseX = (e.clientX - r.left) * (canvas.width / r.width);
-    mouseY = (e.clientY - r.top) * (canvas.height / r.height);
+    mouseX = e.clientX - r.left;
+    mouseY = e.clientY - r.top;
     mouseClicked = true;
   });
   return {
@@ -48,15 +58,16 @@ export function createInput(canvas) {
     pausePressed() { return this.wasPressed('p', 'escape'); },
     mutePressed() { return this.wasPressed('m'); },
     restartPressed() { return this.wasPressed('r'); },
+    rerollPressed() { return this.wasPressed('r'); },
     numberPressed() {
-      for (const n of ['1', '2', '3']) if (pressed.has(n)) return Number(n);
+      for (const n of ['1', '2', '3', '4', '5']) if (pressed.has(n)) return Number(n);
       return 0;
     },
     mouse() { return { x: mouseX, y: mouseY }; },
     click() { const c = mouseClicked; mouseClicked = false; return c; },
     // A click is an edge event like a keypress: visible to exactly one frame's
     // menu handling, then discarded — otherwise a click made during play would
-    // linger and instantly unpause the game (or pick a card) much later.
+    // linger and instantly unpause the game (or buy a card) much later.
     endFrame() { pressed.clear(); mouseClicked = false; },
   };
 }

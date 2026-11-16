@@ -1,7 +1,8 @@
 // TIDEKEEPER tuning: every number the game balances on, in one place.
 // Win = clear all 30 stages and drive off the heron at every fifth stage
-// (5, 10, 15, 20, 25, 30). Lose = 0 HP. Score = kills + pearls + coins +
-// stage bonuses. Coins buy weapons in the shop.
+// (5, 10, 15, 20, 25, 30). Lose = 0 HP. Score = kills + coins +
+// stage bonuses. Coins are the single currency: they buy the 5 cards in the
+// stage-clear menu (weapons, weapon levels, skills).
 export const STAGE_COUNT = 30; // stages in one run — a full session is ~20–25 minutes
 export const VIEW_W = 1280;
 export const VIEW_H = 720;
@@ -14,7 +15,7 @@ export const PAL = {
   deep: '#062a33', water: '#0b3d4a', water2: '#0e5566', sand: '#c9a86a',
   sand2: '#e0c48f', foam: '#bfe8e0', crab: '#ff7a3c', crabDark: '#d94f1e',
   shell0: '#8a6f4d', shell1: '#b08954', shell2: '#4fa8a0', shell3: '#e8b64c',
-  pearl: '#f4f9ff', gold: '#ffd166', coral: '#ff5d73', ink: '#7b5cff',
+  gold: '#ffd166', coral: '#ff5d73', ink: '#7b5cff',
   hp: '#ff5d73', xp: '#7fe0c3', text: '#f4f9ff', dim: '#9fc4bd',
 };
 
@@ -28,25 +29,25 @@ export const PLAYER = {
 // Enemy table. Behaviour: guppy swarms, jelly drifts, urchin tanks, starfish splits,
 // eel lunges, gull swoops (from stage 5). Elites are big gold versions; the herons are the bosses.
 export const ENEMIES = {
-  guppy:    { hp: 10, speed: 102, dmg: 4,  r: 10, xp: 1, score: 10, coins: 1, color: '#ffd166', dark: '#c9962e' },
-  jelly:    { hp: 24, speed: 56,  dmg: 7,  r: 16, xp: 2, score: 20, coins: 2, color: '#c9a7ff', dark: '#8a6fd6' },
-  urchin:   { hp: 66, speed: 37,  dmg: 10, r: 20, xp: 3, score: 30, coins: 3, color: '#5d4a8a', dark: '#3a2d5e' },
-  starfish: { hp: 32, speed: 72,  dmg: 6,  r: 15, xp: 2, score: 20, coins: 2, color: '#ff8fb0', dark: '#d65d7e' },
-  eel:      { hp: 18, speed: 152, dmg: 8,  r: 12, xp: 3, score: 30, coins: 2, color: '#7fe0c3', dark: '#3fae8c' },
-  gull:     { hp: 28, speed: 176, dmg: 8,  r: 14, xp: 4, score: 40, coins: 2, color: '#f4f9ff', dark: '#9fb4c0' },
-  mini:     { hp: 8,  speed: 118, dmg: 5,  r: 8,  xp: 1, score: 5,  coins: 1, color: '#ff8fb0', dark: '#d65d7e' },
+  guppy:    { hp: 10, speed: 102, dmg: 4,  r: 10, score: 10, coins: 1, color: '#ffd166', dark: '#c9962e' },
+  jelly:    { hp: 24, speed: 56,  dmg: 7,  r: 16, score: 20, coins: 2, color: '#c9a7ff', dark: '#8a6fd6' },
+  urchin:   { hp: 66, speed: 37,  dmg: 10, r: 20, score: 30, coins: 3, color: '#5d4a8a', dark: '#3a2d5e' },
+  starfish: { hp: 32, speed: 72,  dmg: 6,  r: 15, score: 20, coins: 2, color: '#ff8fb0', dark: '#d65d7e' },
+  eel:      { hp: 18, speed: 152, dmg: 8,  r: 12, score: 30, coins: 2, color: '#7fe0c3', dark: '#3fae8c' },
+  gull:     { hp: 28, speed: 176, dmg: 8,  r: 14, score: 40, coins: 2, color: '#f4f9ff', dark: '#9fb4c0' },
+  mini:     { hp: 8,  speed: 118, dmg: 5,  r: 8,  score: 5,  coins: 1, color: '#ff8fb0', dark: '#d65d7e' },
 };
-export const ELITE = { hpMul: 3.6, dmgMul: 1.5, sizeMul: 1.55, xp: 10, score: 150, coins: 5 };
+export const ELITE = { hpMul: 3.6, dmgMul: 1.5, sizeMul: 1.55, score: 150, coins: 5 };
 // Six boss herons, one per fifth stage. Each is a distinct fight: bigger,
 // tougher, faster-diving and summoning more gulls as the run goes on. The
 // Heron King at stage 30 is the final boss.
 export const BOSSES = [
-  { stage: 5, type: 'heron', name: 'THE GREAT HERON', hp: 2700, speed: 118, dmg: 18, r: 46, xp: 25, score: 500, coins: 25, color: '#e8e4d8', dark: '#8a8578', dive: 2.1, summon: 0, summonEvery: 7 },
-  { stage: 10, type: 'stormheron', name: 'THE STORM HERON', hp: 6000, speed: 132, dmg: 22, r: 52, xp: 40, score: 1000, coins: 50, color: '#8a93b8', dark: '#4a5178', dive: 2.6, summon: 2, summonEvery: 7 },
-  { stage: 15, type: 'duskheron', name: 'THE DUSK HERON', hp: 9750, speed: 140, dmg: 26, r: 54, xp: 55, score: 1500, coins: 75, color: '#b08ac0', dark: '#6b4a78', dive: 2.8, summon: 2, summonEvery: 6 },
-  { stage: 20, type: 'tidalheron', name: 'THE TIDAL HERON', hp: 14100, speed: 128, dmg: 30, r: 58, xp: 70, score: 2000, coins: 100, color: '#5fb8a8', dark: '#2f6e64', dive: 2.4, summon: 3, summonEvery: 7 },
-  { stage: 25, type: 'abyssheron', name: 'THE ABYSS HERON', hp: 19500, speed: 148, dmg: 34, r: 60, xp: 85, score: 2500, coins: 125, color: '#5a6fd6', dark: '#2e3a7a', dive: 3.0, summon: 3, summonEvery: 6 },
-  { stage: 30, type: 'kingheron', name: 'THE HERON KING', hp: 27000, speed: 140, dmg: 38, r: 66, xp: 120, score: 4000, coins: 200, color: '#e8b64c', dark: '#8a6a1e', dive: 2.8, summon: 3, summonEvery: 5 },
+  { stage: 5, type: 'heron', name: 'THE GREAT HERON', hp: 1600, speed: 118, dmg: 18, r: 46, score: 500, coins: 25, color: '#e8e4d8', dark: '#8a8578', dive: 2.1, summon: 0, summonEvery: 7 },
+  { stage: 10, type: 'stormheron', name: 'THE STORM HERON', hp: 2600, speed: 132, dmg: 22, r: 52, score: 1000, coins: 50, color: '#8a93b8', dark: '#4a5178', dive: 2.6, summon: 2, summonEvery: 7 },
+  { stage: 15, type: 'duskheron', name: 'THE DUSK HERON', hp: 4500, speed: 140, dmg: 26, r: 54, score: 1500, coins: 75, color: '#b08ac0', dark: '#6b4a78', dive: 2.8, summon: 2, summonEvery: 6 },
+  { stage: 20, type: 'tidalheron', name: 'THE TIDAL HERON', hp: 12000, speed: 128, dmg: 30, r: 58, score: 2000, coins: 100, color: '#5fb8a8', dark: '#2f6e64', dive: 2.4, summon: 3, summonEvery: 7 },
+  { stage: 25, type: 'abyssheron', name: 'THE ABYSS HERON', hp: 19000, speed: 148, dmg: 34, r: 60, score: 2500, coins: 125, color: '#5a6fd6', dark: '#2e3a7a', dive: 3.0, summon: 3, summonEvery: 6 },
+  { stage: 30, type: 'kingheron', name: 'THE HERON KING', hp: 27000, speed: 140, dmg: 38, r: 66, score: 4000, coins: 200, color: '#e8b64c', dark: '#8a6a1e', dive: 2.8, summon: 3, summonEvery: 5 },
 ];
 export function bossForStage(stage) { return BOSSES.find((b) => b.stage === stage) || null; }
 
@@ -79,10 +80,20 @@ export function spawnWeights(stage) {
   if (stage >= 24) { w.guppy = 5; w.jelly = 9; w.urchin = 10; w.eel = 8; w.gull = 7; w.starfish = 6; }
   return w;
 }
-export function hpScale(stage) { return 1 + (stage - 1) * 0.65; } // stage 30: 19.9x enemy HP
-export function dmgScale(stage) { return 1 + (stage - 1) * 0.17; } // stage 30: 5.9x enemy damage
+export function hpScale(stage) {
+  // Gentle early (0.55/stage to stage 15), steeper late (0.78/stage after):
+  // the player's power snowballs once the arsenal is complete, so the late
+  // game has to ramp harder to stay a filter. Stage 30: 20.4x enemy HP.
+  if (stage <= 15) return 1 + (stage - 1) * 0.55;
+  return 1 + 14 * 0.55 + (stage - 15) * 0.78;
+}
+export function dmgScale(stage) {
+  // Same shape for damage: 0.14/stage to stage 15, 0.24/stage after.
+  // Stage 30: 6.6x enemy damage.
+  if (stage <= 15) return 1 + (stage - 1) * 0.14;
+  return 1 + 14 * 0.14 + (stage - 15) * 0.24;
+}
 export function speedScale(stage) { return 1 + (stage - 1) * 0.032; } // stage 30: 1.93x enemy speed
-export function xpNeed(level) { return 8 + level * 8 + level * level; } // pearls to the next level — levels come slowly across 30 stages
 
 // Weapons (criterion 2): six tools, six feels — and ALL of them AUTOMATIC.
 // EVERY owned weapon fires at once, each on its own cooldown, each aimed at
@@ -148,16 +159,17 @@ export const WEAPONS = {
 export const WEAPON_ORDER = ['claw', 'bow', 'blaster', 'shell', 'spin', 'laser'];
 export const WEAPON_MAX = 5; // levels per weapon
 
-// The shop (criterion 2): real prices, real purchases, escalating by tier —
-// better weapons cost more. Five weapon slots sell the weapon, then its four
-// level-ups; the claw slot sells claw levels (the claw is owned from the
-// start). Full max-out costs ~6,325 coins against ~3,900 earned per run —
-// the player must choose, never maxes everything.
+// The menu prices (criterion 2): real prices, real purchases, escalating by
+// tier — better weapons cost more. A weapon slot sells the weapon, then its
+// four level-ups; the claw slot sells claw levels (the claw is owned from the
+// start). Full max-out of all six weapons costs ~6,215 coins, and the eight
+// skill tracks cost ~2,040 more — against ~8,900 earned per run (kills +
+// clear bonuses), so the player must choose, never maxes everything.
 export const SHOP = [
-  { id: 'bow', kind: 'weapon', price: 60, up: [100, 150, 210, 280], name: 'BUBBLE BOW', icon: '⌖', desc: 'Long-range piercing arrows' },
-  { id: 'blaster', kind: 'weapon', price: 140, up: [220, 290, 370, 460], name: 'INK BLASTER', icon: '✦', desc: 'Rapid spread of ink pellets' },
-  { id: 'shell', kind: 'weapon', price: 110, up: [170, 230, 300, 380], name: 'HOMING SHELL', icon: '◎', desc: 'Slow shell that chases prey' },
-  { id: 'spin', kind: 'weapon', price: 90, up: [140, 190, 250, 320], name: 'WHIRLPOOL SPIN', icon: '↻', desc: 'Ring blast around the crab' },
-  { id: 'laser', kind: 'weapon', price: 160, up: [200, 260, 330, 420], name: 'LASER GUN', icon: '≋', desc: 'Fixed horizontal beam' },
+  { id: 'bow', kind: 'weapon', price: 50, up: [100, 150, 210, 280], name: 'BUBBLE BOW', icon: '⌖', desc: 'Long-range piercing arrows' },
+  { id: 'blaster', kind: 'weapon', price: 110, up: [220, 290, 370, 460], name: 'INK BLASTER', icon: '✦', desc: 'Rapid spread of ink pellets' },
+  { id: 'shell', kind: 'weapon', price: 90, up: [170, 230, 300, 380], name: 'HOMING SHELL', icon: '◎', desc: 'Slow shell that chases prey' },
+  { id: 'spin', kind: 'weapon', price: 70, up: [140, 190, 250, 320], name: 'WHIRLPOOL SPIN', icon: '↻', desc: 'Ring blast around the crab' },
+  { id: 'laser', kind: 'weapon', price: 130, up: [200, 260, 330, 420], name: 'LASER GUN', icon: '≋', desc: 'Fixed horizontal beam' },
   { id: 'claw', kind: 'weapon', price: 0, up: [60, 95, 140, 200], name: 'SHARPEN CLAWS', icon: '✂', desc: 'Claw +damage, +range' },
 ];

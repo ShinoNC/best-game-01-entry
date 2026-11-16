@@ -13,6 +13,19 @@ function clampToPool(p) {
   if (d > 1) { p.x = POOL.cx + (dx / d) * POOL.rx; p.y = POOL.cy + (dy / d) * POOL.ry; }
 }
 
+// Slide along the pool's edge: near the rim, the outward part of the velocity
+// is removed, so the crab glides along the boundary instead of sticking to it.
+// The ellipse's outward normal is its gradient ((x-cx)/rx^2, (y-cy)/ry^2).
+function slideAtEdge(p, vx, vy) {
+  const ex = (p.x - POOL.cx) / POOL.rx, ey = (p.y - POOL.cy) / POOL.ry;
+  if (Math.hypot(ex, ey) < 0.97) return { vx, vy };
+  let nx = (p.x - POOL.cx) / (POOL.rx * POOL.rx), ny = (p.y - POOL.cy) / (POOL.ry * POOL.ry);
+  const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+  const out = vx * nx + vy * ny;
+  if (out <= 0) return { vx, vy }; // already moving inward — leave it alone
+  return { vx: vx - nx * out, vy: vy - ny * out };
+}
+
 export function nearestEnemy(state, x, y, range) {
   let best = null, bd = range * range;
   for (const e of state.enemies) {
@@ -141,16 +154,18 @@ export function updatePlayer(state, input, dt, fx, audio) {
   p.moving = (mv.x || mv.y || p.dashT > 0) ? 1 : Math.max(0, p.moving - dt * 5); // drives the walk cycle
   if (p.dashT > 0) { // dashing: keep the burst direction, ignore steering
     p.dashT -= dt;
-    p.x += p.dashVx * dt; p.y += p.dashVy * dt;
+    const s = slideAtEdge(p, p.dashVx, p.dashVy);
+    p.x += s.vx * dt; p.y += s.vy * dt;
     fx.bubbles(p.x, p.y, 1); // a bubble trail marks the dash path
     if (state.ups.ink > 0 && state.rng.chance(0.7)) {
       state.inks.push({ x: p.x, y: p.y, r: 26 + state.ups.ink * 6, life: 2.2, dmg: 6 + state.ups.ink * 4 });
     }
   } else if (mv.x || mv.y) {
-    p.x += mv.x * p.speed * dt; p.y += mv.y * p.speed * dt;
+    const s = slideAtEdge(p, mv.x * p.speed, mv.y * p.speed);
+    p.x += s.vx * dt; p.y += s.vy * dt;
     p.angle = Math.atan2(mv.y, mv.x);
   }
-  clampToPool(p);
+  clampToPool(p); // safety net — the slide above already keeps the crab inside
   // Dash on Space/Shift, with a burst, i-frames and a whoosh.
   if (input.dashHeld() && p.dashCd <= 0 && (mv.x || mv.y)) {
     p.dashCd = PLAYER.dashCd; p.dashT = PLAYER.dashTime;
