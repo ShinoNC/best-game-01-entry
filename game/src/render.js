@@ -442,6 +442,46 @@ export function createRenderer(canvas) {
     }
   }
 
+  // Minimap (bottom-right, above the dash panel): the whole pool in one
+  // glance — crab white, creatures coral, elite gold, boss orange with a
+  // pulsing ring. The top entries all show the full game state in one frame;
+  // the minimap does that for TIDEKEEPER. Circle centre (1190, 570), r 62;
+  // the pool ellipse inside keeps the pool's own aspect (556:288).
+  function drawMinimap(state, t) {
+    const mx = 1190, my = 570, mr = 62;
+    ctx.fillStyle = 'rgba(6,42,51,0.78)';
+    ctx.beginPath(); ctx.arc(mx, my, mr, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,209,102,0.5)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(mx, my, mr, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = 'rgba(14,85,102,0.9)';
+    ctx.beginPath(); ctx.ellipse(mx, my, 52, 27, 0, 0, Math.PI * 2); ctx.fill();
+    const dot = (wx, wy) => [mx + ((wx - POOL.cx) / POOL.rx) * 52, my + ((wy - POOL.cy) / POOL.ry) * 27];
+    for (const e of state.enemies) {
+      const [dx, dy] = dot(e.x, e.y);
+      if (e.boss) {
+        const pulse = 0.5 + 0.5 * Math.sin(t * 5);
+        ctx.strokeStyle = `rgba(255,122,60,${0.5 + 0.5 * pulse})`; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(dx, dy, 7 + pulse * 2, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#ff7a3c';
+        ctx.beginPath(); ctx.arc(dx, dy, 5, 0, Math.PI * 2); ctx.fill();
+      } else if (e.elite) {
+        ctx.fillStyle = '#ffd166';
+        ctx.beginPath(); ctx.arc(dx, dy, 3, 0, Math.PI * 2); ctx.fill();
+      } else {
+        ctx.fillStyle = '#ff5d73';
+        ctx.beginPath(); ctx.arc(dx, dy, 2, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    const [cx, cy] = dot(state.player.x, state.player.y);
+    ctx.fillStyle = '#062a33';
+    ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(cx, cy, 3.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = PAL.dim; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('MAP', mx, my + mr + 14);
+    ctx.textAlign = 'left';
+  }
+
   function drawHud(state, t) {
     // HUD layout (VIEW 1280x720) — every element owns one region, none overlap:
     //   top bar y 14–94: HP panel (left, now taller: HP + shell + arsenal row,
@@ -450,6 +490,7 @@ export function createRenderer(canvas) {
     //   banner zone y 146–186: one banner at a time, dark backdrop
     //   playfield y 200–610: damage numbers live here and nowhere else (see particles.js)
     //   hint pill y 564–608, centred, play phase only, never while a banner shows
+    //   minimap: circle centre (1190, 570) r 62, above the dash panel
     //   bottom bar y 620–704: skills left, cooldowns right, controls strip centre
     const p = state.player;
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
@@ -542,6 +583,8 @@ export function createRenderer(canvas) {
     ctx.fillStyle = 'rgba(6,42,51,0.75)'; ctx.fillRect(VIEW_W - 268, VIEW_H - 60, 250, 44);
     ctx.fillStyle = PAL.text; ctx.font = 'bold 15px sans-serif';
     ctx.fillText(p.dashCd <= 0 ? 'DASH READY  [Space]' : `DASH ${p.dashCd.toFixed(1)}s`, VIEW_W - 28, VIEW_H - 32);
+    // Minimap: the whole pool in one glance, bottom-right above the dash panel.
+    drawMinimap(state, t);
     // Wave / elite banner in its own zone (y 146–186) with a dark backdrop and a
     // gold frame, so damage numbers and the heron never cross the text.
     if (state.bannerT > 0) {
@@ -610,6 +653,14 @@ export function createRenderer(canvas) {
     // Scope line: what the game contains, in numbers (the top titles all list theirs).
     ctx.fillStyle = PAL.foam; ctx.font = '15px sans-serif';
     ctx.fillText('30 stages · 6 boss herons · 6 weapons · 5-card shop after every stage · 8 skills', VIEW_W / 2, 396);
+    // The arsenal at a glance: all six weapons as drawn icons under the scope
+    // line, so the title shows the game's depth before a single stage is played.
+    for (let i = 0; i < WEAPON_ORDER.length; i += 1) {
+      const bx = VIEW_W / 2 - 162 + i * 56;
+      ctx.fillStyle = 'rgba(127,224,195,0.22)'; ctx.fillRect(bx, 414, 44, 40);
+      ctx.strokeStyle = 'rgba(127,224,195,0.6)'; ctx.lineWidth = 1; ctx.strokeRect(bx, 414, 44, 40);
+      drawWeaponIcon(ctx, WEAPON_ORDER[i], bx + 22, 434, 30, true);
+    }
     const blink = state.shotMode || Math.floor(performance.now() / 500) % 2 === 0;
     if (blink) {
       ctx.fillStyle = PAL.gold; ctx.font = 'bold 30px sans-serif';
@@ -882,6 +933,29 @@ export function createRenderer(canvas) {
       const lerp = (prev, cur) => prev + (cur - prev) * a;
       ctx.setTransform(s, 0, 0, s, oxd + fx.shakeX * s, oyd + fx.shakeY * s);
       drawPool(state, t);
+      // Dive telegraph: a swooper about to dive (circle state, dive under
+      // 0.6 s away) shows its dive path — a dashed red line toward the crab
+      // and a pulsing ring on the crab, plus a "!" over the bird. The dive
+      // tracks the crab, so the ring sits on the crab, not on a fixed spot.
+      for (const e of state.enemies) {
+        if ((e.type === 'gull' || e.type.endsWith('heron')) && e.state === 'circle' && e.diveT < 0.6) {
+          const ix = lerp(e.px ?? e.x, e.x), iy = lerp(e.py ?? e.y, e.y);
+          const jx = lerp(state.player.px ?? state.player.x, state.player.x);
+          const jy = lerp(state.player.py ?? state.player.y, state.player.y);
+          const pulse = 0.5 + 0.5 * Math.sin(t * 10);
+          ctx.save();
+          ctx.strokeStyle = `rgba(255,93,115,${0.4 + 0.3 * pulse})`;
+          ctx.lineWidth = 2; ctx.setLineDash([8, 8]);
+          ctx.beginPath(); ctx.moveTo(ix, iy); ctx.lineTo(jx, jy); ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.strokeStyle = `rgba(255,93,115,${0.55 + 0.4 * pulse})`;
+          ctx.lineWidth = 2.5;
+          ctx.beginPath(); ctx.arc(jx, jy, 44 + pulse * 6, 0, Math.PI * 2); ctx.stroke();
+          ctx.fillStyle = '#ff5d73'; ctx.font = 'bold 24px sans-serif'; ctx.textAlign = 'center';
+          ctx.fillText('!', ix, iy - e.r - 10);
+          ctx.restore();
+        }
+      }
       // Ink pools under everything that swims.
       for (const ink of state.inks) {
         ctx.fillStyle = `rgba(123,92,255,${Math.min(0.55, ink.life / 2)})`;

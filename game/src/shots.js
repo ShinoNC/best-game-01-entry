@@ -126,8 +126,18 @@ export function stageShot(shot, seed, fx, audio) {
           const a = 0.6 + i * 2.0;
           g.x = Math.min(1160, Math.max(120, s.player.x + Math.cos(a) * 220));
           g.y = Math.min(600, Math.max(170, s.player.y + Math.sin(a) * 150));
-          g.state = 'circle'; g.diveT = 0.8;
+          // diveT under 0.6 s: their dive telegraphs (dashed line + ring on
+          // the crab) are visible in the frame — the flock is about to burst.
+          g.state = 'circle'; g.diveT = 0.4;
         }
+        // The frame shows the whole arsenal firing at once: the laser beam and
+        // the spin ring are mid-blast when the frame is taken (the staged state
+        // is static, so the timers hold until the screenshot).
+        if (s.weapons.laser > 0) {
+          s.player.laser = 0.15; s.player.laserLen = 420;
+          s.player.laserBeams = s.weapons.laser >= 5 ? 2 : 1;
+        }
+        if (s.weapons.spin > 0) s.player.spin = 0.15;
         s.banner = `${b.name} — DRIVE IT OFF!`;
         s.bannerT = 2.5;
         return s;
@@ -140,32 +150,34 @@ export function stageShot(shot, seed, fx, audio) {
     return s;
   }
   if (shot === 'stageclear') {
-    // The stage-clear menu after stage 3: five cards with coin prices, the
-    // reroll and NEXT buttons, and enough coins (~150) that some cards are
-    // buyable and some are not — the economy reads at a glance. Prefer a seed
-    // whose hand includes a weapon card (the "NEW WEAPON" draw is the
-    // exciting one); the crab sits bottom-left so the menu stays centred, and
-    // the leftover damage numbers are cleared so they do not show through the
-    // dim over the menu.
-    let fallback = null;
-    for (let trySeed = seed; trySeed < seed + 6; trySeed += 1) {
-      const s = createStateFromSeed(trySeed); s.phase = 'play';
-      runUntil(s, (st) => st.phase === 'stageclear' && st.stage === 3, 30000, fx, audio);
-      if (s.phase === 'stageclear' && s.stage === 3 && s.hand && s.hand.length >= 3) {
-        if (!fallback) fallback = s;
-        if (s.hand.some((c) => c.kind === 'weapon')) {
-          s.player.x = 200; s.player.y = 620; s.player.angle = 0;
-          s.coins = Math.max(s.coins, 150); // some cards affordable, some not — the economy reads at a glance
-          fx.clear();
-          return s;
+    // The stage-clear menu after a LATER stage (15 first, then 10, then 3):
+    // a fuller build reads in the YOUR BUILD row, and the menu shows real
+    // mid-game choices. Enough coins (~150) that some cards are buyable and
+    // some are not — the economy reads at a glance. Prefer a seed whose hand
+    // includes a weapon card (the "NEW WEAPON" draw is the exciting one);
+    // the crab sits bottom-left so the menu stays centred, and the leftover
+    // damage numbers are cleared so they do not show through the dim.
+    for (const wantStage of [15, 10, 3]) {
+      let fallback = null;
+      for (let trySeed = seed; trySeed < seed + 6; trySeed += 1) {
+        const s = createStateFromSeed(trySeed); s.phase = 'play';
+        runUntil(s, (st) => st.phase === 'stageclear' && st.stage === wantStage, 60000, fx, audio);
+        if (s.phase === 'stageclear' && s.stage === wantStage && s.hand && s.hand.length >= 3) {
+          if (!fallback) fallback = s;
+          if (s.hand.some((c) => c.kind === 'weapon')) {
+            s.player.x = 200; s.player.y = 620; s.player.angle = 0;
+            s.coins = Math.max(s.coins, 150); // some cards affordable, some not — the economy reads at a glance
+            fx.clear();
+            return s;
+          }
         }
       }
-    }
-    if (fallback) {
-      fallback.player.x = 200; fallback.player.y = 620; fallback.player.angle = 0;
-      fallback.coins = Math.max(fallback.coins, 150);
-      fx.clear();
-      return fallback;
+      if (fallback) {
+        fallback.player.x = 200; fallback.player.y = 620; fallback.player.angle = 0;
+        fallback.coins = Math.max(fallback.coins, 150);
+        fx.clear();
+        return fallback;
+      }
     }
     // Fallback: any stage-clear screen will do.
     const s = createStateFromSeed(seed); s.phase = 'play';
@@ -176,12 +188,19 @@ export function stageShot(shot, seed, fx, audio) {
     return s;
   }
   if (shot === 'end') {
-    // Try seeds until the autopilot clears all 30 stages; a real victory screen.
+    // Try seeds until the autopilot clears all 30 stages; prefer a GRADE S
+    // win (60+ HP left) — the strongest victory screen. Fall back to the
+    // best win found (highest HP), then to a real game-over screen.
+    let bestWin = null;
     for (let trySeed = seed; trySeed < seed + 10; trySeed += 1) {
       const s = createStateFromSeed(trySeed); s.phase = 'play';
       runUntil(s, (st) => st.phase === 'over', 120000, fx, audio);
-      if (s.phase === 'over' && s.result === 'won') { fx.clear(); return s; }
+      if (s.phase === 'over' && s.result === 'won') {
+        if (s.player.hp >= 60) { fx.clear(); return s; }
+        if (!bestWin || s.player.hp > bestWin.player.hp) bestWin = s;
+      }
     }
+    if (bestWin) { fx.clear(); return bestWin; }
     // Fallback: the autopilot fell — a real game-over screen is still a complete loop.
     const s = createStateFromSeed(seed); s.phase = 'play';
     runUntil(s, (st) => st.phase === 'over', 120000, fx, audio);
