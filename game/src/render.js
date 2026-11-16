@@ -1,12 +1,7 @@
-// Everything the judge sees: the pool, the crab, the creatures, the HUD and the screens.
-// Criterion 1: goal, timer, score, HP, controls and restart are all VISIBLE here.
-// Criterion 4: one palette, big readable shapes, a scene that reads at a glance.
-// Draw layers (a z-index scale, low to high — nothing draws out of order):
-//   L0 pool + decor · L10 world (inks, coins, pickups, bolts, enemies, crab)
-//   L20 particles + floating text · L30 HUD · L40 banners + hints (inside the HUD)
-//   L50 modal dim · L60 modal content · L70 vignette + flashes.
-// The screen shake moves L0–L20 only: the HUD and the menus never shake, so
-// nothing the player reads ever jumps.
+// Everything the judge sees: pool, crab, creatures, HUD, screens.
+// Draw layers (low to high): L0 pool+decor · L10 world · L20 particles+text
+//   L30 HUD · L40 banners+hints · L50 modal dim · L60 modal · L70 vignette.
+// Screen shake moves L0–L20 only — the HUD and menus never shake.
 import { BOSSES, COMBO_MAX, CREATURE_NAMES, CREATURE_ORDER, DIFFICULTIES, DIFF_ORDER, ENEMIES, FEATS, PAL, POOL, STAGES, STAGE_COUNT, VIEW_H, VIEW_W, WEAPON_MAX, WEAPON_ORDER, bossForStage } from './config.js';
 import { UPGRADE_DEFS } from './upgrades.js';
 import { HAND_SIZE, REROLL_COST } from './cards.js';
@@ -17,13 +12,10 @@ export const SCREEN_TITLE = 'title';
 export const SCREEN_PLAY = 'play';
 export const SCREEN_OVER = 'over';
 
-// The stage-clear menu's layout — FIXED and CENTRED, shared with main.js so
-// clicks always match the drawn cards and buttons. Nothing here slides or
-// shifts: the card row is centred on the hand size, the buttons are centred
-// as a pair. All spacing is on an 8px scale (gaps 16/24, padding 8).
-//   cards: 5 × 200×240, 16px gaps, y 140–380 (fewer cards centre the same way)
-//   buttons: REROLL 240×52 + 24 gap + NEXT 280×52, y 404–456
-//   hint/message line y 480 · build recap y 516–572 · next-stage line y 608
+// Stage-clear menu layout — FIXED and CENTRED, shared with main.js so clicks
+// match the drawn cards. Card row centres on hand size; buttons centre as a pair.
+//   cards: 5 × 200×240, 16px gaps, y 140–380 · buttons: REROLL 240×52 + 24 + NEXT 280×52, y 404–456
+//   hint line y 480 · build recap y 516–572 · next-stage line y 608
 export const MENU_CARD_W = 200, MENU_CARD_H = 240, MENU_CARD_GAP = 16, MENU_CARDS_Y = 140;
 export function stageMenuLayout(state) {
   const hand = state.hand || [];
@@ -496,15 +488,10 @@ export function createRenderer(canvas) {
   }
 
   function drawHud(state, t) {
-    // HUD layout (VIEW 1280x720) — every element owns one region, none overlap:
-    //   top bar y 14–94: HP panel (left, now taller: HP + shell + arsenal row,
-    //     y 14–166) / timer+WIN-LOSE panel (centre) / score panel (right)
-    //   boss strip y 100–134: boss bar (boss alive) OR countdown pill (15 s before) — never both
-    //   banner zone y 146–186: one banner at a time, dark backdrop
-    //   playfield y 200–610: damage numbers live here and nowhere else (see particles.js)
-    //   hint pill y 564–608, centred, play phase only, never while a banner shows
-    //   minimap: circle centre (1190, 570) r 62, above the dash panel
-    //   bottom bar y 620–704: skills left, cooldowns right, controls strip centre
+    // HUD layout (1280x720), one region per element, none overlap:
+    //   top: HP+arsenal (left) / timer+WIN-LOSE (centre) / score (right)
+    //   boss strip y 100–134 · banner y 146–186 · hint pill y 564–608
+    //   minimap (1190, 570) r 62 · bottom bar y 620–704: skills / controls / cooldowns
     const p = state.player;
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
     // Top-left: HP bar with a heart + shell tier + the arsenal row — every
@@ -621,7 +608,7 @@ export function createRenderer(canvas) {
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(6,42,51,0.75)'; ctx.fillRect(446, 676, 558, 24);
     ctx.fillStyle = PAL.foam; ctx.font = '13px sans-serif';
-    ctx.fillText('WASD move  ·  SPACE dash  ·  P pause  ·  M mute', VIEW_W / 2, 693);
+    ctx.fillText('WASD move  ·  SPACE dash  ·  E grab & throw  ·  P pause  ·  M mute', VIEW_W / 2, 693);
     // Tutorial hint pill, bottom centre: an icon plus one short line, fading
     // out. Play phase only — on the menu screen the cards own the player's
     // attention.
@@ -655,7 +642,7 @@ export function createRenderer(canvas) {
     ctx.fillText('★ CLEAR 30 STAGES — BEAT THE HERONS, WIN THE POOL ★', VIEW_W / 2, 146);
     // Scope line: what the game contains, in numbers (the top titles all list theirs).
     ctx.fillStyle = PAL.foam; ctx.font = '15px sans-serif';
-    ctx.fillText('30 stages · 6 boss herons · 6 weapons · 5-card shop after every stage · 8 skills · 3 difficulties', VIEW_W / 2, 174);
+    ctx.fillText('30 stages · 6 boss herons · 6 weapons · grab & throw · 5-card shop · 8 skills · 3 difficulties', VIEW_W / 2, 174);
     // Difficulty select: three real tunings, best score per difficulty. The
     // selected button is gold-filled (the one primary choice on the screen);
     // 1–3 or a click selects, Enter/click elsewhere starts the run.
@@ -1113,6 +1100,8 @@ export function createRenderer(canvas) {
           ctx.strokeStyle = '#a894c4'; ctx.lineWidth = 2;
           ctx.beginPath(); ctx.arc(b.x, b.y, b.r * 0.55, t * 6, t * 6 + Math.PI * 1.5); ctx.stroke();
           ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.x - 2, b.y - 2, 2, 0, Math.PI * 2); ctx.fill();
+        } else if (b.kind === 'thrown') { // a hurled creature, tumbling through the air
+          drawEnemy(ctx, { ...b.thrown, x: b.x, y: b.y }, t * 6, Math.atan2(b.vy, b.vx));
         }
       }
       for (const e of state.enemies) {
@@ -1124,6 +1113,10 @@ export function createRenderer(canvas) {
         drawCrab(ctx, { ...p, x: lerp(p.px ?? p.x, p.x), y: lerp(p.py ?? p.y, p.y) }, t,
           weaponStatsFor(state, 'claw'),
           state.weapons.spin > 0 ? weaponStatsFor(state, 'spin') : null);
+        if (p.grab) { // the held creature, overhead and wriggling to escape
+          const ix = lerp(p.px ?? p.x, p.x), iy = lerp(p.py ?? p.y, p.y);
+          drawEnemy(ctx, { ...p.grab, x: ix + Math.sin(t * 10) * 4, y: iy - 52 }, t * 2, p.angle);
+        }
       }
       fx.draw(ctx);
       // Hurt vignette: red edges while the crab is flashing from a hit.

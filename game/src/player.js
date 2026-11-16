@@ -1,10 +1,8 @@
-// The crab: WASD/arrows move, ALL owned weapons attack AUTOMATICALLY, each on
-// its own cooldown, each aimed at the nearest creature in ITS range (the laser
-// fires fixed horizontal beams instead); Space/Shift dashes (with i-frames).
-// The player's job is movement, positioning and dodging — swarms WILL hit you
-// if you cannot dodge, which is why weapons must grow stronger. Criterion 2:
-// move + six auto-weapons + dash.
-import { PAL, PLAYER, POOL, WEAPON_ORDER } from './config.js';
+// The crab: WASD/arrows move, ALL owned weapons attack AUTOMATICALLY (each on
+// its own cooldown, aimed at the nearest creature in range; the laser fires
+// fixed horizontal beams); Space/Shift dashes (with i-frames). The player's
+// job is movement, positioning and dodging.
+import { GRAB, PAL, PLAYER, POOL, WEAPON_ORDER } from './config.js';
 import { weaponStatsFor } from './weapons.js';
 
 function clampToPool(p) {
@@ -174,6 +172,41 @@ export function updatePlayer(state, input, dt, fx, audio) {
     state.stats.dashes += 1;
     fx.bubbles(p.x, p.y, 8); audio.dash();
   }
+  // Claw Grab (E): snatch the nearest small creature (never an elite or a
+  // heron) and hold it overhead; press E again to hurl it at the nearest foe
+  // — the thrown creature is a bolt, so the bolts loop flies it, hits with
+  // it and pops it. The held creature is OUT of the enemy array (no weapon
+  // targets it, nothing bites it), so the stage-clear check waits for it.
+  p.grabCd -= dt;
+  if (input.grabPressed && input.grabPressed() && p.grabCd <= 0) {
+    if (!p.grab) {
+      let t = null, bd = GRAB.range * GRAB.range;
+      for (const e of state.enemies) {
+        const d2 = (e.x - p.x) ** 2 + (e.y - p.y) ** 2;
+        if (!e.elite && !e.boss && d2 < bd) { bd = d2; t = e; }
+      }
+      if (t) {
+        p.grab = t; p.grabT = GRAB.hold;
+        state.enemies.splice(state.enemies.indexOf(t), 1);
+        audio.pop();
+      }
+    } else {
+      const t = p.grab; p.grab = null;
+      const aim = nearestEnemy(state, p.x, p.y, 500);
+      const a = aim ? Math.atan2(aim.y - p.y, aim.x - p.x) : p.angle;
+      state.bolts.push({ x: p.x, y: p.y, vx: Math.cos(a) * GRAB.speed, vy: Math.sin(a) * GRAB.speed,
+        dmg: GRAB.base + (t.maxHp || t.hp), pierce: 0, r: t.r + 4, life: 1.5, kind: 'thrown', thrown: t });
+      p.grabCd = GRAB.cd;
+      fx.bubbles(p.x, p.y, 4); audio.bolt();
+    }
+  }
+  if (p.grab) {
+    p.grabT -= dt;
+    if (p.grabT <= 0) { // it struggles free and swims off
+      p.grab.x = p.x + 30; p.grab.y = p.y + 30;
+      state.enemies.push(p.grab); p.grab = null; p.grabCd = GRAB.cd;
+    }
+  }
   // Auto-attack: EVERY owned weapon fires on its own, each on its own
   // cooldown, each aimed at the nearest creature in ITS range — the claw
   // cleaves, the bow looses, the blaster bursts, the shell homes, the spin
@@ -195,6 +228,10 @@ export function updatePlayer(state, input, dt, fx, audio) {
 export function hurtPlayer(state, dmg, fx, audio) {
   const p = state.player;
   if (p.iframes > 0 || state.phase !== 'play') return;
+  if (p.grab) { // a hit knocks the held creature free
+    p.grab.x = p.x + 20; p.grab.y = p.y + 20;
+    state.enemies.push(p.grab); p.grab = null; p.grabCd = GRAB.cd;
+  }
   // A sturdier shell soaks a flat slice of every hit.
   const soaked = Math.min(4, state.ups.shell * 1);
   const real = Math.max(1, dmg - soaked);

@@ -1,13 +1,8 @@
-// TIDEKEEPER — boot and the one loop.
-// A hermit crab clears 30 stages of the rockpool, collects six auto-weapons
-// and buys better gear with coins in the stage-clear menu, and drives off a
-// heron at every fifth stage to win. Fixed 60 Hz sim apart from rendering;
-// the renderer interpolates between sim steps, so motion stays smooth on
-// high-refresh displays. Seeded RNG.
-// Criterion 1: title -> play -> stage-clear menu (5 cards + reroll) ->
-// win/lose -> restart, all real, all visible.
-// ?seed=N fixes the run. ?shot=start|play|elite|boss|storm|stageclear|end
-// stages that scene for screenshots.
+// TIDEKEEPER — boot and the one loop. A hermit crab clears 30 stages of the
+// rockpool, collects six auto-weapons, buys gear with coins in the stage-clear
+// menu, and drives off a heron at every fifth stage to win. Fixed 60 Hz sim,
+// renderer interpolates between steps. Seeded RNG; ?seed=N fixes the run.
+// ?shot=start|play|elite|boss|storm|stageclear|end stages a screenshot scene.
 import { BEST_KEY, DIFF_ORDER } from './config.js';
 import { createRandom } from './random.js';
 import { createState } from './state.js';

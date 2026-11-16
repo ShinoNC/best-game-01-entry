@@ -52,6 +52,7 @@ export function createInput(canvas) {
       return { x, y };
     },
     dashHeld() { return keys.has(' ') || keys.has('shift'); },
+    grabPressed() { return this.wasPressed('e'); },
     // Edge-triggered: true once per physical press.
     wasPressed(...names) { return names.some((n) => pressed.has(n)); },
     confirmPressed() { return this.wasPressed('enter', ' '); },

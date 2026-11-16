@@ -95,17 +95,12 @@ export function dmgScale(stage) {
 }
 export function speedScale(stage) { return 1 + (stage - 1) * 0.032; } // stage 30: 1.93x enemy speed
 
-// Weapons (criterion 2): six tools, six feels — and ALL of them AUTOMATIC.
-// EVERY owned weapon fires at once, each on its own cooldown, each aimed at
-// the nearest creature in ITS range (the laser fires fixed horizontal beams
-// instead). There is no equipped weapon and no switching: a new weapon is
-// ADDED to the arsenal, never replaces an old one. The player's job is
-// movement, positioning and dodging — swarms WILL hit you if you cannot
-// dodge. Level steps are small, so the power curve stretches over the whole
-// 30-stage run and no weapon maxes out early. Each weapon scales its own way:
-// the claw swings faster and harder; the bow and blaster fire MORE shots per
-// volley (Lv1 = 1 shot) plus speed and damage; the laser's beams get longer
-// and stronger, and at Lv5 it fires TWO beams (left + right).
+// Weapons: six tools, six feels — ALL AUTOMATIC, all firing at once, each
+// aimed at the nearest creature in ITS range (the laser fires fixed horizontal
+// beams). A new weapon is ADDED to the arsenal, never replaces one. Level
+// steps are small, so no weapon maxes out early; the claw swings faster and
+// harder, the bow/blaster fire MORE shots per volley, the laser's beams grow
+// longer and stronger (TWO beams at Lv5).
 export const WEAPONS = {
   claw: { name: 'CLAW', icon: '✂', desc: 'Slow heavy cleave, wide arc',
     levels: [
@@ -206,6 +201,11 @@ export const CREATURE_NAMES = {
   starfish: 'STARFISH', eel: 'EEL', gull: 'GULL',
 };
 export const CREATURE_ORDER = ['guppy', 'jelly', 'urchin', 'starfish', 'eel', 'gull'];
+
+// Claw Grab (E): snatch a creature, hold it overhead, hurl it at a foe — the
+// thrown creature deals base + its own max HP. Dropped if hit, escapes after
+// hold seconds. The autopilot never grabs, so NORMAL balance is untouched.
+export const GRAB = { range: 160, cd: 3.0, hold: 4.0, base: 60, speed: 520 };
 
 // Combo: kills within 3 s of each other chain; every 4 chained kills raise
 // the score multiplier by one, up to ×8. Score-only — it never changes

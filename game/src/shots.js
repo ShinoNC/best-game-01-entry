@@ -138,6 +138,10 @@ export function stageShot(shot, seed, fx, audio) {
           s.player.laserBeams = s.weapons.laser >= 5 ? 2 : 1;
         }
         if (s.weapons.spin > 0) s.player.spin = 0.15;
+        // The crab holds a guppy overhead — the Claw Grab reads in the cover.
+        const held = spawnEnemy(s, 'guppy', false);
+        s.enemies.splice(s.enemies.indexOf(held), 1);
+        s.player.grab = held; s.player.grabT = 4;
         s.banner = `${b.name} — DRIVE IT OFF!`;
         s.bannerT = 2.5;
         return s;

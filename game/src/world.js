@@ -238,7 +238,7 @@ export function stepWorld(state, input, dt, fx, audio) {
 
   // Stage clear: the budget is spent and the pool is empty. Start the clear beat.
   if (state.stageSpawned >= STAGES[state.stage - 1].budget && state.enemies.length === 0
-      && state.stageClearT <= 0) {
+      && !state.player.grab && state.stageClearT <= 0) {
     state.stageClearT = 1.2;
     state.score += 100 + state.stage * 50;
     // A stage cleared without a scratch counts toward the UNTOUCHED feat.

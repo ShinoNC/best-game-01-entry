@@ -27,6 +27,7 @@ export function createState(rng, seed, difficulty = 'normal') {
       hp: PLAYER.hp, maxHp: PLAYER.hp, radius: PLAYER.radius,
       speed: PLAYER.speed, weapCd: { claw: 0, bow: 0, blaster: 0, shell: 0, spin: 0, laser: 0 },
       dashCd: 0, dashT: 0,
+      grab: null, grabCd: 0, grabT: 0, // Claw Grab: held creature, cooldown, escape timer
       iframes: 0, magnet: PLAYER.magnet, shellTier: 0, flash: 0, swing: 0, spin: 0,
       laser: 0, laserLen: 0, laserBeams: 1, moving: 0,
     },
