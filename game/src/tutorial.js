@@ -1,20 +1,18 @@
 // First-30-seconds tutorial: sequential, contextual, non-blocking hints.
-// v1's verdict was "game ko hiểu gì cả" — a new player never learned the goal or
-// the verbs. Each hint shows once, fades after a few seconds, and only fires when
-// its moment arrives (an enemy approaches, a pearl drops, a crowd closes in).
+// Each hint shows once, fades after a few seconds, and only fires when its
+// moment arrives (an enemy approaches, a pearl drops, a crowd closes in).
+// Every hint is an icon plus a short line — the picture carries the meaning.
 // Criterion 1: the goal and the controls are taught inside the game, not in a manual.
-// v4: weapons attack on their own — the tutorial teaches dodging and the Q
-// switch first, and teaches coins (shop money) alongside pearls (level-up XP).
 export const HINTS = [
-  { id: 'move', text: 'WASD / ARROWS — move your crab', show: 5.0,
+  { id: 'move', icon: '✥', text: 'WASD / ARROWS — move', show: 5.0,
     cond: (s) => s.time > 0.5 },
-  { id: 'weapons', text: 'Your weapons attack on their own — dodge and position! (Q switches)', show: 4.5,
+  { id: 'weapons', icon: '✂', text: 'ALL WEAPONS FIRE ON THEIR OWN — DODGE!', show: 4.5,
     cond: (s) => s.enemies.some((e) => Math.hypot(e.x - s.player.x, e.y - s.player.y) < 240) },
-  { id: 'pearls', text: 'Collect pearls to LEVEL UP and grow stronger', show: 4.5,
+  { id: 'pearls', icon: '○', text: 'PEARLS = LEVEL UP', show: 4.5,
     cond: (s) => s.pearls.some((pe) => pe.kind !== 'coin') || s.pearlsCollected > 0 },
-  { id: 'coins', text: 'Kills drop COINS — spend them in the shop after each stage', show: 4.5,
+  { id: 'coins', icon: '◉', text: 'COINS = SHOP AFTER EACH STAGE', show: 4.5,
     cond: (s) => s.coins > 0 || s.pearls.some((pe) => pe.kind === 'coin') },
-  { id: 'dash', text: 'SPACE — dash out of danger! (briefly invincible)', show: 4.5,
+  { id: 'dash', icon: '»', text: 'SPACE — DASH OUT OF DANGER!', show: 4.5,
     cond: (s) => s.enemies.filter((e) => Math.hypot(e.x - s.player.x, e.y - s.player.y) < 130).length >= 3 },
 ];
 
@@ -26,7 +24,7 @@ export function updateHints(state, dt) {
     if (h.t <= 0) { h.done[h.idx] = true; h.idx += 1; h.cur = null; h.wait = 0; }
     return;
   }
-  // v3: a banner owns the screen while it shows — a new hint waits its turn
+  // A banner owns the screen while it shows — a new hint waits its turn
   // instead of stacking a second text block over the first. The wait clock
   // pauses too, so the 8 s skip never fires during a banner.
   if (state.bannerT > 0) return;

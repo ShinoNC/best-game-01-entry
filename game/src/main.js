@@ -1,7 +1,7 @@
 // TIDEKEEPER — boot and the one loop.
-// A hermit crab clears 10 stages of the rockpool, buys better weapons in the
-// shop after each stage, and drives off the herons at stages 5 and 10 to win.
-// Fixed 60 Hz sim apart from rendering; seeded RNG.
+// A hermit crab clears 30 stages of the rockpool, collects six auto-weapons
+// and buys better gear in the shop after each stage, and drives off a heron
+// at every fifth stage to win. Fixed 60 Hz sim apart from rendering; seeded RNG.
 // Criterion 1: title -> play -> level-up -> stage-clear (card + shop) ->
 // win/lose -> restart, all real, all visible.
 // ?seed=N fixes the run. ?shot=start|play|elite|boss|storm|levelup|stageclear|end
@@ -15,7 +15,7 @@ import { createParticles } from './particles.js';
 import { createRenderer, levelUpRowX, stageClearLayout } from './render.js';
 import { STEP, nextStage, stepWorld } from './world.js';
 import { applyUpgrade } from './upgrades.js';
-import { applyStageCard, buyOffer, switchWeapon } from './weapons.js';
+import { applyStageCard, buyOffer } from './weapons.js';
 import { stageShot } from './shots.js';
 
 const params = new URLSearchParams(window.location.search);
@@ -83,17 +83,12 @@ function handleMenus() {
       audio.unlock();
       state.phase = 'play';
       state.banner = 'STAGE 1 — SLAY THEM ALL'; state.bannerT = 3;
-      status.textContent = 'Clear 10 stages. The herons wait at stages 5 and 10!';
+      status.textContent = 'Clear 30 stages. A heron waits at every fifth stage!';
     }
     return;
   }
   if (state.phase === 'play') {
     if (input.pausePressed()) { state.phase = 'paused'; status.textContent = 'Paused'; return; }
-    if (input.switchPressed()) {
-      const before = state.weapon;
-      switchWeapon(state);
-      if (state.weapon !== before) status.textContent = `Weapon: ${state.weapon}`;
-    }
     return;
   }
   if (state.phase === 'paused') {
@@ -157,9 +152,10 @@ function pickCard(i) {
   audio.pop();
 }
 
-// The stage-clear card: a weapon card owns + equips the weapon, an upgrade
-// card applies through the normal upgrade path. The screen stays up for the
-// shop afterwards — picking the card does not leave the screen.
+// The stage-clear card: a weapon card adds the weapon to the arsenal, a
+// weapon level-up card raises that weapon, an upgrade card applies through
+// the normal upgrade path. The screen stays up for the shop afterwards —
+// picking the card does not leave the screen.
 function pickStageCard(i) {
   const c = state.levelChoices[i];
   if (!c || state.stagePicked) return;
@@ -177,5 +173,5 @@ function restart() {
   state.banner = 'STAGE 1 — SLAY THEM ALL'; state.bannerT = 3;
   fx.clear();
   window.__tide = { state, fx, audio, step: (inp) => stepWorld(state, inp, STEP, fx, audio), STEP };
-  status.textContent = 'A new tide. Clear 10 stages!';
+  status.textContent = 'A new tide. Clear 30 stages!';
 }

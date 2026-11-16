@@ -17,11 +17,21 @@ export function createParticles() {
         // Each number gets its own floor (200/213/226) and a small x nudge
         // when it was moved: without the stagger, every number from the
         // pool's top edge piled onto one y=200 line and overlapped each other.
+        // Numbers sharing a floor also keep a 30 px x-gap from their
+        // neighbours, so two hits landing together never read as one
+        // four-digit number.
         const floor = TEXT_TOP + Math.floor(Math.random() * 3) * 13;
         const cy = Math.max(floor, Math.min(TEXT_BOTTOM, y));
         const moved = cy !== y;
-        texts.push({ x: Math.max(TEXT_LEFT, Math.min(TEXT_RIGHT, x + (moved ? (Math.random() * 2 - 1) * 14 : 0))),
-          y: cy, floor, str, color, life: 0.9, big: !!big });
+        let tx = Math.max(TEXT_LEFT, Math.min(TEXT_RIGHT, x + (moved ? (Math.random() * 2 - 1) * 14 : 0)));
+        const clashes = (v) => texts.some((t) => t.floor === floor && Math.abs(t.x - v) < 30);
+        if (clashes(tx)) {
+          for (const d of [30, -30, 60, -60, 90, -90]) {
+            const v = Math.max(TEXT_LEFT, Math.min(TEXT_RIGHT, tx + d));
+            if (!clashes(v)) { tx = v; break; }
+          }
+        }
+        texts.push({ x: tx, y: cy, floor, str, color, life: 0.9, big: !!big });
       }
     },
     burst(x, y, color, n, speed, kind) {

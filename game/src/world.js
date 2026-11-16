@@ -1,8 +1,8 @@
 // The fixed-step simulation: spawn, move, collide, collect, level, win, lose.
 // One step is 1/60 s; the renderer never touches this state, so replays are exact.
-import { ELITE, ENEMIES, POOL, STAGES, STAGE_COUNT, xpNeed } from './config.js';
+import { ELITE, ENEMIES, POOL, STAGES, STAGE_COUNT, bossForStage, xpNeed } from './config.js';
 import { onEnemyKilled, updateEnemies, updateSpawner } from './enemies.js';
-import { hurtPlayer, updatePlayer } from './player.js';
+import { hurtPlayer, nearestEnemy, updatePlayer } from './player.js';
 import { rollChoices } from './upgrades.js';
 import { rollStageChoices } from './weapons.js';
 import { updateHints } from './tutorial.js';
@@ -49,6 +49,12 @@ export function gainXp(state, n, fx, audio) {
     state.xp -= xpNeed(state.level); state.level += 1;
     state.player.hp = Math.min(state.player.maxHp, state.player.hp + 10); // levelling up mends the shell a little
     state.levelChoices = rollChoices(state);
+    if (state.levelChoices.length === 0) {
+      // Every track is maxed: the level still lands (score + heal), but there
+      // is no card to pick, so no level-up screen opens.
+      state.levelChoices = null;
+      return;
+    }
     state.cardSource = 'level'; state.phase = 'levelup'; state.levelFlash = 1; // a gold flash marks the level-up
     fx.burst(state.player.x, state.player.y, '#7fe0c3', 20, 200);
     audio.level();
@@ -72,11 +78,9 @@ export function nextStage(state, audio) {
   // suppress the stage-10 boss (bossSpawned stays true otherwise).
   state.bossSpawned = false; state.boss = null;
   state.phase = 'play';
-  if (state.stage === STAGE_COUNT) {
-    state.banner = '⚠ STAGE 10 — THE STORM HERON RETURNS! ⚠'; state.bannerT = 3;
-    if (audio) audio.elite();
-  } else if (state.stage === 5) {
-    state.banner = '⚠ STAGE 5 — THE GREAT HERON! ⚠'; state.bannerT = 3;
+  const boss = bossForStage(state.stage);
+  if (boss) {
+    state.banner = `⚠ STAGE ${state.stage} — ${boss.name}! ⚠`; state.bannerT = 3;
     if (audio) audio.elite();
   } else {
     state.banner = `STAGE ${state.stage} — THE TIDE RISES`; state.bannerT = 2.5;
@@ -133,9 +137,25 @@ export function stepWorld(state, input, dt, fx, audio) {
     audio.pop();
   }
 
-  // Bolts fly, pierce, and pop — arrows and pellets use the same flight code.
+  // Bolts fly, pierce, and pop — arrows, pellets and homing shells share the
+  // flight code; a homing shell steers toward its target (re-acquiring the
+  // nearest creature if its target died).
   for (let i = state.bolts.length - 1; i >= 0; i -= 1) {
     const b = state.bolts[i]; b.life -= dt;
+    if (b.kind === 'homing') {
+      if (!b.target || b.target.hp <= 0 || !state.enemies.includes(b.target)) {
+        b.target = nearestEnemy(state, b.x, b.y, 500);
+      }
+      if (b.target) {
+        const want = Math.atan2(b.target.y - b.y, b.target.x - b.x);
+        let cur = Math.atan2(b.vy, b.vx);
+        let da = want - cur;
+        while (da > Math.PI) da -= Math.PI * 2;
+        while (da < -Math.PI) da += Math.PI * 2;
+        cur += Math.max(-b.turn * dt, Math.min(b.turn * dt, da));
+        b.vx = Math.cos(cur) * b.speed; b.vy = Math.sin(cur) * b.speed;
+      }
+    }
     b.x += b.vx * dt; b.y += b.vy * dt;
     let dead = b.life <= 0;
     for (const e of state.enemies) {
@@ -226,10 +246,11 @@ export function stepWorld(state, input, dt, fx, audio) {
     }
     state.pearls.length = 0;
     if (vacuumedCoins > 0) audio.coin();
+    const clearedBoss = bossForStage(state.stage);
     if (state.stage >= STAGE_COUNT) {
-      state.banner = 'THE STORM HERON FALLS — HIGH TIDE!'; state.bannerT = 1.2;
-    } else if (state.stage === 5) {
-      state.banner = '★ STAGE 5 CLEAR — THE HERON IS DRIVEN OFF! ★'; state.bannerT = 1.2;
+      state.banner = 'THE HERON KING FALLS — HIGH TIDE!'; state.bannerT = 1.2;
+    } else if (clearedBoss) {
+      state.banner = `★ STAGE ${state.stage} CLEAR — ${clearedBoss.name} IS DRIVEN OFF! ★`; state.bannerT = 1.2;
     } else {
       state.banner = `★ STAGE ${state.stage} CLEAR! ★`; state.bannerT = 1.2;
     }

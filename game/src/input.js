@@ -1,7 +1,6 @@
-// Keyboard + mouse, read once per frame. WASD/arrows move, CLICK fires a bubble
-// bolt at the mouse, Space/Shift dash, Q switches weapon, 1/2/3 pick a card,
-// P/Esc pause, M mute, R restart. Weapons attack on their own — the mouse
-// never triggers them.
+// Keyboard + mouse, read once per frame. WASD/arrows move, Space/Shift dash,
+// 1/2/3 pick a card, P/Esc pause, M mute, R restart. Weapons attack on their
+// own — the mouse never triggers them; clicks only work the menus.
 export const ACTION_CONFIRM = 'confirm';
 export const ACTION_PAUSE = 'pause';
 export const ACTION_MUTE = 'mute';
@@ -55,7 +54,9 @@ export function createInput(canvas) {
     },
     mouse() { return { x: mouseX, y: mouseY }; },
     click() { const c = mouseClicked; mouseClicked = false; return c; },
-    switchPressed() { return this.wasPressed('q'); },
-    endFrame() { pressed.clear(); },
+    // A click is an edge event like a keypress: visible to exactly one frame's
+    // menu handling, then discarded — otherwise a click made during play would
+    // linger and instantly unpause the game (or pick a card) much later.
+    endFrame() { pressed.clear(); mouseClicked = false; },
   };
 }

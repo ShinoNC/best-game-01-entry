@@ -36,17 +36,9 @@ function autopilotInput(state) {
   const ed = Math.hypot(ex, ey);
   if (ed > 0.6) { mx += -ex * 2.2; my += -ey * 2.2; }
   const len = Math.hypot(mx, my) || 1;
-  // Aim the bubble bolt at the nearest creature and fire whenever it is ready.
-  let aim = null, ad = 380;
-  for (const e of state.enemies) {
-    const d = Math.hypot(e.x - p.x, e.y - p.y);
-    if (d < ad) { ad = d; aim = e; }
-  }
   return {
     move: () => ({ x: mx / len, y: my / len }),
     dashHeld: () => near >= 3,
-    click: () => aim !== null && state.player.boltCd <= 0,
-    mouse: () => (aim ? { x: aim.x, y: aim.y } : { x: 640, y: 360 }),
     wasPressed: () => false,
   };
 }
@@ -79,7 +71,7 @@ function runUntil(state, pred, maxSteps, fx, audio) {
     if (state.phase === 'levelup' && state.levelChoices) {
       const pick = PICK_ORDER.map((id) => state.levelChoices.find((c) => c.id === id)).find(Boolean)
         || state.levelChoices[0];
-      applyUpgrade(state, pick.id);
+      if (pick) applyUpgrade(state, pick.id);
       state.levelChoices = null; state.phase = 'play';
     } else if (state.phase === 'stageclear' && state.levelChoices) {
       if (!state.stagePicked) pickStageCardAuto(state);
@@ -97,6 +89,10 @@ function runUntil(state, pred, maxSteps, fx, audio) {
 }
 
 export function stageShot(shot, seed, fx, audio) {
+  // Staging runs the full sim synchronously on the main thread — real WebAudio
+  // would create tens of thousands of oscillator nodes for a 30-stage win, so
+  // the staged run is silent.
+  audio = new Proxy({}, { get: () => () => {} });
   if (shot === 'start') {
     return createStateFromSeed(seed);
   }
@@ -116,10 +112,11 @@ export function stageShot(shot, seed, fx, audio) {
     return s2;
   }
   if (shot === 'elite') {
-    // A dense late fight: stage 6+, ten or more creatures on screen, an elite
-    // in frame below the banner.
+    // A dense late fight: stage 12+, ten or more creatures on screen, an elite
+    // in frame below the banner — by then the crab owns several weapons, so
+    // the frame shows the whole arsenal firing at once.
     const s = createStateFromSeed(seed); s.phase = 'play';
-    runUntil(s, (st) => st.phase === 'play' && st.stage >= 6 && st.enemies.length >= 10, 30000, fx, audio);
+    runUntil(s, (st) => st.phase === 'play' && st.stage >= 12 && st.enemies.length >= 10, 60000, fx, audio);
     if (s.phase === 'play') {
       // An elite in frame, near the crab but clamped into the clear zone below
       // the banner and above the bottom bar — never half-hidden behind the HUD.
@@ -128,18 +125,26 @@ export function stageShot(shot, seed, fx, audio) {
       elite.x = Math.min(1030, Math.max(250, s.player.x - 200));
       elite.y = Math.min(560, Math.max(200, s.player.y + 120));
       s.banner = '★ ELITE URCHIN — big pearls!'; s.bannerT = 2.5;
+      // The frame shows the whole arsenal firing at once: the laser beam and
+      // the spin ring are mid-blast when the frame is taken (the staged state
+      // is static, so the timers hold until the screenshot).
+      if (s.weapons.laser > 0) {
+        s.player.laser = 0.15; s.player.laserLen = 420;
+        s.player.laserBeams = s.weapons.laser >= 5 ? 2 : 1;
+      }
+      if (s.weapons.spin > 0) s.player.spin = 0.15;
     }
     return s;
   }
   if (shot === 'boss' || shot === 'storm') {
-    // A boss fight: stage 5's Great Heron, or stage 10's Storm Heron. Try seeds
+    // A boss fight: stage 5's Great Heron, or stage 30's Heron King. Try seeds
     // until the autopilot is alive with the boss in the air, then stage the bird
     // mid-swoop near the crab with a flock of gulls around it — the boss bar,
     // the banner and the dive all in one frame.
     const wantStage = shot === 'storm' ? STAGE_COUNT : 5;
     for (let trySeed = seed; trySeed < seed + 8; trySeed += 1) {
       const s = createStateFromSeed(trySeed); s.phase = 'play';
-      runUntil(s, (st) => st.phase === 'play' && st.stage === wantStage && st.boss, 40000, fx, audio);
+      runUntil(s, (st) => st.phase === 'play' && st.stage === wantStage && st.boss, 120000, fx, audio);
       if (s.phase === 'play' && s.boss && s.stage === wantStage) {
         const b = s.boss;
         // Dive in from the upper right of the crab — clamped into the clear
@@ -156,7 +161,7 @@ export function stageShot(shot, seed, fx, audio) {
           g.y = Math.min(600, Math.max(170, s.player.y + Math.sin(a) * 150));
           g.state = 'circle'; g.diveT = 0.8;
         }
-        s.banner = shot === 'storm' ? 'THE STORM HERON — DRIVE IT OFF!' : 'THE GREAT HERON — DRIVE IT OFF!';
+        s.banner = `${b.name} — DRIVE IT OFF!`;
         s.bannerT = 2.5;
         return s;
       }
@@ -164,7 +169,7 @@ export function stageShot(shot, seed, fx, audio) {
     // Fallback: the autopilot fell before the boss in every seed — take the
     // elite frame instead (still a dense late-game fight, never a blank shot).
     const s = createStateFromSeed(seed); s.phase = 'play';
-    runUntil(s, (st) => st.phase === 'play' && st.stage >= 6 && st.enemies.length >= 10, 30000, fx, audio);
+    runUntil(s, (st) => st.phase === 'play' && st.stage >= 12 && st.enemies.length >= 10, 60000, fx, audio);
     return s;
   }
   if (shot === 'stageclear') {
@@ -183,6 +188,7 @@ export function stageShot(shot, seed, fx, audio) {
         if (!fallback) fallback = s;
         if (s.levelChoices.some((c) => c.isWeapon)) {
           s.player.x = 200; s.player.y = 620; s.player.angle = 0;
+          s.coins = Math.max(s.coins, 150); // some offers affordable, some not — the economy reads at a glance
           fx.clear();
           return s;
         }
@@ -190,6 +196,7 @@ export function stageShot(shot, seed, fx, audio) {
     }
     if (fallback) {
       fallback.player.x = 200; fallback.player.y = 620; fallback.player.angle = 0;
+      fallback.coins = Math.max(fallback.coins, 150);
       fx.clear();
       return fallback;
     }
@@ -197,20 +204,22 @@ export function stageShot(shot, seed, fx, audio) {
     const s = createStateFromSeed(seed); s.phase = 'play';
     runUntil(s, (st) => st.phase === 'stageclear', 20000, fx, audio);
     s.player.x = 200; s.player.y = 620; s.player.angle = 0;
+    s.coins = Math.max(s.coins, 150);
     fx.clear();
     return s;
   }
   if (shot === 'end') {
-    // Try seeds until the autopilot clears all 10 stages; a real victory screen.
+    // Try seeds until the autopilot clears all 30 stages; a real victory screen.
     for (let trySeed = seed; trySeed < seed + 10; trySeed += 1) {
       const s = createStateFromSeed(trySeed); s.phase = 'play';
-      runUntil(s, (st) => st.phase === 'over', 40000, fx, audio);
-      if (s.phase === 'over' && s.result === 'won') return s;
+      runUntil(s, (st) => st.phase === 'over', 120000, fx, audio);
+      if (s.phase === 'over' && s.result === 'won') { fx.clear(); return s; }
     }
     // Fallback: the autopilot fell — a real game-over screen is still a complete loop.
     const s = createStateFromSeed(seed); s.phase = 'play';
-    runUntil(s, (st) => st.phase === 'over', 40000, fx, audio);
+    runUntil(s, (st) => st.phase === 'over', 120000, fx, audio);
     if (s.phase === 'play') { s.phase = 'over'; s.result = 'lost'; s.player.hp = 0; }
+    fx.clear();
     return s;
   }
   return createStateFromSeed(seed);

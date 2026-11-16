@@ -1,6 +1,6 @@
-// Enemies: six behaviours + elites + two boss herons (stages 5 and 10).
+// Enemies: six behaviours + elites + six boss herons (every fifth stage).
 // Criterion 2: each type moves and threatens differently, so positioning matters.
-import { BOSS, BOSS_STORM, ELITE, ENEMIES, POOL, STAGES, STAGE_COUNT, dmgScale, hpScale, spawnWeights, speedScale } from './config.js';
+import { ELITE, ENEMIES, POOL, STAGES, bossForStage, dmgScale, hpScale, spawnWeights, speedScale } from './config.js';
 
 let nextId = 1;
 
@@ -31,30 +31,33 @@ function pickType(state) {
   return 'guppy';
 }
 
-function spawnBoss(state, fx, audio, storm) {
+function spawnBoss(state, fx, audio) {
   state.bossSpawned = true;
-  const def = storm ? BOSS_STORM : BOSS;
+  const def = bossForStage(state.stage);
   const b = spawnEnemy(state, 'gull', true);
-  b.type = storm ? 'stormheron' : 'heron';
+  b.type = def.type;
   b.boss = true;
-  b.name = storm ? 'THE STORM HERON' : 'THE GREAT HERON';
+  b.name = def.name;
   b.hp = def.hp; b.maxHp = def.hp; b.r = def.r;
   b.speed = def.speed; b.dmg = def.dmg; b.score = def.score; b.xp = def.xp;
   b.coins = def.coins;
-  // The Storm Heron is the same bird returned darker, bigger and faster — storm
-  // grey-blue plumage, a quicker dive, and it summons gulls every 7 s.
-  b.color = storm ? '#8a93b8' : '#e8e4d8';
-  b.dark = storm ? '#4a5178' : '#8a8578';
+  // Each heron has its own plumage, dive speed and summons — the later birds
+  // are bigger, faster-diving and call more gulls.
+  b.color = def.color;
+  b.dark = def.dark;
+  b.diveMul = def.dive;
+  b.summonN = def.summon;
+  b.summonEvery = def.summonEvery;
   b.summonT = 5;
   state.boss = b;
-  state.banner = storm ? 'THE STORM HERON RETURNS!' : 'THE GREAT HERON ARRIVES!';
+  state.banner = `${def.name} ARRIVES!`;
   state.bannerT = 3;
   audio.boss(); fx.shake(0.6);
 }
 
-// The spawn director (v4): each stage has a budget of enemies; the stage clears
+// The spawn director: each stage has a budget of enemies; the stage clears
 // when the budget is spent and the pool is empty. One elite per stage (from stage
-// 2) and a boss on every 5th stage (5 and 10), both arriving at half the budget.
+// 2) and a boss on every 5th stage, both arriving at half the budget.
 export function updateSpawner(state, dt, fx, audio) {
   const plan = STAGES[state.stage - 1];
   state.spawnT -= dt;
@@ -72,21 +75,21 @@ export function updateSpawner(state, dt, fx, audio) {
     fx.burst(e.x, e.y, '#ffd166', 14, 180); audio.elite();
   }
   if (plan.boss && !state.bossSpawned && state.stageSpawned >= plan.budget / 2) {
-    spawnBoss(state, fx, audio, state.stage === STAGE_COUNT);
+    spawnBoss(state, fx, audio);
   }
-  // The Storm Heron summons gulls while it lives — its adds do not count against
+  // A summoning heron calls gulls while it lives — its adds do not count against
   // the stage budget, so the fight stays a fight even after the budget is spent.
-  if (state.boss && state.boss.type === 'stormheron') {
+  if (state.boss && state.boss.summonN > 0) {
     state.boss.summonT -= dt;
     if (state.boss.summonT <= 0 && state.enemies.length < 55) {
-      state.boss.summonT = 7;
-      for (let i = 0; i < 2; i += 1) {
+      state.boss.summonT = state.boss.summonEvery;
+      for (let i = 0; i < state.boss.summonN; i += 1) {
         const g = spawnEnemy(state, 'gull', false);
         const a = state.rng.angle();
         g.x = state.boss.x + Math.cos(a) * 120; g.y = state.boss.y + Math.sin(a) * 90;
         g.state = 'circle'; g.diveT = 0.8;
       }
-      fx.burst(state.boss.x, state.boss.y, '#8a93b8', 10, 160);
+      fx.burst(state.boss.x, state.boss.y, state.boss.color, 10, 160);
     }
   }
 }
@@ -106,17 +109,18 @@ export function updateEnemies(state, dt) {
       if (e.lungeT > 0) { e.lungeT -= dt; e.x += nx * sp * 2.4 * dt; e.y += ny * sp * 2.4 * dt; }
       else if (e.lungeCd <= 0 && d < 260) { e.lungeT = 0.45; e.lungeCd = 2.6; }
       else { e.x += nx * sp * 0.55 * dt; e.y += ny * sp * 0.55 * dt; }
-    } else if (e.type === 'gull' || e.type === 'heron' || e.type === 'stormheron') { // swoopers circle, then dive
+    } else if (e.type === 'gull' || e.type.endsWith('heron')) { // swoopers circle, then dive
       e.diveT -= dt;
-      const storm = e.type === 'stormheron';
-      if (e.state === 'approach' && d < 200) { e.state = 'circle'; e.diveT = storm ? 0.8 : 1.1; }
+      const boss = e.type.endsWith('heron');
+      if (e.state === 'approach' && d < 200) { e.state = 'circle'; e.diveT = boss ? 0.8 : 1.1; }
       if (e.state === 'circle') {
         const t = e.wob * 1.4;
         e.x += (Math.cos(t) * 0.8 + nx * 0.2) * sp * dt;
         e.y += (Math.sin(t) * 0.8 + ny * 0.2) * sp * dt;
         if (e.diveT <= 0) { e.state = 'dive'; e.diveT = 0.5; }
       } else if (e.state === 'dive') {
-        e.x += nx * sp * (storm ? 2.6 : 2.1) * dt; e.y += ny * sp * (storm ? 2.6 : 2.1) * dt;
+        const mul = e.diveMul || 2.1;
+        e.x += nx * sp * mul * dt; e.y += ny * sp * mul * dt;
         if (e.diveT <= 0) e.state = 'approach';
       } else { e.x += nx * sp * dt; e.y += ny * sp * dt; }
     } else { // chasers: straight at the crab
@@ -149,7 +153,7 @@ export function onEnemyKilled(state, e, fx) {
   }
   if (e.boss) {
     state.boss = null;
-    state.banner = e.type === 'stormheron' ? 'THE STORM HERON FALLS! +1000' : 'THE HERON IS DRIVEN OFF! +500';
+    state.banner = `${e.name} IS DRIVEN OFF! +${e.score}`;
     state.bannerT = 3;
   }
 }
