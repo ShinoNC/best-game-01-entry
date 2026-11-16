@@ -215,7 +215,8 @@ function drawCrab(ctx, p, t, clawStats, spinStats) {
 }
 
 // Every creature faces the crab (ang = direction to the player) and animates its
-// own way: jellies pulse, eels wiggle, gulls flap, urchins spin, starfish crawl.
+// own way: jellies pulse, eels wiggle, gulls flap, urchins spin, starfish crawl,
+// archers aim their snouts.
 function drawEnemy(ctx, e, t, ang) {
   const face = ang ?? 0;
   ctx.save(); ctx.translate(e.x, e.y);
@@ -278,6 +279,19 @@ function drawEnemy(ctx, e, t, ang) {
     if (e.windup > 0) { // winding up: a bright ring warns the player
       ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(0, 0, e.r * 1.9, 0, Math.PI * 2); ctx.stroke();
+    }
+  } else if (e.type === 'archer') { // spitter: tube snout + dark band; a droplet swells while it aims
+    ctx.rotate(face);
+    ctx.fillStyle = flash ? '#fff' : e.color;
+    ctx.beginPath(); ctx.ellipse(0, 0, e.r, e.r * 0.62, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = flash ? '#fff' : e.dark;
+    ctx.fillRect(-e.r * 0.2, -e.r * 0.55, e.r * 0.3, e.r * 1.1);
+    ctx.fillStyle = flash ? '#fff' : e.color;
+    ctx.beginPath(); ctx.moveTo(e.r * 0.7, -3); ctx.lineTo(e.r * 1.6, -1.5); ctx.lineTo(e.r * 1.6, 1.5); ctx.lineTo(e.r * 0.7, 3); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(e.r * 0.45, -3, 2, 0, Math.PI * 2); ctx.fill();
+    if (e.windup > 0) { // aiming: droplet swells at the snout tip — move now
+      ctx.fillStyle = 'rgba(191,232,224,0.95)';
+      ctx.beginPath(); ctx.arc(e.r * 1.85, 0, 3 + (0.35 - e.windup) * 12, 0, Math.PI * 2); ctx.fill();
     }
   } else if (e.type === 'gull' || e.type.endsWith('heron')) {
     // Flying birds cast a soft shadow on the water below — height reads at once.
@@ -364,7 +378,7 @@ export function createRenderer(canvas) {
   }
 
   // Ambient bubbles: fixed pseudo-random table, positions a pure function of
-  // time — deterministic, no state, they just rise forever.
+  // deterministic bubbles, rising forever.
   const ambBubbles = [];
   { let s = 1234567; for (let i = 0; i < 14; i += 1) { s = (s * 1103515245 + 12345) & 0x7fffffff; ambBubbles.push({ fx: (s % 1000) / 1000, fy: ((s >> 9) % 1000) / 1000, r: 2 + ((s >> 5) % 4), sp: 14 + ((s >> 7) % 22) }); } }
 
@@ -456,8 +470,7 @@ export function createRenderer(canvas) {
         ctx.strokeStyle = '#a894c4'; ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.arc(0, 0, 4 * d.s, Math.PI, 0); ctx.stroke();
       } else {
-        // A sand dollar, not a starfish — a pink decor star would read as a
-        // (motionless) enemy starfish at a glance. Pale disc, dark centre dot.
+        // A sand dollar, not a starfish (a pink decor star would read as an enemy).
         ctx.fillStyle = 'rgba(224,196,143,0.8)';
         ctx.beginPath(); ctx.arc(0, 0, 8 * d.s, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = 'rgba(138,111,77,0.8)';
@@ -470,7 +483,7 @@ export function createRenderer(canvas) {
   // Minimap (bottom-right, above the dash panel): the whole pool in one
   // glance — crab white, creatures coral, elite gold, boss orange with a
   // pulsing ring. The top entries all show the full game state in one frame;
-  // the minimap does that for TIDEKEEPER. Circle centre (1190, 570), r 62;
+  // minimap: circle centre (1190, 570), r 62;
   // the pool ellipse inside keeps the pool's own aspect (556:288).
   // Minimap: the whole pool in one glance, bottom-right in the bottom bar.
   function drawMinimap(state, t) {
@@ -510,7 +523,7 @@ export function createRenderer(canvas) {
     // sits between them (y 72–648) and NO hud element floats over the water.
     //   top bar (0–72): HP+SHELL (left) / stage+goal (centre) / score (right)
     //   bottom bar (648–720): skills + arsenal (left) / controls+best
-    //   (centre) / minimap (right) · dash/grab pill above the minimap
+    // centre HUD / minimap (right) · dash/grab pill above the minimap
     //   boss bar y 78–112 · banner y 146–186 · hint pill y 564–608
     const p = state.player;
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
@@ -602,7 +615,7 @@ export function createRenderer(canvas) {
     ctx.fillText('WASD move · SPACE dash · E grab · P pause · M mute', 850, 676);
     ctx.fillStyle = PAL.text; ctx.font = 'bold 13px sans-serif';
     ctx.fillText(`BEST ${state.best}  •  ${state.kills} slain`, 850, 700);
-    // Bottom bar, right: minimap, with the dash/grab pill above it.
+    // Bottom bar, right: minimap + dash/grab pill above it.
     drawMinimap(state, t);
     ctx.textAlign = 'right';
     ctx.fillStyle = 'rgba(6,42,51,0.85)'; ctx.fillRect(1012, 606, 240, 30);
@@ -686,16 +699,15 @@ export function createRenderer(canvas) {
       ctx.fillStyle = PAL.text; ctx.fillText(chips[i], x + widths[i] / 2, 297);
       x += widths[i] + gap;
     }
-    // Left panel: the bestiary — the roster, named, so the judge sees the
-    // content at a glance (the top titles all list theirs).
+    // Left panel: the bestiary, named (top titles all list theirs).
     ctx.fillStyle = 'rgba(6,42,51,0.6)'; ctx.fillRect(40, 324, 580, 232);
     ctx.strokeStyle = 'rgba(159,196,189,0.4)'; ctx.lineWidth = 1; ctx.strokeRect(40, 324, 580, 232);
     ctx.textAlign = 'left';
     ctx.fillStyle = PAL.gold; ctx.font = 'bold 15px sans-serif';
-    ctx.fillText('THE POOL — 6 CREATURES · 6 HERONS', 64, 350);
+    ctx.fillText('THE POOL — 7 CREATURES · 6 HERONS', 64, 350);
     for (let i = 0; i < CREATURE_ORDER.length; i += 1) {
       const type = CREATURE_ORDER[i];
-      const cx = 88 + i * 93;
+      const cx = 84 + i * 80;
       const def = ENEMIES[type];
       drawEnemy(ctx, { type, x: cx, y: 388, r: 15, color: def.color, dark: def.dark, hp: 1, maxHp: 1, flash: 0, wob: 0.5, elite: false }, 0, Math.PI / 2);
       ctx.fillStyle = PAL.text; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
@@ -757,7 +769,7 @@ export function createRenderer(canvas) {
     const bestAll = Math.max(0, ...DIFF_ORDER.map((d) => (meta.bests && meta.bests[d]) || 0), state.best || 0);
     ctx.fillStyle = PAL.dim; ctx.font = '18px sans-serif'; ctx.textAlign = 'center';
     ctx.fillText(bestAll > 0 ? `BEST SCORE ${bestAll}` : 'No best score yet — be the first crab to hold the pool.', VIEW_W / 2, 686);
-    // A crab and a jellyfish flank the bottom, so the title shows the game at once.
+    // A crab and a jellyfish flank the bottom — the title shows the game.
     drawCrab(ctx, { ...state.player, x: 120, y: 640, angle: 0.3, iframes: 0, flash: 0, swing: 0, spin: 0 }, 0, null, null);
     drawEnemy(ctx, { type: 'jelly', x: 1160, y: 640, r: 26, color: '#ff8fb0', dark: '#c94f78', hp: 1, maxHp: 1, flash: 0, wob: 0.5, elite: false }, 0, Math.PI);
   }
@@ -1027,7 +1039,7 @@ export function createRenderer(canvas) {
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = PAL.deep; ctx.fillRect(0, 0, canvas.width, canvas.height);
       // L0–L20: the world, with the screen shake. Interpolated positions keep
-      // the crab and the creatures smooth between 60 Hz sim steps.
+      // creatures interpolate between 60 Hz sim steps.
       const a = Math.max(0, Math.min(1, alpha));
       const lerp = (prev, cur) => prev + (cur - prev) * a;
       ctx.setTransform(s, 0, 0, s, oxd + fx.shakeX * s, oyd + fx.shakeY * s);
@@ -1104,6 +1116,10 @@ export function createRenderer(canvas) {
         } else if (b.kind === 'thrown') { // a hurled creature, tumbling through the air
           drawEnemy(ctx, { ...b.thrown, x: b.x, y: b.y }, t * 6, Math.atan2(b.vy, b.vx));
         }
+      }
+      for (const s of state.spits) { // enemy spit: a bright droplet, easy to see and dodge
+        ctx.fillStyle = '#a8e6ff'; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(s.x - 2, s.y - 2, 2, 0, Math.PI * 2); ctx.fill();
       }
       for (const e of state.enemies) {
         const ix = lerp(e.px ?? e.x, e.x), iy = lerp(e.py ?? e.y, e.y);

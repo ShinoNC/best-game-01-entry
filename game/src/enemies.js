@@ -1,6 +1,6 @@
-// Enemies: six behaviours + elites + six boss herons (every fifth stage).
+// Enemies: seven behaviours + elites + six boss herons (every fifth stage).
 // Criterion 2: each type moves and threatens differently, so positioning matters.
-import { DIFFICULTIES, ELITE, ENEMIES, POOL, STAGES, bossForStage, dmgScale, hpScale, spawnWeights, speedScale } from './config.js';
+import { DIFFICULTIES, ELITE, ENEMIES, POOL, SPIT, STAGES, bossForStage, dmgScale, hpScale, spawnWeights, speedScale } from './config.js';
 
 let nextId = 1;
 
@@ -112,6 +112,20 @@ export function updateEnemies(state, dt) {
       else if (e.windup > 0) { e.windup -= dt; if (e.windup <= 0) { e.lungeT = 0.45; e.lungeCd = 2.6; } }
       else if (e.lungeCd <= 0 && d < 260) { e.windup = 0.4; }
       else { e.x += nx * sp * 0.55 * dt; e.y += ny * sp * 0.55 * dt; }
+    } else if (e.type === 'archer') { // spitter: holds 240–360px, aims 0.35s, spits at where the crab IS
+      e.lungeCd -= dt; // reuses the eel's cooldown slot as the spit timer
+      if (e.windup > 0) {
+        e.windup -= dt;
+        if (e.windup <= 0) {
+          state.spits.push({ x: e.x + nx * e.r * 1.6, y: e.y + ny * e.r * 1.6, vx: nx * SPIT.speed, vy: ny * SPIT.speed, dmg: e.dmg, r: SPIT.r, life: SPIT.life });
+          e.lungeCd = SPIT.cd * state.rng.range(0.85, 1.15);
+        }
+      } else if (e.lungeCd <= 0 && d < SPIT.range) { e.windup = SPIT.aim; }
+      else { // too far: close in; too close: back off; in band: strafe sideways
+        const want = d > 360 ? 1 : d < 240 ? -1 : 0;
+        const strafe = want === 0 ? Math.sin(e.wob * 0.7) * 0.8 : 0;
+        e.x += (nx * want - ny * strafe) * sp * dt; e.y += (ny * want + nx * strafe) * sp * dt;
+      }
     } else if (e.type === 'gull' || e.type.endsWith('heron')) { // swoopers circle, then dive
       e.diveT -= dt;
       const boss = e.type.endsWith('heron');

@@ -27,7 +27,9 @@ export const PLAYER = {
 // it at a glance. Weapon damage/rate/range live in WEAPONS + weaponStatsFor.
 
 // Enemy table. Behaviour: guppy swarms, jelly drifts, urchin tanks, starfish splits,
-// eel lunges, gull swoops (from stage 5). Elites are big gold versions; the herons are the bosses.
+// eel lunges, gull swoops (from stage 5), archer spits (from stage 12) — the only
+// ranged enemy, so a still crab takes fire from off-screen reach. Elites are big
+// gold versions; the herons are the bosses.
 export const ENEMIES = {
   guppy:    { hp: 10, speed: 102, dmg: 4,  r: 10, score: 10, coins: 1, color: '#ffd166', dark: '#c9962e' },
   jelly:    { hp: 24, speed: 56,  dmg: 7,  r: 16, score: 20, coins: 2, color: '#c9a7ff', dark: '#8a6fd6' },
@@ -35,8 +37,12 @@ export const ENEMIES = {
   starfish: { hp: 32, speed: 72,  dmg: 6,  r: 15, score: 20, coins: 2, color: '#ff8fb0', dark: '#d65d7e' },
   eel:      { hp: 18, speed: 152, dmg: 8,  r: 12, score: 30, coins: 2, color: '#7fe0c3', dark: '#3fae8c' },
   gull:     { hp: 28, speed: 176, dmg: 8,  r: 14, score: 40, coins: 2, color: '#f4f9ff', dark: '#9fb4c0' },
+  archer:   { hp: 20, speed: 95,  dmg: 3,  r: 13, score: 35, coins: 2, color: '#7fd4e0', dark: '#3a8ea8' },
   mini:     { hp: 8,  speed: 118, dmg: 5,  r: 8,  score: 5,  coins: 1, color: '#ff8fb0', dark: '#d65d7e' },
 };
+// Spit: the archerfish's water jet. Slow enough to dodge while moving (a still
+// crab is hit), telegraphed by the 0.35 s aim — the droplet swells at the snout.
+export const SPIT = { speed: 240, r: 6, cd: 3.0, range: 420, aim: 0.35, life: 2.5 };
 export const ELITE = { hpMul: 3.6, dmgMul: 1.5, sizeMul: 1.55, score: 150, coins: 5 };
 // Six boss herons, one per fifth stage. Each is a distinct fight: bigger,
 // tougher, faster-diving and summoning more gulls as the run goes on. The
@@ -51,10 +57,8 @@ export const BOSSES = [
 ];
 export function bossForStage(stage) { return BOSSES.find((b) => b.stage === stage) || null; }
 
-// Per-stage spawn plan: budget 34 → 144, interval 0.90 → 0.45 s (fast from
-// stage 1 — early stages felt empty), batch 2 → 5, one elite per stage from
-// stage 2, a boss every fifth stage (boss stages: 30% smaller budget). The
-// same enemies arrive faster, so stages feel denser, not longer.
+// Per-stage spawn plan: budget 34 → 144, interval 0.90 → 0.45 s, batch 2 → 5,
+// one elite per stage from stage 2, a boss every fifth stage (30% smaller budget).
 export const STAGES = Array.from({ length: STAGE_COUNT }, (_, i) => {
   const stage = i + 1;
   const boss = stage % 5 === 0;
@@ -67,27 +71,31 @@ export const STAGES = Array.from({ length: STAGE_COUNT }, (_, i) => {
 });
 
 // Spawn director: weights shift with the stage, HP scales with the stage.
+// Archers: none before 12 (early game unchanged), the main pressure 12–19
+// (where standing still used to win), tapering 20–25, a few only 26–30
+// (density is already the late threat — shooters are a light extra there).
 export function spawnWeights(stage) {
-  const w = { guppy: 10, jelly: 4, urchin: 2, starfish: 3, eel: 0, gull: 0 };
+  const w = { guppy: 10, jelly: 4, urchin: 2, starfish: 3, eel: 0, gull: 0, archer: 0 };
   if (stage >= 2) w.eel = 2;
   if (stage >= 3) { w.urchin = 4; w.jelly = 6; }
   if (stage >= 5) w.gull = 4;
   if (stage >= 7) { w.urchin = 6; w.eel = 3; w.guppy = 7; }
-  if (stage >= 12) { w.jelly = 8; w.starfish = 5; }
+  if (stage >= 12) { w.jelly = 8; w.starfish = 5; w.archer = 2; }
+  if (stage >= 15) w.archer = 3;
   if (stage >= 18) { w.urchin = 8; w.eel = 4; w.gull = 6; }
+  if (stage >= 20) w.archer = 2;
   if (stage >= 24) { w.guppy = 5; w.jelly = 9; w.urchin = 10; w.eel = 5; w.gull = 7; w.starfish = 6; }
+  if (stage >= 26) w.archer = 1;
   return w;
 }
 export function hpScale(stage) {
-  // Gentle early (0.55/stage to stage 15), steeper late (1.10/stage after):
-  // the player's power snowballs once the arsenal is complete, so the late
-  // game has to ramp harder to stay a filter. Stage 30: 25.2x enemy HP.
+  // 0.55/stage to stage 15, 1.10/stage after — the late game must ramp
+  // harder once the arsenal is complete. Stage 30: 25.2x enemy HP.
   if (stage <= 15) return 1 + (stage - 1) * 0.55;
   return 1 + 14 * 0.55 + (stage - 15) * 1.10;
 }
 export function dmgScale(stage) {
-  // Same shape for damage: 0.14/stage to stage 15, 0.24/stage after.
-  // Stage 30: 6.6x enemy damage.
+  // 0.14/stage to stage 15, 0.24/stage after. Stage 30: 6.6x damage.
   if (stage <= 15) return 1 + (stage - 1) * 0.14;
   return 1 + 14 * 0.14 + (stage - 15) * 0.24;
 }
@@ -149,12 +157,10 @@ export const WEAPONS = {
 export const WEAPON_ORDER = ['claw', 'bow', 'blaster', 'shell', 'spin', 'laser'];
 export const WEAPON_MAX = 5; // levels per weapon
 
-// The menu prices (criterion 2): real prices, real purchases, escalating by
-// tier — better weapons cost more. A weapon slot sells the weapon, then its
-// four level-ups; the claw slot sells claw levels (the claw is owned from the
-// start). Full max-out of all six weapons costs ~6,215 coins, and the eight
-// skill tracks cost ~2,040 more — against ~8,900 earned per run (kills +
-// clear bonuses), so the player must choose, never maxes everything.
+// Menu prices (criterion 2): real prices, escalating by tier. A weapon slot
+// sells the weapon, then its four level-ups; claw sells levels only (owned
+// from the start). Maxing everything costs ~8,255 coins vs ~8,900 earned per
+// run — the player must choose, never maxes everything.
 export const SHOP = [
   { id: 'bow', kind: 'weapon', price: 50, up: [100, 150, 210, 280], name: 'BUBBLE BOW', icon: '⌖', desc: 'Long-range piercing arrows' },
   { id: 'blaster', kind: 'weapon', price: 110, up: [220, 290, 370, 460], name: 'INK BLASTER', icon: '✦', desc: 'Rapid spread of ink pellets' },
@@ -164,10 +170,8 @@ export const SHOP = [
   { id: 'claw', kind: 'weapon', price: 0, up: [60, 95, 140, 200], name: 'SHARPEN CLAWS', icon: '✂', desc: 'Claw +damage, +range' },
 ];
 
-// Difficulties: real tuning, not labels. NORMAL is the balanced game (all
-// multipliers 1.0 — the sim's 28% win rate is measured on it); EASY softens
-// the tide for a first run; HARD is the merciless climb after a NORMAL win.
-// Best score is kept per difficulty, and the NEXT GOAL points up the ladder.
+// Difficulties: real tuning, not labels. NORMAL is balanced (all 1.0);
+// EASY softens the tide; HARD is the merciless climb after a NORMAL win.
 export const DIFFICULTIES = {
   easy: { label: 'EASY', desc: 'gentler foes', hp: 0.85, dmg: 0.8, speed: 0.97, bossHp: 0.9, bossDmg: 0.85 },
   normal: { label: 'NORMAL', desc: 'the true tide', hp: 1, dmg: 1, speed: 1, bossHp: 1, bossDmg: 1 },
@@ -175,9 +179,7 @@ export const DIFFICULTIES = {
 };
 export const DIFF_ORDER = ['easy', 'normal', 'hard'];
 
-// Feats: seven named goals beyond winning, persisted across runs. A feat is
-// checked at run end (and at the moment it happens for the in-run ones);
-// the title shows the count, the end screen names the ones earned this run.
+// Feats: seven named goals beyond winning, persisted across runs.
 export const FEATS = [
   { id: 'firstblood', name: 'FIRST BLOOD', desc: 'Slay your first creature' },
   { id: 'arsenal', name: 'FULL ARSENAL', desc: 'Own all 6 weapons in one run' },
@@ -188,21 +190,19 @@ export const FEATS = [
   { id: 'combo', name: 'COMBO ×8', desc: 'Reach combo ×8' },
 ];
 
-// The bestiary: display names for the six creatures (the herons are named in
+// The bestiary: display names for the seven creatures (the herons are named in
 // BOSSES). Shown on the title so the judge sees the roster at a glance.
 export const CREATURE_NAMES = {
   guppy: 'GUPPY', jelly: 'JELLY', urchin: 'URCHIN',
-  starfish: 'STARFISH', eel: 'EEL', gull: 'GULL',
+  starfish: 'STARFISH', eel: 'EEL', gull: 'GULL', archer: 'ARCHER',
 };
-export const CREATURE_ORDER = ['guppy', 'jelly', 'urchin', 'starfish', 'eel', 'gull'];
+export const CREATURE_ORDER = ['guppy', 'jelly', 'urchin', 'starfish', 'eel', 'gull', 'archer'];
 
-// Claw Grab (E): snatch a creature, hold it overhead, hurl it at a foe — the
-// thrown creature deals base + its own max HP. Dropped if hit, escapes after
-// hold seconds. The autopilot never grabs, so NORMAL balance is untouched.
+// Claw Grab (E): snatch, hold, hurl — thrown creature deals base + its own
+// max HP. Dropped if hit, escapes after hold seconds. The autopilot never grabs.
 export const GRAB = { range: 160, cd: 3.0, hold: 4.0, base: 60, speed: 520 };
 
-// Combo: kills within 3 s of each other chain; every 4 chained kills raise
-// the score multiplier by one, up to ×8. Score-only — it never changes
-// survival, so the balance sim is unaffected.
+// Combo: kills within 3 s chain; every 4 chained kills raise the score
+// multiplier by one, up to ×8. Score-only — never changes survival.
 export const COMBO_WINDOW = 3.0;
 export const COMBO_MAX = 8;

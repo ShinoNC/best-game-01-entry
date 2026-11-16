@@ -43,7 +43,7 @@ export function createState(rng, seed, difficulty = 'normal') {
     // against the stage budget; the stage clears when the budget is spent and
     // the pool is empty. stageClearT is the banner beat before the menu.
     stage: 1, stageSpawned: 0, stageEliteDone: false, stageClearT: 0,
-    enemies: [], bolts: [], drops: [], pickups: [], inks: [],
+    enemies: [], bolts: [], spits: [], drops: [], pickups: [], inks: [],
     kills: 0, score: 0, spawnT: 0.8, bossSpawned: false,
     boss: null, banner: '', bannerT: 0, bubbleT: 6, result: null, best: 0,
     // The stage-clear menu: the 5-card hand, rerolls used this visit, the
