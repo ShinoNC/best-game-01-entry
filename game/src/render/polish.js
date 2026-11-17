@@ -1,4 +1,3 @@
-// Fonts: Press Start 2P (headings) + VT323 (body), monospace fallback.
 export const PXF = '"Press Start 2P", monospace';
 export const VTF = '"VT323", monospace';
 export function px(n) { return `${n}px ${PXF}`; }

@@ -193,7 +193,6 @@ function continueRun(slot, s) {
   state.slot = slot;
   state.stage = s.stage;
   state.level = s.level; state.xp = s.xp;
-  // Recompute xpNext from the CURRENT curve (old saves carry stale values).
   state.xpNext = xpNeed(s.level);
   state.coins = s.coins; state.coinsEarned = s.coinsEarned; state.potions = s.potions || 0;
   state.score = s.score; state.kills = s.kills; state.time = s.time || 0;

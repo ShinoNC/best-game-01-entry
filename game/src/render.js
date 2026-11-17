@@ -52,8 +52,6 @@ export function createRenderer(canvas) {
       const lerp = (prev, cur) => prev + (cur - prev) * a;
       ctx.setTransform(s, 0, 0, s, oxd + fx.shakeX * s, oyd + fx.shakeY * s);
 
-      // Fill the letterbox strips (visible area outside the 1280x720 view)
-      // with the same background as the current screen, so no flat color bars show.
       const vx0 = -ox / scale, vy0 = -oy / scale, vw = cssW / scale, vh = cssH / scale;
       if (state.phase === 'stageclear' || state.phase === 'over') {
         ctx.fillStyle = '#072a35';

@@ -8,11 +8,9 @@ import {dither, pxBar, pxFrame, pxPanel, txt, px, vt} from './polish.js';
 export function drawHud(ctx, state, t) {
   const p = state.player;
   ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-  // Top/bottom strips: high-contrast dither.
   ctx.fillStyle = dither(ctx, 'rgba(13,74,92,0.95)', 'rgba(4,26,32,0.95)');
   ctx.fillRect(0, 0, POOL.x1, 72);
   ctx.fillRect(0, VIEW_H - 72, POOL.x1, 72);
-  // Pixel divider: alternating gold / dark blocks.
   for (let x = 0; x < POOL.x1; x += 16) {
     ctx.fillStyle = (x / 16) % 2 === 0 ? 'rgba(255,209,102,0.75)' : 'rgba(4,26,32,0.95)';
     ctx.fillRect(x, 69, 16, 4);
@@ -92,7 +90,6 @@ export function drawHud(ctx, state, t) {
     ctx.textAlign = 'left';
     txt(ctx, num, x0 + 16, 670, PAL.armor, 3);
   }
-  // Potion box: flask icon + count, click or E to drink (+25 HP).
   const nPot = state.potions || 0;
   pxFrame(ctx, POTION_BOX.x - 2, POTION_BOX.y - 2, 60, 60, nPot > 0 ? '#ff5d73' : 'rgba(255,255,255,0.25)', 2);
   ctx.fillStyle = dither(ctx, nPot > 0 ? 'rgba(255,93,115,0.22)' : 'rgba(255,255,255,0.08)', 'rgba(0,0,0,0.25)');
@@ -103,6 +100,16 @@ export function drawHud(ctx, state, t) {
   ctx.restore();
   ctx.font = vt(15); ctx.textAlign = 'center';
   txt(ctx, nPot > 0 ? `×${nPot} [E]` : '[E]', POTION_BOX.x + 28, POTION_BOX.y + 49, nPot > 0 ? PAL.text : PAL.dim, 1);
+  const dX = POOL.cx - 216, dY = 656, dReady = p.dashCd <= 0;
+  pxFrame(ctx, dX - 2, dY - 2, 60, 60, dReady ? PAL.gold : 'rgba(255,255,255,0.25)', 2);
+  ctx.fillStyle = dither(ctx, dReady ? 'rgba(255,209,102,0.22)' : 'rgba(255,255,255,0.08)', 'rgba(0,0,0,0.25)');
+  ctx.fillRect(dX, dY, 56, 56);
+  ctx.save();
+  if (!dReady) ctx.globalAlpha = 0.35;
+  drawSkillIcon(ctx, 'tempo', dX + 28, dY + 22, 30, true);
+  ctx.restore();
+  ctx.font = vt(15); ctx.textAlign = 'center';
+  txt(ctx, dReady ? 'SPACE' : `${p.dashCd.toFixed(1)}s`, dX + 28, dY + 49, dReady ? PAL.text : PAL.dim, 1);
   for (let i = 0; i < UPGRADE_DEFS.length; i += 1) {
     const d = UPGRADE_DEFS[i];
     const lv = state.ups[d.id];
@@ -117,9 +124,6 @@ export function drawHud(ctx, state, t) {
       txt(ctx, `Lv${lv}`, bx + 26, by + 47, PAL.text, 1);
     }
   }
-  ctx.textAlign = 'right';
-  ctx.font = px(9);
-  txt(ctx, p.dashCd <= 0 ? 'DASH READY' : `DASH ${p.dashCd.toFixed(1)}s`, POOL.x1 - 40, 627, PAL.text, 3);
   if (state.bannerT > 0) {
     ctx.textAlign = 'center'; ctx.globalAlpha = Math.min(1, state.bannerT);
     ctx.font = px(19);
