@@ -1,0 +1,81 @@
+// Small drawn shapes every screen shares: stars, hearts, the six weapon
+// icons and the level pips. One place, so the HUD, the menu and the end
+// screen all draw the same icon for the same weapon.
+import { WEAPON_MAX } from '../config.js';
+
+export function star(ctx, x, y, r, rot, color) {
+  ctx.fillStyle = color; ctx.beginPath();
+  for (let i = 0; i < 10; i += 1) {
+    const a = rot + (i * Math.PI) / 5, rr = i % 2 ? r * 0.45 : r;
+    const px = x + Math.cos(a) * rr, py = y + Math.sin(a) * rr;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.closePath(); ctx.fill();
+}
+
+// Health is a HEART: the HUD + SHELL REPAIR card use ♥, so the pickup must
+// match — a star reads as score, not health. Two bezier lobes + a point.
+export function heart(ctx, x, y, r, c) {
+  ctx.fillStyle = c; ctx.beginPath();
+  ctx.moveTo(x, y + r * 0.85);
+  ctx.bezierCurveTo(x - r * 1.25, y, x - r * 0.6, y - r, x, y - r * 0.3);
+  ctx.bezierCurveTo(x + r * 0.6, y - r, x + r * 1.25, y, x, y + r * 0.85);
+  ctx.closePath(); ctx.fill();
+}
+
+// Drawn weapon icons (40-unit box, centred on x,y): pincer, bow+arrow,
+// ink burst, spiral shell, whirlpool arrow, gun+beam. Unowned = dimmed.
+export function drawWeaponIcon(ctx, id, x, y, s, owned) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s / 40, s / 40);
+  if (!owned) ctx.globalAlpha = 0.35;
+  if (id === 'claw') {
+    ctx.fillStyle = '#ff7a3c'; ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#062a33';
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(15, -7); ctx.lineTo(15, 7); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#d94f1e'; ctx.beginPath(); ctx.arc(-4, 0, 4, 0, Math.PI * 2); ctx.fill();
+  } else if (id === 'bow') {
+    ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(-6, 0, 16, -1.1, 1.1); ctx.stroke();
+    ctx.strokeStyle = '#f4f9ff'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(2, -15); ctx.lineTo(2, 15); ctx.stroke();
+    ctx.strokeStyle = '#bfe8e0'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(-8, 0); ctx.lineTo(14, 0); ctx.stroke();
+    ctx.fillStyle = '#e8fffa'; ctx.beginPath(); ctx.arc(15, 0, 4, 0, Math.PI * 2); ctx.fill();
+  } else if (id === 'blaster') {
+    ctx.fillStyle = '#7b5cff';
+    for (const [bx, by, br] of [[-6, -9, 6], [4, -2, 7], [-6, 9, 6]]) {
+      ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.fillStyle = '#3a2d5e'; ctx.fillRect(-18, -4, 9, 8);
+    ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.beginPath(); ctx.arc(2, -4, 2, 0, Math.PI * 2); ctx.fill();
+  } else if (id === 'shell') {
+    ctx.strokeStyle = '#d8cfe8'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    for (const r of [14, 10, 6]) { ctx.beginPath(); ctx.arc(0, 0, r, 0.4, Math.PI * 1.8); ctx.stroke(); }
+    ctx.fillStyle = '#a894c4'; ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI * 2); ctx.fill();
+  } else if (id === 'laser') {
+    ctx.fillStyle = '#3a2d5e'; ctx.fillRect(-18, -5, 14, 10);
+    ctx.fillStyle = '#8a7fb8'; ctx.fillRect(-6, -2, 10, 4);
+    ctx.strokeStyle = '#ff2e88'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(18, 0); ctx.stroke();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(18, 0); ctx.stroke();
+    ctx.fillStyle = '#ff2e88'; ctx.beginPath(); ctx.arc(19, 0, 3, 0, Math.PI * 2); ctx.fill();
+  } else { // spin: a whirlpool arrow
+    ctx.strokeStyle = '#7fe0c3'; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(0, 0, 13, 0.4, 4.8); ctx.stroke();
+    ctx.fillStyle = '#7fe0c3';
+    ctx.beginPath(); ctx.moveTo(13, -6); ctx.lineTo(18, 2); ctx.lineTo(9, 2); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(127,224,195,0.6)'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(0, 0, 6.5, 2.2, 5.6); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// Level pips: five dots, filled = owned levels, gold = the next level (the
+// one a card or shop buy would add), empty = the rest. Centred on (cx, y).
+export function drawPips(ctx, cx, y, lv, next) {
+  for (let i = 0; i < WEAPON_MAX; i += 1) {
+    ctx.fillStyle = i < lv ? '#7fe0c3' : (next && i === lv ? '#ffd166' : 'rgba(255,255,255,0.25)');
+    ctx.beginPath(); ctx.arc(cx - 24 + i * 12, y, 4, 0, Math.PI * 2); ctx.fill();
+  }
+}

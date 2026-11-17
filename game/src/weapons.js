@@ -1,0 +1,78 @@
+// Weapons (criterion 2): six tools with six feels, bought with coins earned
+// by killing creatures. ALL owned weapons fire at once, each on its own
+// cooldown — there is no equipped weapon. A new weapon is ADDED, never
+// replaces one. Each fires at the nearest creature in ITS range (laser =
+// fixed horizontal beams; Lv5 laser = TWO beams). The upgrade tracks
+// (claws/tempo/reach) multiply the damage/rate/range of ALL weapons, so
+// every upgrade stays meaningful. The stage-clear menu (cards.js) owns
+// buying: new weapons, weapon level-ups and skill cards are all cards
+// with coin prices.
+import { WEAPON_MAX } from './config.js';
+
+// The weapon table: five levels each. Lv1 bow = 1 arrow, Lv1 blaster =
+// 1 pellet — more projectiles, faster fire and more damage per level.
+export const WEAPONS = {
+  claw: { name: 'CLAW', icon: '✂', desc: 'Slow heavy cleave, wide arc',
+    levels: [
+      { dmg: 14, rate: 0.60, range: 140, arc: 1.6, hits: 4 },
+      { dmg: 16, rate: 0.55, range: 148, arc: 1.65, hits: 4 },
+      { dmg: 18, rate: 0.50, range: 155, arc: 1.7, hits: 5 },
+      { dmg: 20, rate: 0.46, range: 162, arc: 1.75, hits: 5 },
+      { dmg: 23, rate: 0.42, range: 170, arc: 1.85, hits: 6 },
+    ] },
+  bow: { name: 'BUBBLE BOW', icon: '⌖', desc: 'Long-range piercing arrows',
+    levels: [
+      { dmg: 22, rate: 0.80, range: 420, arrows: 1, pierce: 2 },
+      { dmg: 25, rate: 0.74, range: 440, arrows: 2, pierce: 2 },
+      { dmg: 28, rate: 0.68, range: 460, arrows: 2, pierce: 2 },
+      { dmg: 32, rate: 0.62, range: 480, arrows: 3, pierce: 2 },
+      { dmg: 36, rate: 0.56, range: 500, arrows: 3, pierce: 3 },
+    ] },
+  blaster: { name: 'INK BLASTER', icon: '✦', desc: 'Rapid spread of ink pellets',
+    levels: [
+      { dmg: 9, rate: 0.42, range: 320, pellets: 1 },
+      { dmg: 10, rate: 0.38, range: 330, pellets: 2 },
+      { dmg: 11, rate: 0.34, range: 340, pellets: 3 },
+      { dmg: 12, rate: 0.30, range: 350, pellets: 4 },
+      { dmg: 14, rate: 0.26, range: 365, pellets: 5 },
+    ] },
+  shell: { name: 'HOMING SHELL', icon: '◎', desc: 'Slow shell that chases prey',
+    levels: [
+      { dmg: 26, rate: 1.10, range: 480, turn: 3.2, speed: 380 },
+      { dmg: 29, rate: 1.05, range: 500, turn: 3.4, speed: 380 },
+      { dmg: 32, rate: 1.00, range: 520, turn: 3.6, speed: 390 },
+      { dmg: 36, rate: 0.95, range: 540, turn: 3.8, speed: 400 },
+      { dmg: 41, rate: 0.88, range: 560, turn: 4.0, speed: 410 },
+    ] },
+  spin: { name: 'WHIRLPOOL SPIN', icon: '↻', desc: 'Ring blast around the crab',
+    levels: [
+      { dmg: 16, rate: 1.60, range: 150 },
+      { dmg: 18, rate: 1.50, range: 160 },
+      { dmg: 20, rate: 1.40, range: 170 },
+      { dmg: 23, rate: 1.30, range: 180 },
+      { dmg: 26, rate: 1.20, range: 195 },
+    ] },
+  laser: { name: 'LASER GUN', icon: '≋', desc: 'Fixed horizontal beam',
+    levels: [
+      { dmg: 30, rate: 1.40, range: 300, beams: 1 },
+      { dmg: 36, rate: 1.30, range: 360, beams: 1 },
+      { dmg: 43, rate: 1.20, range: 420, beams: 1 },
+      { dmg: 50, rate: 1.10, range: 480, beams: 1 },
+      { dmg: 60, rate: 1.00, range: 560, beams: 2 },
+    ] },
+};
+
+// Effective stats of ONE weapon (by id): its level table, multiplied by the
+// crab's upgrade tracks. One function, so the sim and the HUD always agree.
+export function weaponStatsFor(state, id) {
+  const lv = state.weapons[id];
+  const def = WEAPONS[id].levels[Math.max(0, Math.min(WEAPON_MAX, lv) - 1)];
+  return {
+    dmg: def.dmg * 1.14 * (1.10 ** state.ups.claws), // 1.14x base: the crab should feel powerful
+    rate: def.rate * (0.90 ** state.ups.tempo),
+    range: def.range * (1.2 ** state.ups.reach),
+    arc: def.arc ?? 0, pierce: def.pierce ?? 0, pellets: def.pellets ?? 1,
+    hits: def.hits ?? 1, turn: def.turn ?? 0, speed: def.speed ?? 0,
+    arrows: def.arrows ?? 1, beams: def.beams ?? 0,
+  };
+}
