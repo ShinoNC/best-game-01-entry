@@ -144,8 +144,8 @@ export function drawEnemy(ctx, e, t, ang) {
     ctx.fillRect(e.x + Math.cos(face) * e.r * 1.85 - wr, e.y + Math.sin(face) * e.r * 1.85 - wr, wr * 2, wr * 2);
   }
   if (e.elite) {
-    ctx.font = px(10); ctx.textAlign = 'center';
-    txt(ctx, '★', e.x, e.y - e.r - 26, '#ffd166');
+    ctx.font = px(18); ctx.textAlign = 'center';
+    txt(ctx, '★', e.x, e.y - e.r - 30, '#ffd166');
   }
   if (e.hp < e.maxHp) {
     const big = e.elite || e.boss;
