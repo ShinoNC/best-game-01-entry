@@ -142,7 +142,7 @@ function bossAttack(state, e, dt, nx, ny, fx) {
     } else if (e.atk === 'shell') { e.atkState = 'retreat'; e.atkPhaseT = 2; e.shelled = true; return true; }
     else if (e.atk === 'line') { e.atkState = 'charge'; e.atkPhaseT = 1.2; e.dmgMul = 1.5; return true; }
     else if (e.atk === 'lure') { e.atkState = 'dash'; e.atkPhaseT = 0.6; return true; }
-    e.atkState = null; e.atkT = e.atkEvery;
+    e.atkState = null; e.atkT = e.atkEvery; e.state = 'rest'; e.diveT = 2;
     return true;
   }
   if (e.atkState === 'retreat') {
@@ -164,8 +164,8 @@ function bossAttack(state, e, dt, nx, ny, fx) {
         state.spits.push({ x: e.x + Math.cos(a) * e.r, y: e.y + Math.sin(a) * e.r,
           vx: Math.cos(a) * 220, vy: Math.sin(a) * 220, dmg: e.dmg, r: 6, life: 2.5, color: e.color });
       }
-      if (e.atk === 'lure') { e.atkState = 'stun'; e.atkPhaseT = 0.5; }
-      else { e.atkState = null; e.atkT = e.atkEvery; }
+      if (e.atk === 'lure') { e.atkState = 'stun'; e.atkPhaseT = 2; }
+      else { e.atkState = null; e.atkT = e.atkEvery; e.state = 'rest'; e.diveT = 2; }
     }
     return true;
   }
