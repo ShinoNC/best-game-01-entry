@@ -4,7 +4,7 @@ export const SCREEN_TITLE = 'title';
 export const SCREEN_PLAY = 'play';
 export const SCREEN_OVER = 'over';
 
-export const MENU_CARD_W = 200, MENU_CARD_H = 240, MENU_CARD_GAP = 16, MENU_CARDS_Y = 200;
+export const MENU_CARD_W = 200, MENU_CARD_H = 240, MENU_CARD_GAP = 16, MENU_CARDS_Y = 255;
 export function stageMenuLayout(state) {
   const hand = state.hand || [];
   const n = hand.length;
@@ -13,8 +13,8 @@ export function stageMenuLayout(state) {
   const cards = hand.map((c, i) => ({ x: x0 + i * (MENU_CARD_W + MENU_CARD_GAP), y: MENU_CARDS_Y, w: MENU_CARD_W, h: MENU_CARD_H }));
   return {
     cards,
-    reroll: { x: 368, y: 485, w: 240, h: 52 },
-    next: { x: 624, y: 485, w: 336, h: 52 },
+    reroll: { x: POOL.cx - 296, y: 540, w: 240, h: 52 },
+    next: { x: POOL.cx - 40, y: 540, w: 336, h: 52 },
   };
 }
 
