@@ -1,4 +1,3 @@
-// Pixel-art UI primitives: stepped corners, 2-tone borders, dithered fills.
 // Fonts: Press Start 2P (headings) + VT323 (body), monospace fallback.
 export const PXF = '"Press Start 2P", monospace';
 export const VTF = '"VT323", monospace';
@@ -50,7 +49,6 @@ export function dither(ctx, base, dark) {
   return p;
 }
 
-// Big-cell dither (8x8 tile, 4px blocks): stays visible at small scales.
 export function dither4(ctx, base, dark) {
   const key = 'b4|' + base + '|' + dark;
   let p = _pat.get(key);
@@ -67,7 +65,6 @@ export function dither4(ctx, base, dark) {
   return p;
 }
 
-// Full pixel panel: offset shadow, stepped 2-tone border, dithered fill.
 export function pxPanel(ctx, x, y, w, h, fill, dark, border, light) {
   ctx.fillStyle = 'rgba(0,0,0,0.45)';
   ctx.fillRect(x + 4, y + 5, w, h);
@@ -97,8 +94,6 @@ export function logoText(ctx, text, x, y, font, top, bottom, outline, lw = 3) {
   ctx.restore();
 }
 
-// Text with a hard pixel drop shadow + dark outline. sh=0 skips the shadow:
-// dark text on a light button would otherwise read as a doubled glyph.
 export function txt(ctx, text, x, y, fill, lw = 2, sh = 2) {
   ctx.save();
   if (sh) {
