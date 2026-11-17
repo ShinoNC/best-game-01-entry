@@ -1,6 +1,6 @@
 // The HUD: two bars framing the play area, boss bar, banner, hint pill.
 // No minimap: the whole pool is on one screen, and spawn ripples mark entries.
-import { CREATURE_NAMES, DIFFICULTIES, PAL, STAGES, STAGE_COUNT, VIEW_H, VIEW_W, WEAPON_MAX, WEAPON_ORDER, bossForStage, nextTypes } from '../config.js';
+import { CREATURE_NAMES, DIFFICULTIES, PAL, STAGES, STAGE_COUNT, VIEW_H, VIEW_W, WEAPON_ORDER, bossForStage, nextTypes } from '../config.js';
 import { UPGRADE_DEFS } from '../upgrades.js';
 import { comboMult } from '../world.js';
 import { drawCoin, drawWeaponIcon } from './icons.js';
@@ -52,21 +52,23 @@ export function drawHud(ctx, state, t) {
     ctx.fillStyle = '#ff5d73'; ctx.fillRect(VIEW_W / 2 - 180, 100, 360 * (state.boss.hp / state.boss.maxHp), 6);
   }
   // Bottom bar: weapons (left) | HP (centre) | skills (right). 7 + 7 slots,
-  // all 44×44 with level pips.
+  // 52×52: big icon + 2-letter label with the level (CL3 = claw Lv3). The
+  // 44px icon-only slots were unreadable on a phone; the label carries the
+  // level the old pips showed, so the pips are gone.
+  const WABBR = { claw: 'CL', bow: 'BW', blaster: 'BL', shell: 'SH', spin: 'SP', laser: 'LZ', trident: 'TR' };
+  const SABBR = { claws: 'DM', tempo: 'FR', reach: 'RG', shell: 'HP', legs: 'SW', bubbles: 'BB', magnet: 'MG' };
   for (let i = 0; i < WEAPON_ORDER.length; i += 1) {
     const id = WEAPON_ORDER[i];
     const lv = state.weapons[id];
-    const bx = 28 + i * 52, by = 662;
+    const bx = 28 + i * 56, by = 658;
     ctx.fillStyle = lv > 0 ? 'rgba(127,224,195,0.22)' : 'rgba(255,255,255,0.08)';
-    ctx.fillRect(bx, by, 44, 44);
-    ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(bx, by, 44, 2);
+    ctx.fillRect(bx, by, 52, 52);
+    ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(bx, by, 52, 2);
     ctx.strokeStyle = lv > 0 ? 'rgba(127,224,195,0.6)' : 'rgba(255,255,255,0.15)';
-    ctx.lineWidth = 1; ctx.strokeRect(bx, by, 44, 44);
-    drawWeaponIcon(ctx, id, bx + 22, by + 18, 30, lv > 0);
-    for (let j = 0; j < WEAPON_MAX; j += 1) {
-      ctx.fillStyle = j < lv ? '#7fe0c3' : 'rgba(255,255,255,0.25)';
-      ctx.beginPath(); ctx.arc(bx + 10 + j * 6, by + 37, 2.5, 0, Math.PI * 2); ctx.fill();
-    }
+    ctx.lineWidth = 1; ctx.strokeRect(bx, by, 52, 52);
+    drawWeaponIcon(ctx, id, bx + 26, by + 16, 34, lv > 0);
+    ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+    txt(ctx, lv > 0 ? WABBR[id] + lv : WABBR[id], bx + 26, by + 47, lv > 0 ? PAL.text : PAL.dim, 1);
   }
   // HP in the middle: heart + numbers, the bar, the shell tier below.
   ctx.textAlign = 'left'; ctx.font = 'bold 14px sans-serif';
@@ -86,18 +88,16 @@ export function drawHud(ctx, state, t) {
   for (let i = 0; i < UPGRADE_DEFS.length; i += 1) {
     const d = UPGRADE_DEFS[i];
     const lv = state.ups[d.id];
-    const bx = 896 + i * 52, by = 662; // 7 chips: 896–1252, mirroring the weapons (28–384)
+    const bx = 864 + i * 56, by = 658; // 7 chips: 864–1252, mirroring the weapons (28–416)
     ctx.fillStyle = lv > 0 ? 'rgba(127,224,195,0.22)' : 'rgba(255,255,255,0.08)';
-    ctx.fillRect(bx, by, 44, 44);
-    ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(bx, by, 44, 2);
+    ctx.fillRect(bx, by, 52, 52);
+    ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(bx, by, 52, 2);
     ctx.strokeStyle = lv > 0 ? 'rgba(127,224,195,0.6)' : 'rgba(255,255,255,0.15)';
-    ctx.lineWidth = 1; ctx.strokeRect(bx, by, 44, 44);
-    ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center';
-    txt(ctx, d.icon, bx + 22, by + 24, lv > 0 ? '#7fe0c3' : '#9fc4bd');
-    for (let j = 0; j < d.max; j += 1) {
-      ctx.fillStyle = j < lv ? '#7fe0c3' : 'rgba(255,255,255,0.25)';
-      ctx.beginPath(); ctx.arc(bx + 10 + j * 6, by + 37, 2.5, 0, Math.PI * 2); ctx.fill();
-    }
+    ctx.lineWidth = 1; ctx.strokeRect(bx, by, 52, 52);
+    ctx.font = 'bold 22px sans-serif'; ctx.textAlign = 'center';
+    txt(ctx, d.icon, bx + 26, by + 27, lv > 0 ? '#7fe0c3' : '#9fc4bd');
+    ctx.font = 'bold 11px sans-serif';
+    txt(ctx, lv > 0 ? SABBR[d.id] + lv : SABBR[d.id], bx + 26, by + 47, lv > 0 ? PAL.text : PAL.dim, 1);
   }
   ctx.textAlign = 'right';
   ctx.fillStyle = 'rgba(6,42,51,0.85)'; ctx.fillRect(1092, 606, 160, 30);

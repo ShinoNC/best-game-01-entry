@@ -23,8 +23,9 @@ export function drawOver(ctx, state) {
   txt(ctx, won ? 'You held the rockpool. The crab keeps its shell.' : 'The creatures feast tonight. Try again, little crab.', VIEW_W / 2, 180, PAL.text);
   ctx.font = 'bold 48px sans-serif';
   txt(ctx, `SCORE ${state.score}`, VIEW_W / 2, 300, PAL.gold, 3);
-  ctx.font = 'bold 20px sans-serif';
-  txt(ctx, `STAGE ${state.stage}/${STAGE_COUNT} · ${mins}:${String(secs).padStart(2, '0')}`, VIEW_W / 2, 346, PAL.dim);
+  // Stage/time line: big and bright (was 20px dim — unreadable on a phone).
+  ctx.font = 'bold 26px sans-serif';
+  txt(ctx, `STAGE ${state.stage}/${STAGE_COUNT} · ${mins}:${String(secs).padStart(2, '0')}`, VIEW_W / 2, 348, PAL.text, 3);
   // A win that hits 3/10/20 clears on its difficulty earns an award — one
   // gold line, only on that win, never on an ordinary victory.
   if (won && state.awardEarned) {
