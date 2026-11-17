@@ -1,6 +1,5 @@
 // Polished-game drawing helpers every screen shares: beveled buttons,
-// gradient logo text, lifted panels. One module, one job — the flat
-// canvas look comes from flat fills; gradients + highlights + shadows fix it.
+// gradient logo text, lifted panels. One module, one job.
 export function rr(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -11,8 +10,7 @@ export function rr(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-// A beveled button: drop shadow beneath, vertical gradient fill, a light
-// top edge, a border. The bevel is the single biggest "polished game" signal.
+// A beveled button: drop shadow, vertical gradient fill, light top edge, border.
 export function bevel(ctx, x, y, w, h, r, top, bottom, border, bw = 2) {
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 5;
@@ -44,7 +42,7 @@ export function logoText(ctx, text, x, y, font, top, bottom, outline, lw = 3) {
 }
 
 // Outlined text: a thin dark stroke behind the fill so text stays crisp
-// over bright shallows and dark storm alike. Font/align set by the caller.
+// over bright shallows and dark storm alike.
 export function txt(ctx, text, x, y, fill, lw = 2) {
   ctx.save();
   ctx.strokeStyle = 'rgba(4,26,32,0.8)'; ctx.lineWidth = lw; ctx.lineJoin = 'round';

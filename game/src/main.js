@@ -1,5 +1,5 @@
 // TIDEKEEPER — boot and the one loop. Fixed 60 Hz sim, renderer interpolates.
-import { BEST_KEY, DIFF_ORDER } from './config.js';
+import { AWARD_KIND, AWARD_TIERS, BEST_KEY, DIFF_ORDER } from './config.js';
 import { createRandom } from './random.js';
 import { createState } from './state.js';
 import { createInput } from './input.js';
@@ -79,6 +79,7 @@ if (shot) {
         const res = recordRun(state, state.meta || readMeta());
         state.meta = res.meta;
         state.featsEarned = res.earned;
+        if (res.award) state.awardEarned = `${AWARD_TIERS[res.award.tier].metal} ${AWARD_KIND[res.award.diff]}`;
         state.best = Math.max(0, ...DIFF_ORDER.map((d) => res.meta.bests[d] || 0));
       }
     }

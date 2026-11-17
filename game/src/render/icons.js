@@ -21,8 +21,8 @@ export function heart(ctx, x, y, r, c) {
   ctx.closePath(); ctx.fill();
 }
 
-// Drawn weapon icons (40-unit box, centred on x,y): pincer, bow+arrow,
-// ink burst, spiral shell, whirlpool arrow, gun+beam. Unowned = dimmed.
+// Drawn weapon icons (40-unit box): pincer, bow+arrow, ink burst, spiral
+// shell, whirlpool arrow, gun+beam, trident. Unowned = dimmed.
 export function drawWeaponIcon(ctx, id, x, y, s, owned) {
   ctx.save(); ctx.translate(x, y); ctx.scale(s / 40, s / 40);
   if (!owned) ctx.globalAlpha = 0.35;
@@ -79,6 +79,34 @@ export function drawWeaponIcon(ctx, id, x, y, s, owned) {
   ctx.restore();
 }
 
+// Completion-award icons (40-unit box): medal (disc + ribbon), cup (trophy),
+// crown (three points + band). Locked = grey, earned = the metal colour.
+export function drawAwardIcon(ctx, kind, x, y, s, color, locked) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s / 40, s / 40);
+  const c = locked ? '#5a6a6a' : color;
+  ctx.fillStyle = c; ctx.strokeStyle = c; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  if (kind === 'MEDAL') {
+    for (const sgn of [-1, 1]) {
+      ctx.beginPath(); ctx.moveTo(sgn * 6, -16); ctx.lineTo(sgn * 1, -5); ctx.lineTo(sgn * 11, -5);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.beginPath(); ctx.arc(0, 4, 12, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath(); ctx.arc(-4, 0, 4, 0, Math.PI * 2); ctx.fill();
+  } else if (kind === 'CUP') {
+    ctx.beginPath(); ctx.moveTo(-11, -15); ctx.lineTo(11, -15); ctx.lineTo(8, 1); ctx.lineTo(-8, 1); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(-12, -9, 5, Math.PI * 0.5, Math.PI * 1.5); ctx.stroke();
+    ctx.beginPath(); ctx.arc(12, -9, 5, Math.PI * 1.5, Math.PI * 0.5); ctx.stroke();
+    ctx.fillRect(-2, 1, 4, 9); ctx.fillRect(-8, 10, 16, 4);
+  } else { // CROWN
+    ctx.beginPath();
+    ctx.moveTo(-14, 8); ctx.lineTo(-14, -3); ctx.lineTo(-7, 3); ctx.lineTo(0, -11);
+    ctx.lineTo(7, 3); ctx.lineTo(14, -3); ctx.lineTo(14, 8); ctx.closePath(); ctx.fill();
+    ctx.fillRect(-14, 8, 28, 5);
+  }
+  ctx.restore();
+}
+
 // A drawn gold coin: dark rim, gold face, $ inside — instantly money, at any size.
 export function drawCoin(ctx, x, y, r) {
   ctx.save();
@@ -92,8 +120,8 @@ export function drawCoin(ctx, x, y, r) {
   ctx.restore();
 }
 
-// Level pips: five dots, filled = owned levels, gold = the next level (the
-// one a card or shop buy would add), empty = the rest. Centred on (cx, y).
+// Level pips: five dots — filled = owned, gold = the level a card adds,
+// empty = the rest. Centred on (cx, y).
 export function drawPips(ctx, cx, y, lv, next) {
   for (let i = 0; i < WEAPON_MAX; i += 1) {
     ctx.fillStyle = i < lv ? '#7fe0c3' : (next && i === lv ? '#ffd166' : 'rgba(255,255,255,0.25)');

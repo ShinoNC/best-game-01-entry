@@ -1,14 +1,16 @@
 // The title overlays: HOW TO PLAY, ACHIEVEMENTS, HISTORY, SETTINGS. One shared panel style.
-import { BOSSES, CREATURE_NAMES, CREATURE_ORDER, DIFFICULTIES, DIFF_ORDER, ENEMIES, FEATS, PAL, VIEW_W } from '../config.js';
+import { AWARD_KIND, AWARD_TIERS, BOSSES, CREATURE_NAMES, CREATURE_ORDER, DIFFICULTIES, DIFF_ORDER, ENEMIES, FEATS, PAL, VIEW_W } from '../config.js';
+import { bestTitle } from '../meta.js';
 import { drawEnemy } from './creatures.js';
+import { drawAwardIcon } from './icons.js';
 import { bevel, lift, txt } from './polish.js';
 
 const BIG = { x: 140, y: 60, w: 1000, h: 580 }; // the help panel
 const BIG_CLOSE = { x: 560, y: 576, w: 160, h: 44 };
 const HIST_PANEL = { x: 140, y: 60, w: 1000, h: 360 }; // history: 3 short tables
 const HIST_CLOSE = { x: 560, y: 356, w: 160, h: 44 };
-const FEAT_PANEL = { x: 340, y: 110, w: 600, h: 480 };
-const FEAT_CLOSE = { x: 560, y: 526, w: 160, h: 44 };
+const FEAT_PANEL = { x: 140, y: 60, w: 1000, h: 580 }; // feats + awards: two columns
+const FEAT_CLOSE = { x: 560, y: 576, w: 160, h: 44 };
 const SET_PANEL = { x: 440, y: 240, w: 400, h: 240 };
 const SET_CLOSE = { x: 560, y: 420, w: 160, h: 44 };
 const SET_SOUND = { x: 640, y: 300, w: 120, h: 36 };
@@ -101,27 +103,55 @@ export function drawHelp(ctx, state) {
 }
 
 export function drawAchievements(ctx, state) {
-  const meta = state.meta || { feats: [] };
+  const meta = state.meta || { feats: [], wins: {} };
   const unlocked = new Set(meta.feats || []);
+  const wins = meta.wins || {};
   ctx.fillStyle = 'rgba(6,42,51,0.6)'; ctx.fillRect(0, 0, 1280, 720);
   panel(ctx, FEAT_PANEL);
   ctx.textAlign = 'center';
   ctx.font = 'bold 28px sans-serif';
-  txt(ctx, 'ACHIEVEMENTS', VIEW_W / 2, 150, PAL.gold);
-  ctx.font = '15px sans-serif';
-  txt(ctx, `${unlocked.size} of ${FEATS.length} earned`, VIEW_W / 2, 178, PAL.dim);
+  txt(ctx, 'ACHIEVEMENTS', VIEW_W / 2, 100, PAL.gold);
+  // Left column: the 7 feats, as before.
   ctx.textAlign = 'left';
+  ctx.font = 'bold 15px sans-serif';
+  txt(ctx, `FEATS — ${unlocked.size} of ${FEATS.length}`, 180, 132, PAL.gold);
   for (let i = 0; i < FEATS.length; i += 1) {
     const f = FEATS[i];
     const got = unlocked.has(f.id);
-    const y = 214 + i * 44;
-    ctx.font = 'bold 18px sans-serif';
-    txt(ctx, `${got ? '★' : '☆'} ${f.name}`, 380, y, got ? PAL.gold : PAL.dim);
+    const y = 164 + i * 52;
+    ctx.font = 'bold 17px sans-serif';
+    txt(ctx, `${got ? '★' : '☆'} ${f.name}`, 180, y, got ? PAL.gold : PAL.dim);
     ctx.font = '13px sans-serif';
-    txt(ctx, f.desc, 380, y + 20, PAL.dim);
+    txt(ctx, f.desc, 180, y + 19, PAL.dim);
+  }
+  // Right column: the 9 completion awards — 3 rows (difficulty) x 3 tiers.
+  ctx.font = 'bold 15px sans-serif';
+  txt(ctx, 'COMPLETION AWARDS', 620, 132, PAL.gold);
+  const title = bestTitle(wins);
+  if (title) {
+    ctx.font = 'bold 15px sans-serif';
+    txt(ctx, `YOUR TITLE: ${title}`, 620, 158, PAL.gold);
+  }
+  for (let d = 0; d < DIFF_ORDER.length; d += 1) {
+    const diff = DIFF_ORDER[d];
+    const w = wins[diff] || 0;
+    const y = 196 + d * 128;
+    ctx.font = 'bold 14px sans-serif';
+    txt(ctx, `${DIFFICULTIES[diff].label} — ${w} WIN${w === 1 ? '' : 'S'}`, 620, y, PAL.text);
+    for (let t = 0; t < AWARD_TIERS.length; t += 1) {
+      const tier = AWARD_TIERS[t];
+      const got = w >= tier.wins;
+      const cx = 660 + t * 160;
+      drawAwardIcon(ctx, AWARD_KIND[diff], cx, y + 40, 44, tier.color, !got);
+      ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
+      txt(ctx, `${tier.metal} ${AWARD_KIND[diff]}`, cx, y + 74, got ? tier.color : PAL.dim);
+      ctx.font = '11px sans-serif';
+      txt(ctx, got ? 'EARNED' : `WIN ${tier.wins}×`, cx, y + 90, got ? '#7fe0c3' : PAL.dim);
+      ctx.textAlign = 'left';
+    }
   }
   closeButton(ctx, FEAT_CLOSE);
-  dimHint(ctx, 614);
+  dimHint(ctx, 664);
 }
 
 export function drawHistory(ctx, state) {

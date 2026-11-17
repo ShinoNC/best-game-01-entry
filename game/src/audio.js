@@ -1,9 +1,8 @@
 // WebAudio SFX + a soft music loop, synthesised — no audio files. M toggles mute.
 export function createAudio() {
   let ctx = null, muted = false;
-  // Music: a barely-there ambient pad — two soft chords (C major, A minor),
-  // one every 6 s, slow fades so they melt into each other. Sine only, very
-  // quiet: felt, not heard. pad() checks muted, so M silences it.
+  // Music: a barely-there ambient pad — two soft chords, one every 6 s,
+  // slow fades, sine only, very quiet: felt, not heard.
   const CHORDS = [[131, 165, 196], [110, 131, 165]];
   let musicOn = false, musicStep = 0;
   function pad(freqs) {

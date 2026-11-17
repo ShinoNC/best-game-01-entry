@@ -24,8 +24,7 @@ export function createParticles() {
         else if (!big) return;
         else texts.shift();
       }
-      // Each number gets its own floor (200/213/226) + an x nudge when moved,
-      // and a 30 px x-gap from neighbours on the same floor — no overlaps.
+      // Each number gets its own floor + an x nudge when moved — no overlaps.
       const floor = TEXT_TOP + Math.floor(Math.random() * 3) * 13;
       const cy = Math.max(floor, Math.min(TEXT_BOTTOM, y));
       const moved = cy !== y;
@@ -47,9 +46,7 @@ export function createParticles() {
       }
     },
     bubbles(x, y, n) { this.burst(x, y, '#bfe8e0', n, 50, 'bubble'); },
-    // Spawn telegraph: an expanding ripple ring at the edge point where an
-    // enemy enters — the player sees the flood coming instead of enemies
-    // materialising under them. 0.45s, fades as it grows.
+    // Spawn telegraph: an expanding ripple ring at the edge entry point.
     ring(x, y) { this.add({ x, y, vx: 0, vy: 0, life: 0.45, max: 0.45, r: 6, color: '#bfe8e0', kind: 'ring' }); },
     shake(amount) { trauma = Math.min(1, trauma + amount); },
     get shakeX() { return trauma * trauma * 14 * (Math.random() * 2 - 1); },

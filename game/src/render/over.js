@@ -1,5 +1,5 @@
 // The end screen: minimal — title, big SCORE, one stage/time line,
-// PLAY AGAIN + MENU buttons. Stats, feats and history live in the menus now.
+// PLAY AGAIN + MENU buttons.
 import { PAL, STAGE_COUNT, VIEW_H, VIEW_W } from '../config.js';
 import { overLayout } from './layout.js';
 import { bevel, logoText, txt } from './polish.js';
@@ -25,6 +25,12 @@ export function drawOver(ctx, state) {
   txt(ctx, `SCORE ${state.score}`, VIEW_W / 2, 300, PAL.gold, 3);
   ctx.font = 'bold 20px sans-serif';
   txt(ctx, `STAGE ${state.stage}/${STAGE_COUNT} · ${mins}:${String(secs).padStart(2, '0')}`, VIEW_W / 2, 346, PAL.dim);
+  // A win that hits 3/10/20 clears on its difficulty earns an award — one
+  // gold line, only on that win, never on an ordinary victory.
+  if (won && state.awardEarned) {
+    ctx.font = 'bold 20px sans-serif';
+    txt(ctx, `NEW AWARD: ${state.awardEarned}!`, VIEW_W / 2, 382, PAL.gold, 3);
+  }
   const L = overLayout();
   bevel(ctx, L.playAgain.x, L.playAgain.y, L.playAgain.w, L.playAgain.h, 10, '#ffe08a', '#f0b23e', PAL.gold, 2);
   ctx.font = 'bold 22px sans-serif';

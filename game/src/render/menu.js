@@ -8,10 +8,8 @@ import { bevel, rr, txt } from './polish.js';
 // Card colour coding: SKILL mint, LEVEL-UP gold, NEW WEAPON purple, REPAIR pink.
 const KIND_COLOR = { skill: '#7fe0c3', wup: '#ffd166', weapon: '#c9a7ff', repair: '#ff8fb0' };
 
-// One menu card: tag, picture, name, level pips, price — no description line,
-// the names are self-explanatory. States differ by more than colour:
-// unaffordable = RED price + "NEED N MORE"; bought = green border + "✓ BOUGHT"
-// stamp, keeps its place; hovered = thick gold frame.
+// One menu card: tag, picture, name, level pips, price. States differ by more
+// than colour: unaffordable = RED price; bought = green border + "✓ BOUGHT".
 function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   const poor = !card.bought && state.coins < card.price;
   const need = card.price - state.coins;
@@ -74,7 +72,7 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
 export function drawStageMenu(ctx, state, hover) {
   const L = stageMenuLayout(state);
   // The shop is its own space: an opaque dark background — no pool, no
-  // creatures, no decor behind the cards. A faint radial glow in the centre.
+  // creatures, no decor behind the cards.
   const bg = ctx.createRadialGradient(640, 360, 100, 640, 360, 750);
   bg.addColorStop(0, '#0a3542'); bg.addColorStop(1, '#041f28');
   ctx.fillStyle = bg; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
@@ -119,8 +117,7 @@ export function drawStageMenu(ctx, state, hover) {
   bevel(ctx, n.x, n.y, n.w, n.h, 8, nHover ? '#ffe08a' : '#ffd97a', '#f0b23e', PAL.gold, 2);
   ctx.font = 'bold 20px sans-serif';
   txt(ctx, `NEXT STAGE ${state.stage + 1} →  [Enter]`, n.x + n.w / 2, n.y + 33, '#062a33');
-  // One line under the buttons: an error message shows while it lasts — the
-  // [1]–[5] numbers, [R] and [Enter] on the buttons already teach the keys.
+  // One line under the buttons: an error message shows while it lasts.
   if (state.menuMsgT > 0 && state.menuMsg) {
     ctx.font = 'bold 16px sans-serif';
     txt(ctx, state.menuMsg, VIEW_W / 2, 600, '#ff8fa0');

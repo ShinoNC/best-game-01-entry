@@ -1,6 +1,5 @@
-// The water: full width between the HUD bars, edge to edge, NO frame —
-// the sea spills to both sides. On the title/difficulty screens the water
-// fills the whole screen. The WATER changes by stage band (ENVS).
+// The water: full width between the HUD bars, edge to edge, NO frame.
+// The WATER changes by stage band (ENVS).
 import { envForStage, POOL } from '../config.js';
 
 // Ambient particles: fixed pseudo-random tables, positions a pure function of time.
@@ -17,10 +16,8 @@ const rainDrops = table(60, 7654321);
 const glowDots = table(24, 987654);
 const motes = table(36, 24680); // drifting plankton dots
 
-// Seaweed that STANDS: 3–5 tapered vertical strands from a dark floor anchor,
-// swaying with the current. Drawn outside the decor rotation — rotation is
-// what made the old blades lie flat. Strands are 44–80px tall so they read
-// as plants at a glance, not streaks; height is capped so tips stay in the pool.
+// Seaweed that STANDS: 3–5 tapered vertical strands from a floor anchor,
+// swaying with the current. Drawn outside the decor rotation.
 function drawWeed(ctx, d, env, t, swA, swS) {
   ctx.save(); ctx.translate(d.x, d.y); ctx.globalAlpha = 0.9;
   ctx.fillStyle = 'rgba(4,26,32,0.35)';
@@ -114,8 +111,7 @@ export function drawPool(ctx, state, t) {
   }
   ctx.restore();
   // Decor: rocks, weed, shells, sand dollars — placed by the seeded RNG.
-  // Weed sway: visible bend, random phase per plant; the storm current is
-  // faster and stronger. Bright bands gentle, STORM wild.
+  // Weed sway: visible bend, random phase per plant; the storm is faster.
   const swA = env.rain ? 17 : 13, swS = env.rain ? 3 : 1.8;
   for (const d of state.decor) {
     if (d.kind === 'weed') { drawWeed(ctx, d, env, t, swA, swS); continue; }

@@ -6,7 +6,7 @@ export const POOL = { x0: 0, y0: 72, x1: 1280, y1: 648, cx: 640, cy: 360, rx: 64
 export const BEST_KEY = 'tidekeeper-best';
 
 // Environments: the water changes by stage band — six colours, 5 stages each.
-// Bosses sit at 5/10/15/20/25/30, the last stage of each band: beat the boss, the tide turns.
+// Bosses sit at 5/10/15/20/25/30, the last stage of each band.
 export const ENVS = [
   { name: 'SHALLOWS', water: '#35b8dc', water2: '#8fe8f8', sand: '#c9a86a', weed: '#2f8f6b', weed2: '#4fae7d', rays: 1, rain: 0, glow: 0 },
   { name: 'EMERALD LAGOON', water: '#0e7a4e', water2: '#3fc98a', sand: '#b0a05e', weed: '#0a5a36', weed2: '#1f7a4a', rays: 0.8, rain: 0, glow: 0 },
@@ -120,6 +120,16 @@ export const FEATS = [
   { id: 'rich', name: 'RICH CRAB', desc: 'Hold 500+ coins at once' },
   { id: 'combo', name: 'COMBO ×8', desc: 'Reach combo ×8' },
 ];
+
+// Completion awards: 3/10/20 clears per difficulty — medals on EASY, cups on
+// NORMAL, crowns + a title on HARD.
+export const AWARD_TIERS = [
+  { wins: 3, metal: 'BRONZE', color: '#cd7f32' },
+  { wins: 10, metal: 'SILVER', color: '#c0c0c0' },
+  { wins: 20, metal: 'GOLD', color: '#ffd700' },
+];
+export const AWARD_KIND = { easy: 'MEDAL', normal: 'CUP', hard: 'CROWN' };
+export const AWARD_TITLES = ['Tide Guardian', 'Heron Bane', 'Tidekeeper Legend'];
 
 export const CREATURE_NAMES = {
   guppy: 'GUPPY', jelly: 'JELLY', urchin: 'URCHIN',

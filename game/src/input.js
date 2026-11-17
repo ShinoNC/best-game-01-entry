@@ -17,9 +17,7 @@ export function createInput(canvas) {
   const clearAll = () => { keys.clear(); pressed.clear(); };
   addEventListener('keydown', down);
   addEventListener('keyup', up);
-  // Losing focus (alt-tab, a notification) clears BOTH sets: a movement key
-  // held across the blur must not stick, and a key pressed while blurred must
-  // not fire a menu action when focus returns.
+  // Losing focus clears BOTH sets: a held key must not stick across the blur.
   addEventListener('blur', clearAll);
   document.addEventListener('visibilitychange', () => { if (document.hidden) clearAll(); });
   canvas.addEventListener('pointermove', (e) => {
@@ -59,9 +57,7 @@ export function createInput(canvas) {
     },
     mouse() { return { x: mouseX, y: mouseY }; },
     click() { const c = mouseClicked; mouseClicked = false; return c; },
-    // A click is an edge event like a keypress: visible to exactly one frame's
-    // menu handling, then discarded — otherwise a click made during play would
-    // linger and instantly unpause the game (or buy a card) much later.
+    // A click is an edge event like a keypress: seen by one frame, then discarded.
     endFrame() { pressed.clear(); mouseClicked = false; },
   };
 }

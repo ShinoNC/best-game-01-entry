@@ -226,8 +226,7 @@ export function drawEnemy(ctx, e, t, ang) {
     ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
     txt(ctx, '★', e.x, e.y - e.r - 26, '#ffd166');
   }
-// HP bars on every DAMAGED enemy: thin + small for regulars, larger for
-// elites/boss. Full-HP enemies need no bar (they are full by definition).
+// HP bars on every DAMAGED enemy: thin for regulars, larger for elites/boss.
   if (e.hp < e.maxHp) {
     const big = e.elite || e.boss;
     const w = big ? e.r * 2 : 22, h = big ? 5 : 3;

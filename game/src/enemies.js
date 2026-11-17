@@ -9,8 +9,7 @@ export function spawnEnemy(state, type, elite, fx) {
   const s = Math.floor(state.rng.next() * 4), f = state.rng.next(); // one of the four edges, just outside it
   const x = s === 1 ? POOL.x1 + 14 : s === 3 ? POOL.x0 - 14 : POOL.x0 + f * (POOL.x1 - POOL.x0);
   const y = s === 0 ? POOL.y0 - 14 : s === 2 ? POOL.y1 + 14 : POOL.y0 + f * (POOL.y1 - POOL.y0);
-  // Spawn telegraph: a ripple ring at the edge point where the enemy enters,
-  // clamped inside the pool so it never draws over the HUD bars.
+  // Spawn telegraph: a ripple ring at the edge entry point, clamped inside the pool.
   if (fx && fx.ring) fx.ring(Math.max(POOL.x0 + 8, Math.min(POOL.x1 - 8, x)), Math.max(POOL.y0 + 8, Math.min(POOL.y1 - 8, y)));
   const hp = Math.round(def.hp * hpScale(state.stage) * diff.hp * (elite ? ELITE.hpMul : 1));
   const e = {
@@ -28,8 +27,7 @@ export function spawnEnemy(state, type, elite, fx) {
 
 function pickType(state) {
   const w = spawnWeights(state.stage);
-  // The run's spawn mix tilts the weights (same budget, different swarm):
-  // one run brings more eels, the next more urchins — the tide never repeats.
+  // The run's spawn mix tilts the weights — the tide never repeats.
   const mix = state.mix || {};
   let total = 0;
   for (const k in w) { w[k] *= mix[k] || 1; total += w[k]; }
@@ -49,8 +47,6 @@ function spawnBoss(state, fx, audio) {
   b.hp = Math.round(def.hp * diff.bossHp); b.maxHp = b.hp; b.r = def.r;
   b.speed = def.speed; b.dmg = Math.round(def.dmg * diff.bossDmg); b.score = def.score;
   b.coins = def.coins;
-  // Each heron has its own plumage, dive speed and summons — the later birds
-  // are bigger, faster-diving and call more gulls.
   b.color = def.color;
   b.dark = def.dark;
   b.diveMul = def.dive;
@@ -63,9 +59,7 @@ function spawnBoss(state, fx, audio) {
   audio.boss(); fx.shake(0.6);
 }
 
-// The spawn director: each stage has a budget of enemies; the stage clears
-// when the budget is spent and the pool is empty. One elite per stage (from stage
-// 2) and a boss on every 5th stage, both arriving at half the budget.
+// The spawn director: a budget per stage; elite + boss arrive at half budget.
 export function updateSpawner(state, dt, fx, audio) {
   const plan = STAGES[state.stage - 1];
   state.spawnT -= dt;
@@ -85,10 +79,8 @@ export function updateSpawner(state, dt, fx, audio) {
   if (plan.boss && !state.bossSpawned && state.stageSpawned >= plan.budget / 2) {
     spawnBoss(state, fx, audio);
   }
-  // A summoning heron calls gulls while it lives — its adds do not count against
-  // the stage budget, so the fight stays a fight even after the budget is spent.
-  // Called gulls fly in from the edges (with the spawn ripple); they never pop
-  // up next to the boss mid-pool — that was the "coming from the ground" feel.
+  // A summoning heron calls gulls while it lives (not counted in the budget).
+  // Called gulls fly in from the edges — never pop up next to the boss.
   if (state.boss && state.boss.summonN > 0) {
     state.boss.summonT -= dt;
     if (state.boss.summonT <= 0 && state.enemies.length < 55) {
@@ -150,8 +142,7 @@ export function updateEnemies(state, dt) {
       e.x += nx * sp * dt; e.y += ny * sp * dt;
     }
   }
-  // Separation: creatures push each other apart, so they cannot stack on one spot
-  // and bite as a single blob — the swarm stays a swarm, not a wall.
+  // Separation: creatures push each other apart, so the swarm stays a swarm.
   const list = state.enemies;
   for (let i = 0; i < list.length; i += 1) {
     for (let j = i + 1; j < list.length; j += 1) {
@@ -166,17 +157,13 @@ export function updateEnemies(state, dt) {
   }
 }
 
-// Starfish split into two minis when killed — the only enemy that multiplies.
-// The split happens at the death spot by design (it IS a split, not a spawn);
-// the pink burst + spawn ripple mark it so it reads as a split, not a pop-up.
+// Starfish split into two minis at the death spot (a split, not a spawn).
 export function onEnemyKilled(state, e, fx) {
   if (e.type === 'starfish') {
     for (let i = 0; i < 2; i += 1) {
       const m = spawnEnemy(state, 'mini', false);
       m.x = e.x + (i ? 14 : -14); m.y = e.y + (i ? -10 : 10);
     }
-    // No fx passed above: the minis do NOT enter from an edge, so no edge
-    // ripple — the burst + ring mark the split point itself instead.
     if (fx) { fx.burst(e.x, e.y, '#ff8fb0', 8, 120); if (fx.ring) fx.ring(e.x, e.y); }
   }
   if (e.boss) {

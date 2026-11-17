@@ -9,9 +9,8 @@ export const UPGRADE_DEFS = [
   { id: 'magnet', name: 'COIN MAGNET', icon: '◎', max: 5 },
 ];
 
-// Skill card prices by the level the card BUYS (index 0 = Lv1). Cheap early
-// so the first menu always has something affordable, steep late so maxing a
-// track is a real decision. All 7 tracks × 5 levels = 1,785 coins total.
+// Skill card prices by the level the card BUYS (index 0 = Lv1). Cheap early,
+// steep late. All 7 tracks × 5 levels = 1,785 coins total.
 export const SKILL_PRICES = [20, 35, 50, 65, 85];
 
 export function applyUpgrade(state, id) {

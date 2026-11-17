@@ -48,8 +48,7 @@ export function drawHud(ctx, state, t) {
   ctx.fillStyle = 'rgba(255,255,255,0.14)';
   ctx.fillRect(0, 70, VIEW_W, 2);
   ctx.fillRect(0, VIEW_H - 72, VIEW_W, 2);
-  // Top bar: STAGE + left/next (left, two lines) + SCORE / COINS / COMBO
-  // (right). The incoming panel is gone — its counts live under the stage.
+  // Top bar: STAGE + left/next (left, two lines) + SCORE / COINS / COMBO (right).
   const remaining = (STAGES[state.stage - 1].budget - state.stageSpawned) + state.enemies.length;
   const diffLabel = (DIFFICULTIES[state.difficulty || 'normal'] || DIFFICULTIES.normal).label;
   const nx = state.stage + 1;
@@ -86,7 +85,7 @@ export function drawHud(ctx, state, t) {
     ctx.fillStyle = '#ff5d73'; ctx.fillRect(VIEW_W / 2 - 180, 100, 360 * (state.boss.hp / state.boss.maxHp), 6);
   }
   // Bottom bar: weapons (left) | HP (centre) | skills (right). 7 + 7 slots,
-  // all the same 44×44 size with level pips — the HP bar separates them.
+  // all 44×44 with level pips.
   for (let i = 0; i < WEAPON_ORDER.length; i += 1) {
     const id = WEAPON_ORDER[i];
     const lv = state.weapons[id];

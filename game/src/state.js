@@ -18,7 +18,7 @@ export function createState(rng, seed, difficulty = 'normal') {
     });
   }
   // Seaweed grows on rocks or on the floor — never floating mid-water.
-  // (Rocks near the top are skipped: a standing strand needs room to rise.)
+  // (Rocks near the top are skipped: a strand needs room to rise.)
   const rocks = decor.filter((d) => d.kind === 'rock' && d.y >= 180);
   for (const d of decor) {
     if (d.kind !== 'weed') continue;

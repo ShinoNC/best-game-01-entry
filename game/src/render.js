@@ -47,8 +47,7 @@ export function createRenderer(canvas) {
       const lerp = (prev, cur) => prev + (cur - prev) * a;
       ctx.setTransform(s, 0, 0, s, oxd + fx.shakeX * s, oyd + fx.shakeY * s);
       // Background life runs on the render clock, not sim time — the water
-      // keeps moving on the title and while paused. Staged shots use the
-      // frozen sim time so captures stay deterministic.
+      // keeps moving on the title and while paused.
       const rt = state.shotMode ? t : performance.now() / 1000;
       drawPool(ctx, state, rt);
       // Dive telegraph: a swooper about to dive shows a dashed line to the crab, a ring on the crab, "!" over the bird.

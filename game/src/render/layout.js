@@ -6,8 +6,7 @@ export const SCREEN_PLAY = 'play';
 export const SCREEN_OVER = 'over';
 
 // Stage-clear menu: 5 × 200×240 cards, 16px gaps, y 240–480; buttons
-// REROLL 240×52 + 24 + NEXT 280×52, y 520–572. The card row centres on the
-// hand size; the buttons centre as a pair.
+// REROLL 240×52 + 24 + NEXT 280×52, y 520–572.
 export const MENU_CARD_W = 200, MENU_CARD_H = 240, MENU_CARD_GAP = 16, MENU_CARDS_Y = 240;
 export function stageMenuLayout(state) {
   const hand = state.hand || [];
