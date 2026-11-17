@@ -35,9 +35,12 @@ export function drawHud(ctx, state, t) {
   ctx.font = px(19);
   txt(ctx, `SCORE ${state.score}`, POOL.x1 - 28, 38, PAL.gold);
   ctx.font = px(9);
-  const coinTxt = `${state.coins} COINS · COMBO ×${comboMult(state)}`;
+  const coinTxt = `${state.coins} COINS`;
   txt(ctx, coinTxt, POOL.x1 - 28, 60, PAL.gold);
   drawCoin(ctx, POOL.x1 - 28 - ctx.measureText(coinTxt).width - 13, 55, 8);
+  const cm = comboMult(state);
+  ctx.textAlign = 'center'; ctx.font = px(13);
+  txt(ctx, `COMBO ×${cm}`, POOL.cx, 40, cm > 1 ? PAL.gold : PAL.dim);
   if (STAGES[contentStage(state) - 1].boss && !state.bossSpawned && !state.boss) {
     const boss = bossForStage(state.stage, state.bossOrder);
     const warn = `⚠ ${boss ? boss.name : 'THE BEAST'} IS COMING ⚠`;
