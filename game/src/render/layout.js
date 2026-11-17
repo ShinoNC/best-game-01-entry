@@ -40,8 +40,8 @@ export function titleLayout() {
 // End screen: PLAY AGAIN 300×56, y 470–526; MENU 200×44 below, y 546–590.
 export function overLayout() {
   return {
-    playAgain: { x: VIEW_W / 2 - 150, y: 470, w: 300, h: 56 },
-    menu: { x: VIEW_W / 2 - 100, y: 546, w: 200, h: 44 },
+    playAgain: { x: VIEW_W / 2 - 150, y: 440, w: 300, h: 56 },
+    menu: { x: VIEW_W / 2 - 100, y: 516, w: 200, h: 44 },
   };
 }
 export const DIFF_CARD_W = 260, DIFF_CARD_H = 110, DIFF_CARD_GAP = 24, DIFF_CARD_Y = 300;
