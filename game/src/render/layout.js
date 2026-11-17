@@ -14,7 +14,7 @@ export function stageMenuLayout(state) {
   return {
     cards,
     reroll: { x: 368, y: 485, w: 240, h: 52 },
-    next: { x: 632, y: 485, w: 280, h: 52 },
+    next: { x: 624, y: 485, w: 336, h: 52 },
   };
 }
 
@@ -38,12 +38,12 @@ export function overLayout() {
   };
 }
 
-// Slot-selection screen: 3 stacked cards inside the big overlay panel.
+// Slot-selection screen: 3 vertical cards side by side inside the overlay panel.
 export const SLOT_PANEL = { x: 140, y: 60, w: 1000, h: 580 };
 export const SLOT_CLOSE = { x: 560, y: 576, w: 160, h: 44 };
 export function slotsLayout() {
-  const cards = [0, 1, 2].map((i) => ({ x: 170, y: 150 + i * 140, w: 940, h: 120 }));
-  const dels = cards.map((c) => ({ x: c.x + c.w - 56, y: c.y + 12, w: 40, h: 40 }));
+  const cards = [0, 1, 2].map((i) => ({ x: 220 + i * 290, y: 150, w: 260, h: 390 }));
+  const dels = cards.map((c) => ({ x: c.x + c.w - 48, y: c.y + 12, w: 36, h: 36 }));
   return { panel: SLOT_PANEL, close: SLOT_CLOSE, cards, dels };
 }
 

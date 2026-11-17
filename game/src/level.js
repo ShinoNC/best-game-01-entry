@@ -5,14 +5,14 @@ export function xpNeed(level) {
 }
 
 const CHOICE_POOL = [
-  { id: 'claws', name: 'SHARPER CLAWS', desc: 'DMG +5%', icon: '✂' },
-  { id: 'tempo', name: 'QUICK CLAWS', desc: 'FIRE RATE +5%', icon: '≫' },
-  { id: 'reach', name: 'LONGER REACH', desc: 'RANGE +10%', icon: '↔' },
-  { id: 'legs', name: 'SWIFT LEGS', desc: 'SPEED +6%', icon: '»' },
-  { id: 'bubbles', name: 'BUBBLE BURST', desc: '+4 BURST DMG', icon: '○' },
-  { id: 'magnet', name: 'COIN MAGNET', desc: 'PICKUP +22%', icon: '◎' },
-  { id: 'shell', name: 'ENHANCE', desc: '+15 MAX HP', icon: '⦿' },
-  { id: 'heal', name: 'SHELL MEND', desc: 'HEAL +30 HP NOW', icon: '♥' },
+  { id: 'claws', name: 'SHARPER CLAWS', desc: 'DMG +5%' },
+  { id: 'tempo', name: 'QUICK CLAWS', desc: 'FIRE RATE +5%' },
+  { id: 'reach', name: 'LONGER REACH', desc: 'RANGE +10%' },
+  { id: 'legs', name: 'SWIFT LEGS', desc: 'SPEED +6%' },
+  { id: 'bubbles', name: 'BUBBLE BURST', desc: '+4 BURST DMG' },
+  { id: 'magnet', name: 'COIN MAGNET', desc: 'PICKUP +22%' },
+  { id: 'shell', name: 'ENHANCE', desc: '+15 MAX HP' },
+  { id: 'heal', name: 'SHELL MEND', desc: 'HEAL +30 HP NOW' },
 ];
 
 export function rollLevelChoices(state) {

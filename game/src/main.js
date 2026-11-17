@@ -7,7 +7,7 @@ import { createParticles } from './particles.js';
 import { MENU_ITEMS, createRenderer, levelupLayout, overLayout, stageMenuLayout, titleLayout } from './render.js';
 import { STEP, nextStage, stepWorld } from './world.js';
 import { REROLL_COST, autoBuy, buyCard, rerollHand } from './cards.js';
-import { applyLevelChoice, rollLevelChoices } from './level.js';
+import { applyLevelChoice, rollLevelChoices, xpNeed } from './level.js';
 import { SLOT_COUNT, clearSlot, hasSlotSave, loadSlot } from './save.js';
 import { stageShot } from './shots.js';
 import { overlayLayout } from './render/overlays.js';
@@ -21,6 +21,19 @@ const seed = Number.isInteger(seedParam) ? seedParam : Math.floor(Math.random() 
 
 const canvas = document.getElementById('game');
 const status = document.getElementById('status');
+// Pixel fonts (Press Start 2P + VT323, embedded woff2): warm them up so the
+// canvas draws with them from the first frame instead of the monospace fallback.
+function loadPixelFonts() {
+  try {
+    return Promise.race([
+      Promise.all([
+        document.fonts.load('16px "Press Start 2P"'),
+        document.fonts.load('20px "VT323"'),
+      ]),
+      new Promise((r) => setTimeout(r, 1500)),
+    ]).catch(() => {});
+  } catch { return Promise.resolve(); }
+}
 const renderer = createRenderer(canvas);
 const input = createInput(canvas);
 const audio = createAudio();
@@ -50,6 +63,7 @@ let state;
 if (shot) {
   (async () => {
     await loadSprites();
+    await loadPixelFonts();
     state = stageShot(shot, seed, fx, audio);
     attachMeta(state);
     if (state.phase === 'over') state.featsEarned = featsEarnedThisRun(state, state.meta.feats);
@@ -59,6 +73,7 @@ if (shot) {
     window.__shotReady = true;
   })();
 } else {
+  loadPixelFonts();
   state = attachMeta(createState(createRandom(seed), seed));
   window.__tide = { state, fx, audio, step: (inp) => stepWorld(state, inp, STEP, fx, audio), STEP,
     menuLayout: () => stageMenuLayout(state), toScreen, toLogical, viewTransform: () => renderer.viewTransform(),
@@ -195,7 +210,10 @@ function continueRun(slot, s) {
   state.audio = audio;
   state.slot = slot;
   state.stage = s.stage;
-  state.level = s.level; state.xp = s.xp; state.xpNext = s.xpNext;
+  state.level = s.level; state.xp = s.xp;
+  // Recompute the XP bar from the CURRENT curve: a save written by an older
+  // build carries a stale xpNext, which would level the player far too fast.
+  state.xpNext = xpNeed(s.level);
   state.coins = s.coins; state.coinsEarned = s.coinsEarned;
   state.score = s.score; state.kills = s.kills; state.time = s.time || 0;
   Object.assign(state.player, { hp: s.hp, maxHp: s.maxHp, armor: s.armor || 0,

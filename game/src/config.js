@@ -181,13 +181,13 @@ export const WEAPON_ORDER = ['claw', 'bow', 'blaster', 'shell', 'spin', 'laser',
 export const WEAPON_MAX = 5;
 
 export const SHOP = [
-  { id: 'bow', kind: 'weapon', price: 50, up: [100, 150, 210, 280], name: 'BUBBLE BOW', icon: '⌖' },
-  { id: 'blaster', kind: 'weapon', price: 110, up: [220, 290, 370, 460], name: 'INK BLASTER', icon: '✦' },
-  { id: 'shell', kind: 'weapon', price: 90, up: [170, 230, 300, 380], name: 'HOMING SHELL', icon: '◎' },
-  { id: 'spin', kind: 'weapon', price: 70, up: [140, 190, 250, 320], name: 'WHIRLPOOL SPIN', icon: '↻' },
-  { id: 'laser', kind: 'weapon', price: 130, up: [200, 260, 330, 420], name: 'LASER GUN', icon: '≋' },
-  { id: 'trident', kind: 'weapon', price: 120, up: [190, 250, 320, 410], name: 'TRIDENT', icon: 'Ψ' },
-  { id: 'claw', kind: 'weapon', price: 0, up: [60, 95, 140, 200], name: 'SHARPEN CLAWS', icon: '✂' },
+  { id: 'bow', kind: 'weapon', price: 50, up: [100, 150, 210, 280], name: 'BUBBLE BOW' },
+  { id: 'blaster', kind: 'weapon', price: 110, up: [220, 290, 370, 460], name: 'INK BLASTER' },
+  { id: 'shell', kind: 'weapon', price: 90, up: [170, 230, 300, 380], name: 'HOMING SHELL' },
+  { id: 'spin', kind: 'weapon', price: 70, up: [140, 190, 250, 320], name: 'WHIRLPOOL SPIN' },
+  { id: 'laser', kind: 'weapon', price: 130, up: [200, 260, 330, 420], name: 'LASER GUN' },
+  { id: 'trident', kind: 'weapon', price: 120, up: [190, 250, 320, 410], name: 'TRIDENT' },
+  { id: 'claw', kind: 'weapon', price: 0, up: [60, 95, 140, 200], name: 'SHARPEN CLAWS' },
 ];
 
 export const FEAT_IDS = ['firstblood', 'arsenal', 'beast', 'untouched', 'rich', 'combo'];

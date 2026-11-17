@@ -2,44 +2,45 @@ import { CREATURE_NAMES, PAL, STAGES, VIEW_H, VIEW_W, WEAPON_ORDER, bossForStage
 import { UPGRADE_DEFS } from '../upgrades.js';
 import { comboMult } from '../world.js';
 import { drawCoin, drawSkillIcon, drawWeaponIcon, heart } from './icons.js';
-import { dither, pxBar, pxFrame, pxPanel, txt } from './polish.js';
+import {dither, pxBar, pxFrame, pxPanel, txt, px, vt} from './polish.js';
 
 export function drawHud(ctx, state, t) {
   const p = state.player;
   ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = dither(ctx, 'rgba(6,42,51,0.92)', 'rgba(4,26,32,0.92)');
+  // Strips: high-contrast dither so the checkerboard is VISIBLE, not a flat wash.
+  ctx.fillStyle = dither(ctx, 'rgba(13,74,92,0.95)', 'rgba(4,26,32,0.95)');
   ctx.fillRect(0, 0, VIEW_W, 72);
   ctx.fillRect(0, VIEW_H - 72, VIEW_W, 72);
-  // Chunky pixel divider: alternating gold / dark blocks.
+  // Chunky pixel divider: alternating gold / dark blocks, 4px tall.
   for (let x = 0; x < VIEW_W; x += 16) {
-    ctx.fillStyle = (x / 16) % 2 === 0 ? 'rgba(255,209,102,0.55)' : 'rgba(4,26,32,0.9)';
-    ctx.fillRect(x, 70, 16, 3);
-    ctx.fillRect(x, VIEW_H - 75, 16, 3);
+    ctx.fillStyle = (x / 16) % 2 === 0 ? 'rgba(255,209,102,0.75)' : 'rgba(4,26,32,0.95)';
+    ctx.fillRect(x, 69, 16, 4);
+    ctx.fillRect(x, VIEW_H - 76, 16, 4);
   }
   const remaining = (STAGES[contentStage(state) - 1].budget - state.stageSpawned) + state.enemies.length;
   const nx = state.stage + 1;
   const nextBoss = bossForStage(nx, state.bossOrder);
   const nextBit = nextBoss ? `⚠ ${nextBoss.name}`
     : nextTypes(nx, state.stageMix).map((k) => CREATURE_NAMES[k]).join(' + ');
-  ctx.font = 'bold 22px sans-serif';
+  ctx.font = px(14);
   txt(ctx, `STAGE ${state.stage}`, 28, 28, PAL.text);
-  ctx.font = 'bold 13px sans-serif';
+  ctx.font = px(8);
   txt(ctx, `${remaining} LEFT · NEXT: ${nextBit}`, 28, 46, PAL.dim);
   const mod = clusterMod(state, state.stage);
   const c0 = clusterOf(state.stage) * 5 + 1, c1 = c0 + 4;
-  ctx.font = 'bold 13px sans-serif';
+  ctx.font = px(8);
   txt(ctx, `EFFECT (STAGES ${c0}–${c1}): ${mod.n}`, 28, 64, PAL.gold);
   ctx.textAlign = 'right';
-  ctx.font = 'bold 30px sans-serif';
+  ctx.font = px(19);
   txt(ctx, `SCORE ${state.score}`, 1252, 38, PAL.gold);
-  ctx.font = 'bold 15px sans-serif';
-  const coinTxt = `${state.coins} COINS · COMBO ×${comboMult(state)} · BEST STAGE ${(state.meta || {}).bestStage || 0}`;
+  ctx.font = px(9);
+  const coinTxt = `${state.coins} COINS · COMBO ×${comboMult(state)}`;
   txt(ctx, coinTxt, 1252, 60, PAL.gold);
   drawCoin(ctx, 1252 - ctx.measureText(coinTxt).width - 13, 55, 8);
   if (STAGES[contentStage(state) - 1].boss && !state.bossSpawned && !state.boss) {
     const boss = bossForStage(state.stage, state.bossOrder);
     const warn = `⚠ ${boss ? boss.name : 'THE BEAST'} IS COMING ⚠`;
-    ctx.font = 'bold 17px sans-serif';
+    ctx.font = px(11);
     const ww = ctx.measureText(warn).width + 40;
     pxPanel(ctx, VIEW_W / 2 - ww / 2, 78, ww, 32, 'rgba(6,42,51,0.85)', 'rgba(4,26,32,0.85)', '#ff5d73');
     ctx.textAlign = 'center';
@@ -47,12 +48,10 @@ export function drawHud(ctx, state, t) {
   }
   if (state.boss) {
     pxPanel(ctx, VIEW_W / 2 - 190, 78, 380, 34, 'rgba(6,42,51,0.85)', 'rgba(4,26,32,0.85)', '#ff5d73');
-    ctx.textAlign = 'center'; ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center'; ctx.font = px(9);
     txt(ctx, state.boss.name, VIEW_W / 2, 94, '#e8e4d8');
     pxBar(ctx, VIEW_W / 2 - 180, 100, 360, 6, state.boss.hp / state.boss.maxHp, '#ff5d73', 12);
   }
-  const WABBR = { claw: 'CL', bow: 'BW', blaster: 'BL', shell: 'SH', spin: 'SP', laser: 'LZ', trident: 'TR' };
-  const SABBR = { claws: 'DM', tempo: 'FR', reach: 'RG', shell: 'EN', legs: 'SW', bubbles: 'BB', magnet: 'MG' };
   for (let i = 0; i < WEAPON_ORDER.length; i += 1) {
     const id = WEAPON_ORDER[i];
     const lv = state.weapons[id];
@@ -62,10 +61,12 @@ export function drawHud(ctx, state, t) {
       'rgba(0,0,0,0.25)');
     ctx.fillRect(bx, by, 52, 52);
     drawWeaponIcon(ctx, id, bx + 26, by + 16, 34, lv > 0);
-    ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
-    txt(ctx, lv > 0 ? WABBR[id] + lv : WABBR[id], bx + 26, by + 47, lv > 0 ? PAL.text : PAL.dim, 1);
+    if (lv > 0) {
+      ctx.font = vt(15); ctx.textAlign = 'center';
+      txt(ctx, `Lv${lv}`, bx + 26, by + 47, PAL.text, 1);
+    }
   }
-  ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'left';
+  ctx.font = px(9); ctx.textAlign = 'left';
   heart(ctx, 498, 663, 8, PAL.hp);
   txt(ctx, `${Math.ceil(p.hp)}/${p.maxHp}`, 510, 670, PAL.text, 3);
   if (state.ups.shell > 0) {
@@ -73,11 +74,11 @@ export function drawHud(ctx, state, t) {
     txt(ctx, `Lv${state.ups.shell}`, 790, 670, PAL.gold, 3);
   }
   pxBar(ctx, 490, 677, 300, 14, p.hp / p.maxHp, PAL.hp, 12);
-  ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'left';
+  ctx.font = px(8); ctx.textAlign = 'left';
   txt(ctx, `Lv${state.level}`, 490, 706, PAL.xp, 3);
   pxBar(ctx, 530, 697, 260, 8, Math.min(1, state.xp / state.xpNext), PAL.xp, 10);
   if (p.armor > 0) {
-    ctx.font = 'bold 14px sans-serif';
+    ctx.font = px(9);
     const num = `${p.armor}`;
     const x0 = 640 - (ctx.measureText(num).width + 16) / 2;
     ctx.fillStyle = PAL.armor;
@@ -96,15 +97,17 @@ export function drawHud(ctx, state, t) {
       'rgba(0,0,0,0.25)');
     ctx.fillRect(bx, by, 52, 52);
     drawSkillIcon(ctx, d.id, bx + 26, by + 20, 30, lv > 0);
-    ctx.font = 'bold 11px sans-serif';
-    txt(ctx, lv > 0 ? SABBR[d.id] + lv : SABBR[d.id], bx + 26, by + 47, lv > 0 ? PAL.text : PAL.dim, 1);
+    if (lv > 0) {
+      ctx.font = vt(15); ctx.textAlign = 'center';
+      txt(ctx, `Lv${lv}`, bx + 26, by + 47, PAL.text, 1);
+    }
   }
   ctx.textAlign = 'right';
-  ctx.font = 'bold 15px sans-serif';
+  ctx.font = px(9);
   txt(ctx, p.dashCd <= 0 ? 'DASH READY' : `DASH ${p.dashCd.toFixed(1)}s`, 1240, 627, PAL.text, 3);
   if (state.bannerT > 0) {
     ctx.textAlign = 'center'; ctx.globalAlpha = Math.min(1, state.bannerT);
-    ctx.font = 'bold 30px sans-serif';
+    ctx.font = px(19);
     const bw = ctx.measureText(state.banner).width + 56;
     pxPanel(ctx, VIEW_W / 2 - bw / 2, 146, bw, 40, 'rgba(6,42,51,0.88)', 'rgba(4,26,32,0.88)', PAL.gold);
     txt(ctx, state.banner, VIEW_W / 2, 175, PAL.gold);
@@ -114,14 +117,18 @@ export function drawHud(ctx, state, t) {
   if (hint) {
     const remain = state.hints.t;
     const alpha = Math.min(1, remain / 0.5) * Math.min(1, (hint.show - remain) / 0.25);
-    ctx.font = 'bold 19px sans-serif';
+    ctx.font = px(12);
     const tw = ctx.measureText(hint.text).width;
     const w = tw + 44 + 30;
     const y = 105;
     ctx.globalAlpha = alpha;
     pxPanel(ctx, VIEW_W / 2 - w / 2, y - 24, w, 44, 'rgba(6,42,51,0.88)', 'rgba(4,26,32,0.88)', PAL.gold);
+    // Pixel diamond marker (drawn rects, never a Unicode glyph).
+    const dx = VIEW_W / 2 - w / 2 + 24, dy = y - 3;
+    ctx.fillStyle = PAL.gold;
+    ctx.fillRect(dx - 2, dy - 8, 4, 4); ctx.fillRect(dx - 6, dy - 4, 12, 4);
+    ctx.fillRect(dx - 2, dy, 4, 4); ctx.fillRect(dx - 6, dy - 4, 4, 4); ctx.fillRect(dx + 2, dy - 4, 4, 4);
     ctx.textAlign = 'center';
-    txt(ctx, hint.icon, VIEW_W / 2 - w / 2 + 24, y + 5, PAL.gold);
     txt(ctx, hint.text, VIEW_W / 2 + 15, y + 5, PAL.text);
     ctx.globalAlpha = 1;
   }
@@ -130,8 +137,8 @@ export function drawHud(ctx, state, t) {
 export function drawPaused(ctx) {
   ctx.fillStyle = 'rgba(6,42,51,0.7)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   ctx.textAlign = 'center';
-  ctx.font = 'bold 56px sans-serif';
+  ctx.font = px(35);
   txt(ctx, 'PAUSED', VIEW_W / 2, 330, PAL.text, 3);
-  ctx.font = '20px sans-serif';
+  ctx.font = vt(27);
   txt(ctx, 'P / Esc — resume      M — mute      H — help      R — restart', VIEW_W / 2, 380, PAL.dim);
 }

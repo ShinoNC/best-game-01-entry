@@ -1,11 +1,11 @@
 export const UPGRADE_DEFS = [
-  { id: 'claws', name: 'SHARPER CLAWS', icon: '✂', stat: 'DMG +5%' },
-  { id: 'tempo', name: 'QUICK CLAWS', icon: '≫', stat: 'FIRE RATE +5%' },
-  { id: 'reach', name: 'LONGER REACH', icon: '↔', stat: 'RANGE +10%' },
-  { id: 'shell', name: 'ENHANCE', icon: '⦿', max: 5, stat: '+15 MAX HP' },
-  { id: 'legs', name: 'SWIFT LEGS', icon: '»', stat: 'SPEED +6%' },
-  { id: 'bubbles', name: 'BUBBLE BURST', icon: '○', stat: '+4 BURST DMG' },
-  { id: 'magnet', name: 'COIN MAGNET', icon: '◎', stat: 'PICKUP +22%' },
+  { id: 'claws', name: 'SHARPER CLAWS', stat: 'DMG +5%' },
+  { id: 'tempo', name: 'QUICK CLAWS', stat: 'FIRE RATE +5%' },
+  { id: 'reach', name: 'LONGER REACH', stat: 'RANGE +10%' },
+  { id: 'shell', name: 'ENHANCE', max: 5, stat: '+15 MAX HP' },
+  { id: 'legs', name: 'SWIFT LEGS', stat: 'SPEED +6%' },
+  { id: 'bubbles', name: 'BUBBLE BURST', stat: '+4 BURST DMG' },
+  { id: 'magnet', name: 'COIN MAGNET', stat: 'PICKUP +22%' },
 ];
 
 export const SKILL_PRICES = [20, 35, 50, 65, 85];

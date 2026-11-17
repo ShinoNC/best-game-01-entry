@@ -1,3 +1,5 @@
+import { px } from './render/polish.js';
+
 const TEXT_TOP = 200, TEXT_BOTTOM = 560, TEXT_LEFT = 40, TEXT_RIGHT = 1240;
 const TEXT_MAX = 5;
 export function createParticles() {
@@ -80,7 +82,7 @@ export function createParticles() {
       ctx.textAlign = 'center';
       for (const t of texts) {
         ctx.globalAlpha = Math.min(1, t.life / 0.3);
-        ctx.font = `bold ${t.big ? 22 : 14}px sans-serif`;
+        ctx.font = px(t.big ? 14 : 9);
         ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(4,26,32,0.9)';
         ctx.strokeText(t.str, t.x, t.y);
         ctx.fillStyle = t.color;

@@ -9,7 +9,7 @@ import { drawStageMenu } from './render/menu.js';
 import { drawLevelUp } from './render/levelup.js';
 import { drawOver } from './render/over.js';
 import { heart } from './render/icons.js';
-import { txt } from './render/polish.js';
+import {txt, px, vt} from './render/polish.js';
 
 export { MENU_ITEMS, SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE, levelupLayout, overLayout, stageMenuLayout, titleLayout } from './render/layout.js';
 
@@ -38,6 +38,9 @@ export function createRenderer(canvas) {
       const { scale, ox, oy } = viewTransform();
       const s = scale * dpr;
       const oxd = ox * dpr, oyd = oy * dpr;
+      // Re-assert every frame: resizing the canvas resets ALL context state,
+      // including imageSmoothingEnabled (sprites would silently go blurry).
+      ctx.imageSmoothingEnabled = false;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = PAL.deep; ctx.fillRect(0, 0, canvas.width, canvas.height);
       const a = Math.max(0, Math.min(1, alpha));
@@ -85,7 +88,7 @@ export function createRenderer(canvas) {
           ctx.lineWidth = 2;
           const tr = 44 + pulse * 6;
           ctx.strokeRect(jx - tr, jy - tr, tr * 2, tr * 2);
-          ctx.font = 'bold 24px sans-serif'; ctx.textAlign = 'center';
+          ctx.font = px(15); ctx.textAlign = 'center';
           txt(ctx, '!', ix, iy - e.r - 10, '#ff5d73');
           ctx.restore();
         }
@@ -104,13 +107,17 @@ export function createRenderer(canvas) {
         else if (pk.kind === 'bomb') {
           ctx.fillStyle = '#ffd166';
           ctx.fillRect(pk.x - 13, pk.y - 13, 26, 26);
-          ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center';
-          txt(ctx, '✹', pk.x, pk.y + 5, '#062a33');
+          // Pixel starburst: 4 dark arms from the centre.
+          ctx.fillStyle = '#062a33';
+          ctx.fillRect(pk.x - 2, pk.y - 9, 4, 18); ctx.fillRect(pk.x - 9, pk.y - 2, 18, 4);
+          ctx.fillRect(pk.x - 7, pk.y - 7, 4, 4); ctx.fillRect(pk.x + 3, pk.y - 7, 4, 4);
+          ctx.fillRect(pk.x - 7, pk.y + 3, 4, 4); ctx.fillRect(pk.x + 3, pk.y + 3, 4, 4);
         } else {
-          ctx.strokeStyle = '#7fe0c3'; ctx.lineWidth = 3;
-          ctx.strokeRect(pk.x - 12, pk.y - 12, 24, 24);
-          ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center';
-          txt(ctx, '◎', pk.x, pk.y + 5, '#7fe0c3');
+          // Magnet pickup: concentric pixel squares, teal.
+          ctx.fillStyle = '#7fe0c3';
+          ctx.fillRect(pk.x - 12, pk.y - 12, 24, 4); ctx.fillRect(pk.x - 12, pk.y + 8, 24, 4);
+          ctx.fillRect(pk.x - 12, pk.y - 8, 4, 16); ctx.fillRect(pk.x + 8, pk.y - 8, 4, 16);
+          ctx.fillRect(pk.x - 4, pk.y - 4, 8, 8);
         }
       }
       for (const b of state.bolts) {

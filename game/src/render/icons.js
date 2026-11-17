@@ -1,4 +1,5 @@
 import { WEAPON_MAX } from '../config.js';
+import { px } from './polish.js';
 
 // Pixel heart from a 7x6 bitmap, drawn with flat rects only.
 const HEART_ROWS = ['.XX.XX.', 'XXXXXXX', 'XXXXXXX', '.XXXXX.', '..XXX..', '...X...'];
@@ -262,7 +263,7 @@ export function drawCoin(ctx, x, y, r) {
   ctx.fillRect(x - r * 0.7, y - r * 0.7, r * 1.4, r * 1.4);
   ctx.fillStyle = '#fff3c4';
   ctx.fillRect(x - r * 0.7, y - r * 0.7, r * 0.5, r * 0.5);
-  ctx.fillStyle = '#7a5a17'; ctx.font = `bold ${Math.round(r * 1.15)}px sans-serif`;
+  ctx.fillStyle = '#7a5a17'; ctx.font = px(Math.max(8, Math.round(r * 0.72)));
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText('$', x, y + r * 0.08);
   ctx.restore();

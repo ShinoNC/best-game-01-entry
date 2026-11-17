@@ -1,6 +1,14 @@
 // Pixel-art UI primitives. Everything here is drawn to LOOK 16-bit: stepped
 // corners, thick 2-tone borders, dithered fills, hard shadows. No gradients,
 // no curves, no blur — and no flat rectangles pretending to be pixel art.
+// Pixel fonts (embedded woff2, loaded via @font-face in index.html):
+// Press Start 2P for headings/labels (wide: use ~0.6x the sans size),
+// VT323 for body/stats (narrow: use ~1.35x the sans size). Fallback is
+// monospace, never sans-serif, so a missing font still reads retro.
+export const PXF = '"Press Start 2P", monospace';
+export const VTF = '"VT323", monospace';
+export function px(n) { return `${n}px ${PXF}`; }
+export function vt(n) { return `${n}px ${VTF}`; }
 export function rr(ctx, x, y, w, h) {
   ctx.beginPath(); ctx.rect(x, y, w, h);
   ctx.closePath();
@@ -44,6 +52,24 @@ export function dither(ctx, base, dark) {
   g.fillStyle = base; g.fillRect(0, 0, 4, 4);
   g.fillStyle = dark;
   g.fillRect(0, 0, 2, 2); g.fillRect(2, 2, 2, 2);
+  p = ctx.createPattern(c, 'repeat');
+  _pat.set(key, p);
+  return p;
+}
+
+// Big-cell dither (8x8 tile, 4px blocks): reads as pixel texture even at
+// small display scales, where the 2px dither washes out to a flat colour.
+export function dither4(ctx, base, dark) {
+  const key = 'b4|' + base + '|' + dark;
+  let p = _pat.get(key);
+  if (p) return p;
+  if (typeof document === 'undefined') return base;
+  const c = document.createElement('canvas');
+  c.width = 8; c.height = 8;
+  const g = c.getContext('2d');
+  g.fillStyle = base; g.fillRect(0, 0, 8, 8);
+  g.fillStyle = dark;
+  g.fillRect(0, 0, 4, 4); g.fillRect(4, 4, 4, 4);
   p = ctx.createPattern(c, 'repeat');
   _pat.set(key, p);
   return p;
@@ -111,7 +137,7 @@ function shade(hex) {
 // dithered fill, light shine strip on filled segments.
 export function pxBar(ctx, x, y, w, h, frac, fill, segs, dark) {
   const n = segs || 10;
-  const gap = 2;
+  const gap = 3;
   const sw = (w - gap * (n - 1)) / n;
   pxFrame(ctx, x - 3, y - 3, w + 6, h + 6, '#101820', 3);
   ctx.fillStyle = 'rgba(0,0,0,0.6)';
@@ -120,10 +146,11 @@ export function pxBar(ctx, x, y, w, h, frac, fill, segs, dark) {
   for (let i = 0; i < n; i += 1) {
     const sx = x + i * (sw + gap);
     const f = Math.max(0, Math.min(1, frac * n - i));
-    ctx.fillStyle = 'rgba(255,255,255,0.14)';
+    // Empty part of the segment: dark dither, so it reads as pixel too.
+    ctx.fillStyle = dither4(ctx, 'rgba(255,255,255,0.10)', 'rgba(0,0,0,0.25)');
     ctx.fillRect(sx, y, sw, h);
     if (f > 0) {
-      ctx.fillStyle = dither(ctx, fill, dk);
+      ctx.fillStyle = dither4(ctx, fill, dk);
       ctx.fillRect(sx, y, sw * f, h);
       ctx.fillStyle = 'rgba(255,255,255,0.35)';
       ctx.fillRect(sx, y, sw * f, 2);

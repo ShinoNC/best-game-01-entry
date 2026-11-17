@@ -41,7 +41,7 @@ export function cardPool(state) {
     if (wid === 'claw') continue;
     if (state.weapons[wid] === 0) {
       pool.push({ id: `weapon:${wid}`, kind: 'weapon', wid, lv: 0, toLevel: 1,
-        price: pr(shopEntry(wid).price), name: WEAPONS[wid].name, icon: WEAPONS[wid].icon,
+        price: pr(shopEntry(wid).price), name: WEAPONS[wid].name,
         tag: 'NEW WEAPON', weight: 3, bought: false });
     }
   }
@@ -50,14 +50,14 @@ export function cardPool(state) {
     if (lv > 0 && lv < WEAPON_MAX) {
       pool.push({ id: `wup:${wid}:${lv + 1}`, kind: 'wup', wid, lv, toLevel: lv + 1,
         price: pr(shopEntry(wid).up[lv - 1]), name: `${WEAPONS[wid].name} Lv${lv + 1}`,
-        icon: WEAPONS[wid].icon, tag: 'LEVEL UP', weight: 2, bought: false });
+        tag: 'LEVEL UP', weight: 2, bought: false });
     }
   }
   const d = UPGRADE_DEFS.find((u) => u.id === 'shell');
   const lv = state.ups.shell;
   if (lv < d.max) {
     pool.push({ id: `skill:shell:${lv + 1}`, kind: 'skill', track: 'shell', lv, toLevel: lv + 1,
-      price: pr(SKILL_PRICES[lv]), name: d.name, icon: d.icon,
+      price: pr(SKILL_PRICES[lv]), name: d.name,
       tag: 'SKILL', weight: 1, bought: false });
   }
   return pool;
@@ -65,7 +65,7 @@ export function cardPool(state) {
 
 function repairCard(n, state) {
   return { id: `repair:${n}`, kind: 'repair', lv: 0, toLevel: 0, price: Math.round(REPAIR_PRICE * modOf(state, 'price')),
-    name: 'SHELL REPAIR', icon: '♥', tag: 'REPAIR',
+    name: 'SHELL REPAIR', tag: 'REPAIR',
     weight: 0, bought: false };
 }
 

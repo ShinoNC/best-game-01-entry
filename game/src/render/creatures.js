@@ -1,6 +1,6 @@
 import { PAL } from '../config.js';
 import { imgFor } from '../sprites.js';
-import { txt } from './polish.js';
+import {txt, px, vt} from './polish.js';
 
 const SIDE = { guppy: 1, eel: 1, archer: 1, angler: 1 };
 const DRAW = {
@@ -147,7 +147,7 @@ export function drawEnemy(ctx, e, t, ang) {
     ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3;
     const er = e.r + 7;
     ctx.strokeRect(e.x - er, e.y - er, er * 2, er * 2);
-    ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
+    ctx.font = px(10); ctx.textAlign = 'center';
     txt(ctx, '★', e.x, e.y - e.r - 26, '#ffd166');
   }
   if (e.hp < e.maxHp) {

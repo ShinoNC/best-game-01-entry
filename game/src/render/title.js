@@ -1,7 +1,7 @@
 import { CREATURE_ORDER, ENEMIES, PAL, VIEW_W } from '../config.js';
 import { drawCrab, drawEnemy } from './creatures.js';
 import { MENU_ITEMS, titleLayout } from './layout.js';
-import { bevel, logoText, pxPanel, txt } from './polish.js';
+import {bevel, logoText, pxPanel, txt, px, vt} from './polish.js';
 
 const AMBIENT = [];
 for (let i = 0; i < 24; i += 1) {
@@ -40,12 +40,12 @@ export function drawTitle(ctx, state) {
   ctx.textAlign = 'center';
   ctx.letterSpacing = '3px';
   logoText(ctx, 'TIDEKEEPER', VIEW_W / 2, 112,
-    '900 88px "Trebuchet MS", "Segoe UI", Verdana, sans-serif',
+    px(56),
     '#ffb35c', '#e8590c', '#4a2408', 3);
   ctx.letterSpacing = '0px';
   const tagParts = [
-    { t: '★ ENDLESS STAGES', f: '900 30px sans-serif' },
-    { t: ' — DEFEND THE REEF, KEEP THE TIDE ★', f: 'bold 24px sans-serif' },
+    { t: '★ ENDLESS STAGES', f: px(19) },
+    { t: ' — DEFEND THE REEF, KEEP THE TIDE ★', f: px(15) },
   ];
   let tagW = 0;
   for (const p of tagParts) { ctx.font = p.f; tagW += ctx.measureText(p.t).width; }
@@ -59,12 +59,6 @@ export function drawTitle(ctx, state) {
     tx += ctx.measureText(p.t).width;
   }
   ctx.textAlign = 'center';
-  const bestStage = (state.meta || {}).bestStage || 0;
-  const bestLevel = (state.meta || {}).bestLevel || 0;
-  if (bestStage > 0 || bestLevel > 0) {
-    ctx.font = 'bold 17px sans-serif';
-    txt(ctx, `✦ BEST STAGE ${bestStage} · BEST LEVEL ${bestLevel} ✦`, VIEW_W / 2, 202, PAL.gold);
-  }
   const TL = titleLayout();
   const labels = { play: 'PLAY',
     help: 'HOW TO PLAY  ?', feats: 'ACHIEVEMENTS', history: 'HISTORY', settings: 'SETTINGS' };
@@ -82,7 +76,7 @@ export function drawTitle(ctx, state) {
       ctx.strokeRect(b.x - 4, b.y - 4, b.w + 8, b.h + 8);
     }
     const ty = b.y + (isPlay ? 41 : 30);
-    ctx.font = isPlay ? 'bold 24px sans-serif' : 'bold 18px sans-serif';
+    ctx.font = isPlay ? px(15) : px(11);
     if (isPlay) {
       ctx.fillStyle = 'rgba(255,255,255,0.55)';
       ctx.fillText(label, b.x + b.w / 2, ty - 1);
@@ -93,7 +87,7 @@ export function drawTitle(ctx, state) {
     }
   }
   ctx.textAlign = 'right';
-  ctx.font = 'bold 16px sans-serif';
+  ctx.font = px(10);
   ctx.fillStyle = 'rgba(255,255,255,0.7)';
   ctx.fillText('v1.0', VIEW_W - 12, 708);
 }

@@ -1,11 +1,11 @@
 export const HINTS = [
-  { id: 'move', icon: '✥', text: 'WASD / ARROWS — move', show: 5.0,
+  { id: 'move', text: 'WASD / ARROWS — move', show: 5.0,
     cond: (s) => s.time > 0.5 },
-  { id: 'weapons', icon: '✂', text: 'ALL WEAPONS FIRE ON THEIR OWN — DODGE!', show: 4.5,
+  { id: 'weapons', text: 'ALL WEAPONS FIRE ON THEIR OWN — DODGE!', show: 4.5,
     cond: (s) => s.enemies.some((e) => Math.hypot(e.x - s.player.x, e.y - s.player.y) < 240) },
-  { id: 'coins', icon: '$', text: 'COINS — BUY CARDS AFTER EACH STAGE', show: 4.5,
+  { id: 'coins', text: 'COINS — BUY CARDS AFTER EACH STAGE', show: 4.5,
     cond: (s) => s.coins > 0 || s.drops.length > 0 },
-  { id: 'dash', icon: '»', text: 'SPACE — DASH OUT OF DANGER!', show: 4.5,
+  { id: 'dash', text: 'SPACE — DASH OUT OF DANGER!', show: 4.5,
     cond: (s) => s.enemies.filter((e) => Math.hypot(e.x - s.player.x, e.y - s.player.y) < 130).length >= 3 },
 ];
 
