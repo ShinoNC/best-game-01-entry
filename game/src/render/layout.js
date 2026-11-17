@@ -41,12 +41,12 @@ export function overLayout() {
 export const POTION_BOX = { x: 800, y: 656, w: 56, h: 56 };
 
 // Slot screen: 3 vertical cards in the overlay panel.
-export const SLOT_PANEL = { x: 140, y: 60, w: 1000, h: 580 };
-export const SLOT_CLOSE = { x: 560, y: 576, w: 160, h: 44 };
+export const SLOT_PANEL = () => ({ x: POOL.cx - 500, y: 60, w: 1000, h: 580 });
+export const SLOT_CLOSE = () => ({ x: POOL.cx - 80, y: 576, w: 160, h: 44 });
 export function slotsLayout() {
-  const cards = [0, 1, 2].map((i) => ({ x: 220 + i * 290, y: 150, w: 260, h: 390 }));
+  const cards = [0, 1, 2].map((i) => ({ x: POOL.cx - 420 + i * 290, y: 150, w: 260, h: 390 }));
   const dels = cards.map((c) => ({ x: c.x + c.w - 48, y: c.y + 12, w: 36, h: 36 }));
-  return { panel: SLOT_PANEL, close: SLOT_CLOSE, cards, dels };
+  return { panel: SLOT_PANEL(), close: SLOT_CLOSE(), cards, dels };
 }
 
 export const LV_CARD_W = 260, LV_CARD_H = 200, LV_CARD_GAP = 24, LV_CARD_Y = 280;
