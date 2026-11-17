@@ -1,6 +1,3 @@
-// Deterministic screenshot scenes (?shot=start|play|elite|boss|storm|stageclear|end&seed=N).
-// Each plays the real rules forward with an autopilot that kites, chases coins and
-// dashes — every frame is what a real game looks like, same seed = same frame.
 import { POOL, STAGE_COUNT } from './config.js';
 import { createRandom } from './random.js';
 import { createState } from './state.js';
@@ -8,7 +5,6 @@ import { nextStage, stepWorld } from './world.js';
 import { autoBuy } from './cards.js';
 import { spawnEnemy } from './enemies.js';
 
-// The autopilot: flee the centroid of nearby threats, chase coins, dash out of crowds.
 function autopilotInput(state) {
   const p = state.player;
   let mx = 0, my = 0, fx = 0, fy = 0;
@@ -17,7 +13,7 @@ function autopilotInput(state) {
     const d = Math.hypot(e.x - p.x, e.y - p.y);
     if (d < 130) { near += 1; const w = 1 / (d * d + 40); fx += (p.x - e.x) * w; fy += (p.y - e.y) * w; }
   }
-  for (const s of state.spits || []) { // sidestep incoming spits, like a player would
+  for (const s of state.spits || []) {
     const d = Math.hypot(s.x - p.x, s.y - p.y);
     if (d < 170) {
       const sl = Math.hypot(s.vx, s.vy) || 1;
@@ -27,10 +23,16 @@ function autopilotInput(state) {
       fx += px * sgn * w; fy += py * sgn * w;
     }
   }
-  if (near > 0 && (fx || fy)) { // kite away from the crowd
+  if (state.boss && state.boss.slamSpots) {
+    for (const c of state.boss.slamSpots) {
+      const d = Math.hypot(c.x - p.x, c.y - p.y);
+      if (d < c.r + 70) { near += 1; const w = 4 / (d * d + 40); fx += (p.x - c.x) * w; fy += (p.y - c.y) * w; }
+    }
+  }
+  if (near > 0 && (fx || fy)) {
     mx = fx; my = fy;
   } else {
-    let coin = null, pd = 1e9; // otherwise chase the nearest coin
+    let coin = null, pd = 1e9;
     for (const pe of state.drops) {
       const d = Math.hypot(pe.x - p.x, pe.y - p.y);
       if (d < pd) { pd = d; coin = pe; }
@@ -38,7 +40,6 @@ function autopilotInput(state) {
     if (coin) { mx = (coin.x - p.x) / (pd || 1); my = (coin.y - p.y) / (pd || 1); }
     else { mx = (POOL.cx - p.x) / 400; my = (POOL.cy - p.y) / 400; }
   }
-  // Near the pool's edge, steer back toward open water instead of hugging the rim.
   const ex = (p.x - POOL.cx) / POOL.rx, ey = (p.y - POOL.cy) / POOL.ry;
   const ed = Math.hypot(ex, ey);
   if (ed > 0.6) { mx += -ex * 2.2; my += -ey * 2.2; }
@@ -50,18 +51,15 @@ function autopilotInput(state) {
   };
 }
 
-// Run the real sim until `pred(state)` is true, a run ends, or maxSteps is hit.
 function runUntil(state, pred, maxSteps, fx, audio) {
   let steps = 0;
   while (steps < maxSteps) {
-    // Predicate first: a stage-clear the caller wants must not be auto-played past.
     if (pred(state)) return true;
     if (state.phase === 'over') return pred(state);
     if (state.phase === 'stageclear') {
       autoBuy(state);
       nextStage(state, audio);
     } else if (state.phase === 'play') {
-      // Fresh steering every step — a stale vector walks into the rim and dies.
       stepWorld(state, autopilotInput(state), 1 / 60, fx, audio);
     } else {
       return pred(state);
@@ -72,8 +70,6 @@ function runUntil(state, pred, maxSteps, fx, audio) {
 }
 
 export function stageShot(shot, seed, fx, audio) {
-  // Staging runs the full sim synchronously — real WebAudio would create tens
-  // of thousands of oscillator nodes for a 30-stage win, so staged runs are silent.
   audio = new Proxy({}, { get: () => () => {} });
   if (shot === 'start') {
     return createStateFromSeed(seed);
@@ -84,18 +80,14 @@ export function stageShot(shot, seed, fx, audio) {
     return s;
   }
   if (shot === 'elite') {
-    // A dense late fight: stage 12+, 10+ creatures, an elite in frame — by then
-    // the crab owns several weapons, so the frame shows the whole arsenal firing.
     const s = createStateFromSeed(seed); s.phase = 'play';
     runUntil(s, (st) => st.phase === 'play' && st.stage >= 12 && st.enemies.length >= 10, 60000, fx, audio);
     if (s.phase === 'play') {
-      // An elite in frame, clamped into the clear zone below the banner.
       let elite = s.enemies.find((e) => e.elite);
       if (!elite) elite = spawnEnemy(s, 'urchin', true);
       elite.x = Math.min(1030, Math.max(250, s.player.x - 200));
       elite.y = Math.min(560, Math.max(200, s.player.y + 120));
       s.banner = '★ ELITE URCHIN — big coins!'; s.bannerT = 2.5;
-      // Laser beam + spin ring mid-blast when the frame is taken.
       if (s.weapons.laser > 0) {
         s.player.laser = 0.15; s.player.laserLen = 420;
         s.player.laserBeams = s.weapons.laser >= 5 ? 2 : 1;
@@ -105,61 +97,65 @@ export function stageShot(shot, seed, fx, audio) {
     return s;
   }
   if (shot === 'boss' || shot === 'storm') {
-    // A boss fight: stage 5's Great Heron, or stage 30's Heron King. Try seeds
-    // until the autopilot is alive with the boss in the air, then stage the bird
-    // mid-swoop near the crab with a flock of gulls around it.
     const wantStage = shot === 'storm' ? STAGE_COUNT : 5;
     for (let trySeed = seed; trySeed < seed + 8; trySeed += 1) {
       const s = createStateFromSeed(trySeed); s.phase = 'play';
       runUntil(s, (st) => st.phase === 'play' && st.stage === wantStage && st.boss, 120000, fx, audio);
       if (s.phase === 'play' && s.boss && s.stage === wantStage) {
         const b = s.boss;
-        // Dive in from the upper right — clamped into the clear zone.
-        b.x = Math.min(1030, Math.max(250, s.player.x + 170));
-        b.y = Math.min(560, Math.max(200, s.player.y - 130));
-        b.state = 'dive'; b.diveT = 0.4; // mid-swoop when the frame is taken
-        b.hp = Math.min(b.hp, b.maxHp * 0.7); // the bar shows real damage, not a full bar
-        for (let i = 0; i < 3; i += 1) { // a flock of gulls joins the fight
-          const g = spawnEnemy(s, 'gull', false);
+        s.player.x = 480; s.player.y = 430; s.player.angle = -0.5;
+        b.x = 830; b.y = 280;
+        b.state = 'dive'; b.diveT = 0.4;
+        b.hp = Math.min(b.hp, b.maxHp * 0.7);
+
+        if (shot === 'storm') {
+          s.player.armor = Math.max(s.player.armor, 60);
+          b.atkState = 'tele'; b.atkPhaseT = 0.9;
+          b.slamSpots = [
+            { x: s.player.x + 70, y: s.player.y - 40, r: 55 },
+            { x: s.player.x - 80, y: s.player.y + 55, r: 55 },
+            { x: s.player.x + 140, y: s.player.y + 90, r: 55 },
+          ];
+        }
+        for (let i = 0; i < 3; i += 1) {
+          const g = spawnEnemy(s, 'squid', false);
           const a = 0.6 + i * 2.0;
           g.x = Math.min(1160, Math.max(120, s.player.x + Math.cos(a) * 220));
           g.y = Math.min(600, Math.max(170, s.player.y + Math.sin(a) * 150));
-          // diveT under 0.6 s: their dive telegraphs are visible in the frame.
           g.state = 'circle'; g.diveT = 0.4;
         }
-        // Laser beam + spin ring mid-blast when the frame is taken.
         if (s.weapons.laser > 0) {
           s.player.laser = 0.15; s.player.laserLen = 420;
           s.player.laserBeams = s.weapons.laser >= 5 ? 2 : 1;
         }
         if (s.weapons.spin > 0) s.player.spin = 0.15;
-        // An archerfish mid-aim (droplet swelling at its snout) — the ranged
-        // threat reads in the cover, and a spit is already in the air.
         const ar = spawnEnemy(s, 'archer', false);
         ar.x = Math.min(1160, Math.max(120, s.player.x - 280));
         ar.y = Math.min(600, Math.max(170, s.player.y - 90));
         ar.windup = 0.2; ar.lungeCd = 2;
         s.spits.push({ x: (ar.x + s.player.x) / 2, y: (ar.y + s.player.y) / 2,
           vx: 200, vy: 60, dmg: ar.dmg, r: 6, life: 2 });
-        // The crab holds a guppy overhead — the Claw Grab reads in the cover.
-        const held = spawnEnemy(s, 'guppy', false);
-        s.enemies.splice(s.enemies.indexOf(held), 1);
-        s.player.grab = held; s.player.grabT = 4;
         s.banner = `${b.name} — DRIVE IT OFF!`;
         s.bannerT = 2.5;
         return s;
       }
     }
-    // Fallback: the autopilot fell before the boss — take the elite frame instead.
+    const s = createStateFromSeed(seed); s.phase = 'play';
+    runUntil(s, (st) => st.phase === 'play' && st.stage >= 12 && st.enemies.length >= 10, 60000, fx, audio);
+    return s;
+  }
+  if (shot.startsWith('band')) {
+    const target = parseInt(shot.slice(4), 10) || 1;
+    for (let trySeed = seed; trySeed < seed + 8; trySeed += 1) {
+      const s = createStateFromSeed(trySeed); s.phase = 'play';
+      runUntil(s, (st) => st.phase === 'play' && st.stage >= target && st.enemies.length >= 8, 120000, fx, audio);
+      if (s.phase === 'play' && s.stage >= target) return s;
+    }
     const s = createStateFromSeed(seed); s.phase = 'play';
     runUntil(s, (st) => st.phase === 'play' && st.stage >= 12 && st.enemies.length >= 10, 60000, fx, audio);
     return s;
   }
   if (shot === 'stageclear') {
-    // The stage-clear menu after a LATER stage (15 first, then 10, then 3):
-    // a fuller build reads in the YOUR BUILD row. Enough coins (~150) that
-    // some cards are buyable and some are not. Prefer a hand with a weapon
-    // card; the crab sits bottom-left so the menu stays centred.
     for (const wantStage of [15, 10, 3]) {
       let fallback = null;
       for (let trySeed = seed; trySeed < seed + 6; trySeed += 1) {
@@ -169,7 +165,7 @@ export function stageShot(shot, seed, fx, audio) {
           if (!fallback) fallback = s;
           if (s.hand.some((c) => c.kind === 'weapon')) {
             s.player.x = 200; s.player.y = 620; s.player.angle = 0;
-            s.coins = Math.max(s.coins, 150); // some cards affordable, some not — the economy reads at a glance
+            s.coins = Math.max(s.coins, 150);
             fx.clear();
             return s;
           }
@@ -182,7 +178,6 @@ export function stageShot(shot, seed, fx, audio) {
         return fallback;
       }
     }
-    // Fallback: any stage-clear screen will do.
     const s = createStateFromSeed(seed); s.phase = 'play';
     runUntil(s, (st) => st.phase === 'stageclear', 20000, fx, audio);
     s.player.x = 200; s.player.y = 620; s.player.angle = 0;
@@ -191,8 +186,6 @@ export function stageShot(shot, seed, fx, audio) {
     return s;
   }
   if (shot === 'end') {
-    // Try seeds until the autopilot clears all 30 stages; prefer a win with
-    // 60+ HP left. Fall back to the best win found, then to a game-over screen.
     let bestWin = null;
     for (let trySeed = seed; trySeed < seed + 10; trySeed += 1) {
       const s = createStateFromSeed(trySeed); s.phase = 'play';
@@ -203,7 +196,6 @@ export function stageShot(shot, seed, fx, audio) {
       }
     }
     if (bestWin) { fx.clear(); return bestWin; }
-    // Fallback: the autopilot fell — a real game-over screen is still a complete loop.
     const s = createStateFromSeed(seed); s.phase = 'play';
     runUntil(s, (st) => st.phase === 'over', 120000, fx, audio);
     if (s.phase === 'play') { s.phase = 'over'; s.result = 'lost'; s.player.hp = 0; }

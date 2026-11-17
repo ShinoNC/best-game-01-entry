@@ -1,62 +1,79 @@
-// The stage-clear menu's cards (criterion 2): ONE menu, only at stage-clear,
-// showing 5 cards — a new weapon, a weapon level-up, or a skill — each with a
-// coin price. The player buys as many as they can afford, rerolls the hand
-// for 10 coins, or skips straight to the next stage. There is no level-up
-// screen and no separate shop: the cards ARE the shop.
-// A card: { id, kind, wid|track, lv, toLevel, price, name, icon, desc, tag, bought }.
-import { SHOP, WEAPONS, WEAPON_MAX, WEAPON_ORDER } from './config.js';
-import { SKILL_PRICES, UPGRADE_DEFS, applyUpgrade } from './upgrades.js';
+import { SHOP, WEAPON_MAX, WEAPON_ORDER, modOf } from './config.js';
+import { WEAPONS } from './weapons.js';
+import { SKILL_PRICES, UPGRADE_DEFS, applyUpgrade, spendSkillPoint } from './upgrades.js';
 
-export const REROLL_COST = 10; // flat, per reroll — cheap enough to use, dear enough to matter
+export const REROLL_COST = 10;
 export const HAND_SIZE = 5;
 export const REPAIR_PRICE = 25;
 export const REPAIR_HEAL = 40;
+export const SPOINT_PRICE = 300;
 
 function shopEntry(wid) { return SHOP.find((s) => s.id === wid); }
 
-// Every card the player could draw right now: unowned weapons (weight 3, so
-// the arsenal completes early), weapon level-ups (weight 2), skill upgrades
-// (weight 1). One card per option — the hand is 5 distinct draws from this pool.
+export function cardStats(card, state) {
+  if (card.kind === 'repair') return `+${REPAIR_HEAL} HP`;
+  if (card.kind === 'spoint') return '+1 SKILL POINT';
+  if (card.kind === 'skill') {
+    const d = UPGRADE_DEFS.find((u) => u.id === card.track);
+    return d ? d.stat : '';
+  }
+  const W = WEAPONS[card.wid];
+  const mult = 1.14 * (1.05 ** state.ups.claws);
+  const dmgAt = (lv) => Math.round(W.levels[lv - 1].dmg * mult);
+  if (card.kind === 'weapon') {
+    const L = W.levels[0];
+    const sig = L.harpoons ? `×${L.harpoons}` : L.beams ? `${L.beams} BEAM`
+      : L.pierce ? `PIERCE ${L.pierce}` : L.turn ? 'HOMING' : L.arc ? `${L.hits} HITS`
+      : L.rate <= 0.5 ? 'RAPID' : 'AREA';
+    return `${dmgAt(1)} DMG · ${sig}`;
+  }
+  let s = `DMG ${dmgAt(card.lv)}→${dmgAt(card.toLevel)}`;
+  const a = W.levels[card.lv - 1], b = W.levels[card.toLevel - 1];
+  for (const [k, label] of [['arrows', 'ARROW'], ['pellets', 'PELLET'], ['harpoons', 'HARPOON'],
+    ['beams', 'BEAM'], ['hits', 'HIT'], ['pierce', 'PIERCE']]) {
+    if ((b[k] || 0) > (a[k] || 0)) s += ` · +${b[k] - a[k]} ${label}`;
+  }
+  return s;
+}
+
 export function cardPool(state) {
+  const pr = (p) => Math.round(p * modOf(state, 'price'));
   const pool = [];
   for (const wid of WEAPON_ORDER) {
-    if (wid === 'claw') continue; // the claw is owned from the start
+    if (wid === 'claw') continue;
     if (state.weapons[wid] === 0) {
       pool.push({ id: `weapon:${wid}`, kind: 'weapon', wid, lv: 0, toLevel: 1,
-        price: shopEntry(wid).price, name: WEAPONS[wid].name, icon: WEAPONS[wid].icon,
-        desc: WEAPONS[wid].desc, tag: 'NEW WEAPON', weight: 3, bought: false });
+        price: pr(shopEntry(wid).price), name: WEAPONS[wid].name, icon: WEAPONS[wid].icon,
+        tag: 'NEW WEAPON', weight: 3, bought: false });
     }
   }
   for (const wid of WEAPON_ORDER) {
     const lv = state.weapons[wid];
     if (lv > 0 && lv < WEAPON_MAX) {
       pool.push({ id: `wup:${wid}:${lv + 1}`, kind: 'wup', wid, lv, toLevel: lv + 1,
-        price: shopEntry(wid).up[lv - 1], name: `${WEAPONS[wid].name} Lv${lv + 1}`,
-        icon: WEAPONS[wid].icon, desc: WEAPONS[wid].desc, tag: 'LEVEL UP', weight: 2, bought: false });
+        price: pr(shopEntry(wid).up[lv - 1]), name: `${WEAPONS[wid].name} Lv${lv + 1}`,
+        icon: WEAPONS[wid].icon, tag: 'LEVEL UP', weight: 2, bought: false });
     }
   }
-  for (const d of UPGRADE_DEFS) {
-    const lv = state.ups[d.id];
-    if (lv < d.max) {
-      pool.push({ id: `skill:${d.id}:${lv + 1}`, kind: 'skill', track: d.id, lv, toLevel: lv + 1,
-        price: SKILL_PRICES[lv], name: d.name, icon: d.icon, desc: d.desc,
-        tag: 'SKILL', weight: 1, bought: false });
-    }
+  const d = UPGRADE_DEFS.find((u) => u.id === 'shell');
+  const lv = state.ups.shell;
+  if (lv < d.max) {
+    pool.push({ id: `skill:shell:${lv + 1}`, kind: 'skill', track: 'shell', lv, toLevel: lv + 1,
+      price: pr(SKILL_PRICES[lv]), name: d.name, icon: d.icon,
+      tag: 'SKILL', weight: 1, bought: false });
   }
+  pool.push({ id: 'spoint', kind: 'spoint', lv: 0, toLevel: 0,
+    price: Math.round(SPOINT_PRICE * modOf(state, 'price')), name: 'SKILL POINT', icon: '★',
+    tag: 'SKILL POINT', weight: 1, bought: false });
   return pool;
 }
 
-function repairCard(n) {
-  return { id: `repair:${n}`, kind: 'repair', lv: 0, toLevel: 0, price: REPAIR_PRICE,
-    name: 'SHELL REPAIR', icon: '♥', desc: `HEAL +${REPAIR_HEAL} HP`, tag: 'REPAIR',
+function repairCard(n, state) {
+  return { id: `repair:${n}`, kind: 'repair', lv: 0, toLevel: 0, price: Math.round(REPAIR_PRICE * modOf(state, 'price')),
+    name: 'SHELL REPAIR', icon: '♥', tag: 'REPAIR',
     weight: 0, bought: false };
 }
 
-// Draw a fresh 5-card hand: weighted sample without replacement. The FIRST
-// menu (after stage 1) always includes a new weapon, so the player sees the
-// most exciting option immediately. If the pool is nearly empty, repair cards
-// pad the hand (only while the shell is damaged — a full-HP crab sees fewer
-// cards, never a useless one).
 export function drawHand(state) {
   const pool = cardPool(state);
   const weighted = [];
@@ -73,14 +90,11 @@ export function drawHand(state) {
   }
   let n = 0;
   while (hand.length < HAND_SIZE && state.player.hp < state.player.maxHp) {
-    hand.push(repairCard(n += 1));
+    hand.push(repairCard(n += 1, state));
   }
   return hand;
 }
 
-// Buy one card. Returns 'ok', 'poor' (not enough coins) or 'bought' (already
-// bought this visit). A bought card stays in the hand, marked, so the row
-// never reflows mid-visit — the player sees exactly what they bought.
 export function buyCard(state, card) {
   if (!card || card.bought) return 'bought';
   if (state.coins < card.price) return 'poor';
@@ -90,6 +104,8 @@ export function buyCard(state, card) {
     state.weapons[card.wid] = card.toLevel;
   } else if (card.kind === 'skill') {
     applyUpgrade(state, card.track);
+  } else if (card.kind === 'spoint') {
+    state.skillPts += 1;
   } else if (card.kind === 'repair') {
     state.player.hp = Math.min(state.player.maxHp, state.player.hp + REPAIR_HEAL);
   }
@@ -97,10 +113,6 @@ export function buyCard(state, card) {
   return 'ok';
 }
 
-// Reroll the hand for a flat 10 coins. Returns false when the player cannot
-// afford it (the button is disabled then). Bought cards are gone from the
-// pool by definition — a bought weapon is owned, a bought skill is levelled —
-// so a reroll never offers the same card twice.
 export function rerollHand(state) {
   if (state.coins < REROLL_COST) return false;
   state.coins -= REROLL_COST;
@@ -111,27 +123,37 @@ export function rerollHand(state) {
   return true;
 }
 
-// The sim autopilot's shopper: new weapons first (cheapest first), then
-// weapon level-ups (claw first), then skills in priority order, repair last.
-// Buys while affordable; if the hand offered nothing buyable and coins allow,
-// rerolls up to twice to fish for a wanted card. A reasonable player, not an
-// optimal one — it stops after buying, it never fishes after a purchase.
-const SKILL_ORDER = ['claws', 'tempo', 'shell', 'reach', 'bubbles', 'legs', 'ink', 'magnet'];
+const SKILL_ORDER = ['claws', 'tempo', 'shell', 'reach', 'bubbles', 'legs', 'magnet'];
 function cardScore(card) {
   if (card.kind === 'weapon') return 1000 - card.price;
   if (card.kind === 'wup') return (card.wid === 'claw' ? 900 : 800) - card.price;
   if (card.kind === 'skill') return 300 - SKILL_ORDER.indexOf(card.track) * 10;
+  if (card.kind === 'spoint') return 250;
   return 100;
 }
+const POINT_ORDER = ['claws', 'tempo', 'reach'];
+const POINT_REST = ['legs', 'bubbles', 'magnet'];
+function lowestSkill(state, list) {
+  let best = null, bestLv = 99;
+  for (const id of list) {
+    const lv = state.ups[id];
+    if (lv < 10 && lv < bestLv) { bestLv = lv; best = id; }
+  }
+  return best;
+}
+export function autoSpendPoints(state) {
+  while (state.skillPts > 0) {
+    const id = lowestSkill(state, POINT_ORDER) || lowestSkill(state, POINT_REST);
+    if (!id || !spendSkillPoint(state, id)) break;
+  }
+}
 export function autoBuy(state) {
-  // A human fishes for the missing weapons: if the hand has no new weapon
-  // and the arsenal is incomplete, reroll first (up to 2x) before buying
-  // anything — a cheap skill is a worse use of the menu than a new gun.
+  autoSpendPoints(state);
   const owned = WEAPON_ORDER.filter((w) => state.weapons[w] > 0).length;
   for (let fish = 0; fish < 2; fish += 1) {
     if (owned >= WEAPON_ORDER.length) break;
     if (state.hand.some((c) => c.kind === 'weapon' && !c.bought)) break;
-    if (state.coins < REROLL_COST + 50) break; // keep enough to buy the weapon
+    if (state.coins < REROLL_COST + 50) break;
     if (!rerollHand(state)) break;
   }
   let bought = 0;
@@ -147,10 +169,11 @@ export function autoBuy(state) {
       if (buyCard(state, best) !== 'ok') break;
       bought += 1;
     }
-    if (bought > 0) return bought;
+    if (bought > 0) break;
     if (round < 2 && state.coins >= REROLL_COST + 10 && state.hand.length > 0) {
-      if (!rerollHand(state)) return bought;
-    } else return bought;
+      if (!rerollHand(state)) break;
+    } else break;
   }
+  autoSpendPoints(state);
   return bought;
 }

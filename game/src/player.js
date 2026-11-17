@@ -1,27 +1,20 @@
-// The crab: WASD/arrows move, ALL owned weapons attack AUTOMATICALLY (each on
-// its own cooldown, aimed at the nearest creature in range; the laser fires
-// fixed horizontal beams); Space/Shift dashes (with i-frames). The player's
-// job is movement, positioning and dodging.
-import { GRAB, PAL, PLAYER, POOL, WEAPON_ORDER } from './config.js';
+import { PAL, PLAYER, POOL, WEAPON_ORDER, modOf } from './config.js';
 import { weaponStatsFor } from './weapons.js';
+import { hurtEnemy } from './enemies.js';
 
 function clampToPool(p) {
-  const dx = (p.x - POOL.cx) / POOL.rx, dy = (p.y - POOL.cy) / POOL.ry;
-  const d = Math.hypot(dx, dy);
-  if (d > 1) { p.x = POOL.cx + (dx / d) * POOL.rx; p.y = POOL.cy + (dy / d) * POOL.ry; }
+  const r = p.radius || 0;
+  p.x = Math.max(POOL.x0 + r, Math.min(POOL.x1 - r, p.x));
+  p.y = Math.max(POOL.y0 + r, Math.min(POOL.y1 - r, p.y));
 }
 
-// Slide along the pool's edge: near the rim, the outward part of the velocity
-// is removed, so the crab glides along the boundary instead of sticking to it.
-// The ellipse's outward normal is its gradient ((x-cx)/rx^2, (y-cy)/ry^2).
 function slideAtEdge(p, vx, vy) {
-  const ex = (p.x - POOL.cx) / POOL.rx, ey = (p.y - POOL.cy) / POOL.ry;
-  if (Math.hypot(ex, ey) < 0.97) return { vx, vy };
-  let nx = (p.x - POOL.cx) / (POOL.rx * POOL.rx), ny = (p.y - POOL.cy) / (POOL.ry * POOL.ry);
-  const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
-  const out = vx * nx + vy * ny;
-  if (out <= 0) return { vx, vy }; // already moving inward — leave it alone
-  return { vx: vx - nx * out, vy: vy - ny * out };
+  const r = p.radius || 0, m = 6;
+  if (p.x - r - POOL.x0 < m && vx < 0) vx = 0;
+  if (POOL.x1 - p.x - r < m && vx > 0) vx = 0;
+  if (p.y - r - POOL.y0 < m && vy < 0) vy = 0;
+  if (POOL.y1 - p.y - r < m && vy > 0) vy = 0;
+  return { vx, vy };
 }
 
 export function nearestEnemy(state, x, y, range) {
@@ -33,17 +26,11 @@ export function nearestEnemy(state, x, y, range) {
   return best;
 }
 
-// One weapon attack, aimed at `aim` (the direction of the nearest creature in
-// that weapon's range). Claw: a cleaving arc centred on the aim. Bow: a volley
-// of parallel piercing arrows (Lv1 = 1 arrow). Blaster: a pellet spread (Lv1 =
-// 1 pellet). Shell: one homing shell that steers toward its target. Spin: a
-// ring blast hitting everything nearby. Laser: fixed horizontal beam(s) — one
-// to the right, two (left + right) at max level — hitting everything on the line.
 function fireWeapon(state, id, aim, target, fx, audio) {
   const p = state.player, w = weaponStatsFor(state, id);
   p.weapCd[id] = w.rate;
   if (id === 'claw') {
-    p.angle = aim; // the crab faces its claw target, so the arc reads clearly
+    p.angle = aim;
     p.swing = 0.18;
     const inArc = state.enemies
       .map((e) => ({ e, d: Math.hypot(e.x - p.x, e.y - p.y) }))
@@ -59,17 +46,16 @@ function fireWeapon(state, id, aim, target, fx, audio) {
     let hits = 0;
     for (const { e } of inArc) {
       const dmg = Math.round(w.dmg * (0.9 + state.rng.next() * 0.2));
-      e.hp -= dmg; e.flash = 0.12; state.stats.damage += dmg;
-      // Knockback: the claw shoves creatures away, so the crab is never simply swarmed.
+      if (!hurtEnemy(state, e, dmg)) continue;
       const ka = Math.atan2(e.y - p.y, e.x - p.x);
       const kb = e.elite ? 8 : 26;
       e.x += Math.cos(ka) * kb; e.y += Math.sin(ka) * kb;
-      if (hits < 4) fx.text(e.x, e.y - e.r - 6, `${dmg}`, '#ffd166');
-      fx.burst(e.x, e.y, '#ffd166', 5, 150); // a visible puff on every claw hit
+      if (hits < 4 && e.boss) fx.text(e.x, e.y - e.r - 6, `${dmg}`, '#ffd166', false, e.id);
+      fx.burst(e.x, e.y, '#ffd166', 5, 150);
       hits += 1;
     }
     audio.snap();
-  } else if (id === 'bow') { // a volley of parallel piercing arrows
+  } else if (id === 'bow') {
     for (let i = 0; i < w.arrows; i += 1) {
       const off = (i - (w.arrows - 1) / 2) * 14;
       state.bolts.push({ x: p.x + Math.cos(aim) * 28 - Math.sin(aim) * off,
@@ -79,7 +65,7 @@ function fireWeapon(state, id, aim, target, fx, audio) {
     }
     fx.bubbles(p.x + Math.cos(aim) * 28, p.y + Math.sin(aim) * 28, 2);
     audio.bolt();
-  } else if (id === 'laser') { // hitscan beams, fixed horizontal directions
+  } else if (id === 'laser') {
     p.laser = 0.15; p.laserLen = w.range; p.laserBeams = w.beams;
     const dirs = w.beams >= 2 ? [1, -1] : [1];
     let hits = 0;
@@ -88,20 +74,20 @@ function fireWeapon(state, id, aim, target, fx, audio) {
         const dx = (e.x - p.x) * dir, dy = Math.abs(e.y - p.y);
         if (dx < 0 || dx > w.range + e.r || dy > 16 + e.r) continue;
         const dmg = Math.round(w.dmg * (0.9 + state.rng.next() * 0.2));
-        e.hp -= dmg; e.flash = 0.12; state.stats.damage += dmg;
-        if (hits < 4) fx.text(e.x, e.y - e.r - 6, `${dmg}`, '#ff2e88');
+        if (!hurtEnemy(state, e, dmg)) continue;
+        if (hits < 4 && e.boss) fx.text(e.x, e.y - e.r - 6, `${dmg}`, '#ff2e88', false, e.id);
         hits += 1;
       }
     }
     fx.burst(p.x, p.y, '#ff2e88', 6, 120);
     audio.bolt();
-  } else if (id === 'shell') { // homing: one shell that steers toward its target
+  } else if (id === 'shell') {
     state.bolts.push({ x: p.x + Math.cos(aim) * 28, y: p.y + Math.sin(aim) * 28,
       vx: Math.cos(aim) * w.speed, vy: Math.sin(aim) * w.speed, dmg: Math.round(w.dmg),
       pierce: 0, r: 9, life: 2.0, kind: 'homing', target, turn: w.turn, speed: w.speed });
     fx.bubbles(p.x + Math.cos(aim) * 28, p.y + Math.sin(aim) * 28, 2);
     audio.bolt();
-  } else if (id === 'spin') { // ring blast: everything nearby takes damage + a shove
+  } else if (id === 'spin') {
     p.spin = 0.3;
     fx.burst(p.x, p.y, '#7fe0c3', 18, 260, 'bubble');
     let hits = 0;
@@ -109,15 +95,24 @@ function fireWeapon(state, id, aim, target, fx, audio) {
       const d = Math.hypot(e.x - p.x, e.y - p.y);
       if (d > w.range + e.r) continue;
       const dmg = Math.round(w.dmg * (0.9 + state.rng.next() * 0.2));
-      e.hp -= dmg; e.flash = 0.12; state.stats.damage += dmg;
+      if (!hurtEnemy(state, e, dmg)) continue;
       const ka = Math.atan2(e.y - p.y, e.x - p.x);
       const kb = e.elite ? 8 : 30;
       e.x += Math.cos(ka) * kb; e.y += Math.sin(ka) * kb;
-      if (hits < 4) fx.text(e.x, e.y - e.r - 6, `${dmg}`, '#7fe0c3');
+      if (hits < 4 && e.boss) fx.text(e.x, e.y - e.r - 6, `${dmg}`, '#7fe0c3', false, e.id);
       hits += 1;
     }
     audio.pop();
-  } else { // blaster: a tight spread of ink pellets
+  } else if (id === 'trident') {
+    for (let i = 0; i < w.harpoons; i += 1) {
+      const off = (i - (w.harpoons - 1) / 2) * w.spread;
+      state.bolts.push({ x: p.x + Math.cos(aim) * 28, y: p.y + Math.sin(aim) * 28,
+        vx: Math.cos(aim + off) * 600, vy: Math.sin(aim + off) * 600, dmg: Math.round(w.dmg),
+        pierce: 0, r: 6, life: 1.0, kind: 'harpoon' });
+    }
+    fx.bubbles(p.x + Math.cos(aim) * 28, p.y + Math.sin(aim) * 28, 2);
+    audio.bolt();
+  } else {
     for (let i = 0; i < w.pellets; i += 1) {
       const off = (i - (w.pellets - 1) / 2) * 0.14;
       state.bolts.push({ x: p.x + Math.cos(aim) * 26, y: p.y + Math.sin(aim) * 26,
@@ -129,9 +124,6 @@ function fireWeapon(state, id, aim, target, fx, audio) {
   }
 }
 
-// Is any creature on the laser's beam line? The beams are fixed horizontal
-// directions (right; left + right at max level), so the laser only fires when
-// something is actually in the way.
 function laserTarget(state, w) {
   const p = state.player;
   const dirs = w.beams >= 2 ? [1, -1] : [1];
@@ -149,22 +141,18 @@ export function updatePlayer(state, input, dt, fx, audio) {
   for (const id of WEAPON_ORDER) p.weapCd[id] -= dt;
   p.dashCd -= dt; p.iframes -= dt; p.flash -= dt; p.swing -= dt; p.spin -= dt; p.laser -= dt;
   const mv = input.move();
-  p.moving = (mv.x || mv.y || p.dashT > 0) ? 1 : Math.max(0, p.moving - dt * 5); // drives the walk cycle
-  if (p.dashT > 0) { // dashing: keep the burst direction, ignore steering
+  p.moving = (mv.x || mv.y || p.dashT > 0) ? 1 : Math.max(0, p.moving - dt * 5);
+  if (p.dashT > 0) {
     p.dashT -= dt;
     const s = slideAtEdge(p, p.dashVx, p.dashVy);
     p.x += s.vx * dt; p.y += s.vy * dt;
-    fx.bubbles(p.x, p.y, 1); // a bubble trail marks the dash path
-    if (state.ups.ink > 0 && state.rng.chance(0.7)) {
-      state.inks.push({ x: p.x, y: p.y, r: 26 + state.ups.ink * 6, life: 2.2, dmg: 6 + state.ups.ink * 4 });
-    }
+    fx.bubbles(p.x, p.y, 1);
   } else if (mv.x || mv.y) {
     const s = slideAtEdge(p, mv.x * p.speed, mv.y * p.speed);
     p.x += s.vx * dt; p.y += s.vy * dt;
     p.angle = Math.atan2(mv.y, mv.x);
   }
-  clampToPool(p); // safety net — the slide above already keeps the crab inside
-  // Dash on Space/Shift, with a burst, i-frames and a whoosh.
+  clampToPool(p);
   if (input.dashHeld() && p.dashCd <= 0 && (mv.x || mv.y)) {
     p.dashCd = PLAYER.dashCd; p.dashT = PLAYER.dashTime;
     p.dashVx = mv.x * PLAYER.dashSpeed; p.dashVy = mv.y * PLAYER.dashSpeed;
@@ -172,45 +160,6 @@ export function updatePlayer(state, input, dt, fx, audio) {
     state.stats.dashes += 1;
     fx.bubbles(p.x, p.y, 8); audio.dash();
   }
-  // Claw Grab (E): snatch the nearest small creature (never an elite or a
-  // heron) and hold it overhead; press E again to hurl it at the nearest foe
-  // — the thrown creature is a bolt, so the bolts loop flies it, hits with
-  // it and pops it. The held creature is OUT of the enemy array (no weapon
-  // targets it, nothing bites it), so the stage-clear check waits for it.
-  p.grabCd -= dt;
-  if (input.grabPressed && input.grabPressed() && p.grabCd <= 0) {
-    if (!p.grab) {
-      let t = null, bd = GRAB.range * GRAB.range;
-      for (const e of state.enemies) {
-        const d2 = (e.x - p.x) ** 2 + (e.y - p.y) ** 2;
-        if (!e.elite && !e.boss && d2 < bd) { bd = d2; t = e; }
-      }
-      if (t) {
-        p.grab = t; p.grabT = GRAB.hold;
-        state.enemies.splice(state.enemies.indexOf(t), 1);
-        audio.pop();
-      }
-    } else {
-      const t = p.grab; p.grab = null;
-      const aim = nearestEnemy(state, p.x, p.y, 500);
-      const a = aim ? Math.atan2(aim.y - p.y, aim.x - p.x) : p.angle;
-      state.bolts.push({ x: p.x, y: p.y, vx: Math.cos(a) * GRAB.speed, vy: Math.sin(a) * GRAB.speed,
-        dmg: GRAB.base + (t.maxHp || t.hp), pierce: 0, r: t.r + 4, life: 1.5, kind: 'thrown', thrown: t });
-      p.grabCd = GRAB.cd;
-      fx.bubbles(p.x, p.y, 4); audio.bolt();
-    }
-  }
-  if (p.grab) {
-    p.grabT -= dt;
-    if (p.grabT <= 0) { // it struggles free and swims off
-      p.grab.x = p.x + 30; p.grab.y = p.y + 30;
-      state.enemies.push(p.grab); p.grab = null; p.grabCd = GRAB.cd;
-    }
-  }
-  // Auto-attack: EVERY owned weapon fires on its own, each on its own
-  // cooldown, each aimed at the nearest creature in ITS range — the claw
-  // cleaves, the bow looses, the blaster bursts, the shell homes, the spin
-  // blasts, the laser beams. The crab turns to face the nearest creature overall.
   const face = nearestEnemy(state, p.x, p.y, 560);
   if (face) p.angle = Math.atan2(face.y - p.y, face.x - p.x);
   for (const id of WEAPON_ORDER) {
@@ -228,19 +177,14 @@ export function updatePlayer(state, input, dt, fx, audio) {
 export function hurtPlayer(state, dmg, fx, audio) {
   const p = state.player;
   if (p.iframes > 0 || state.phase !== 'play') return;
-  if (p.grab) { // a hit knocks the held creature free
-    p.grab.x = p.x + 20; p.grab.y = p.y + 20;
-    state.enemies.push(p.grab); p.grab = null; p.grabCd = GRAB.cd;
-  }
-  // A sturdier shell soaks a flat slice of every hit.
   const soaked = Math.min(4, state.ups.shell * 1);
-  const real = Math.max(1, dmg - soaked);
-  p.hp -= real; p.iframes = PLAYER.iframes; p.flash = 0.25;
+  const real = Math.max(1, Math.round((dmg - soaked) * modOf(state, 'taken')));
+  const absorbed = Math.min(p.armor, real);
+  p.armor -= absorbed;
+  const toHp = real - absorbed;
+  p.hp -= toHp; p.iframes = PLAYER.iframes; p.flash = 0.25;
   state.stats.taken += real;
-  state.stageTaken += real; // any damage this stage voids UNTOUCHED for it
-  // A hit shoves nearby creatures back a little — breathing room, so the
-  // crab is not instantly re-bitten by the same swarm. The shake is light
-  // (0.15): a heavy shake on every hit made steering feel lost.
+  state.stageTaken += real;
   for (const e of state.enemies) {
     const d = Math.hypot(e.x - p.x, e.y - p.y);
     if (d < 60 + e.r) {
@@ -248,7 +192,7 @@ export function hurtPlayer(state, dmg, fx, audio) {
       e.x += Math.cos(ka) * 20; e.y += Math.sin(ka) * 20;
     }
   }
-  fx.shake(0.15); fx.text(p.x, p.y - 30, `-${real}`, PAL.hp, true);
+  fx.shake(0.15); fx.text(p.x, p.y - 30, toHp > 0 ? `-${toHp}` : 'BLOCKED', toHp > 0 ? PAL.hp : PAL.armor, true);
   fx.burst(p.x, p.y, PAL.hp, 8, 160);
   audio.hurt();
   if (p.hp <= 0) { p.hp = 0; state.phase = 'over'; state.result = 'lost'; audio.lose(); }

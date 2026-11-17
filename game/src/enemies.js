@@ -1,19 +1,32 @@
-// Enemies: seven behaviours + elites + six boss herons (every fifth stage).
-// Criterion 2: each type moves and threatens differently, so positioning matters.
-import { DIFFICULTIES, ELITE, ENEMIES, POOL, SPIT, STAGES, bossForStage, dmgScale, hpScale, spawnWeights, speedScale } from './config.js';
+import { DIFFICULTIES, ELITE, ENEMIES, POOL, SPIT, STAGES, bossForStage, contentStage, dmgScale, hpScale, modOf, sandRect, spawnWeights, speedScale } from './config.js';
 
 let nextId = 1;
 
-export function spawnEnemy(state, type, elite) {
+export function hurtEnemy(state, e, dmg) {
+  if (e.shelled) return false;
+  e.hp -= dmg; e.flash = 0.12; state.stats.damage += dmg;
+  return true;
+}
+
+export function spawnEnemy(state, type, elite, fx) {
   const def = ENEMIES[type];
   const diff = DIFFICULTIES[state.difficulty || 'normal'];
-  const a = state.rng.angle();
-  const x = POOL.cx + Math.cos(a) * POOL.rx * 1.02;
-  const y = POOL.cy + Math.sin(a) * POOL.ry * 1.02;
-  const hp = Math.round(def.hp * hpScale(state.stage) * diff.hp * (elite ? ELITE.hpMul : 1));
+  const sand = sandRect(state.sandCorner), M = 20;
+  let x, y;
+  for (let tries = 0; tries < 6; tries += 1) {
+    const s = Math.floor(state.rng.next() * 4), f = state.rng.next();
+    x = s === 1 ? POOL.x1 + 14 : s === 3 ? POOL.x0 - 14 : POOL.x0 + f * (POOL.x1 - POOL.x0);
+    y = s === 0 ? POOL.y0 - 14 : s === 2 ? POOL.y1 + 14 : POOL.y0 + f * (POOL.y1 - POOL.y0);
+    const cx = Math.max(POOL.x0 + 8, Math.min(POOL.x1 - 8, x)), cy = Math.max(POOL.y0 + 8, Math.min(POOL.y1 - 8, y));
+    if (cx < sand.x0 - M || cx > sand.x1 + M || cy < sand.y0 - M || cy > sand.y1 + M) break;
+    if (tries === 5) { x = POOL.cx; y = POOL.y1 + 14; }
+  }
+  if (fx && fx.ring) fx.ring(Math.max(POOL.x0 + 8, Math.min(POOL.x1 - 8, x)), Math.max(POOL.y0 + 8, Math.min(POOL.y1 - 8, y)));
+  const cs = contentStage(state);
+  const hp = Math.round(def.hp * hpScale(cs) * diff.hp * (elite ? ELITE.hpMul : 1) * modOf(state, 'ehp'));
   const e = {
     id: nextId += 1, type, x, y, hp, maxHp: hp, r: def.r * (elite ? ELITE.sizeMul : 1),
-    speed: def.speed * speedScale(state.stage) * diff.speed * state.rng.range(0.9, 1.1), dmg: Math.round(def.dmg * dmgScale(state.stage) * diff.dmg * (elite ? ELITE.dmgMul : 1)),
+    speed: def.speed * speedScale(cs) * diff.speed * modOf(state, 'espd') * state.rng.range(0.9, 1.1), dmg: Math.round(def.dmg * dmgScale(cs) * diff.dmg * (elite ? ELITE.dmgMul : 1)),
     score: elite ? ELITE.score : def.score,
     coins: elite ? ELITE.coins : def.coins,
     color: def.color, dark: def.dark, elite: !!elite,
@@ -25,8 +38,10 @@ export function spawnEnemy(state, type, elite) {
 }
 
 function pickType(state) {
-  const w = spawnWeights(state.stage);
-  let total = 0; for (const k in w) total += w[k];
+  const w = spawnWeights(contentStage(state));
+  const mix = state.mix || {};
+  let total = 0;
+  for (const k in w) { w[k] *= mix[k] || 1; total += w[k]; }
   let roll = state.rng.next() * total;
   for (const k in w) { roll -= w[k]; if (roll <= 0) return k; }
   return 'guppy';
@@ -34,86 +49,142 @@ function pickType(state) {
 
 function spawnBoss(state, fx, audio) {
   state.bossSpawned = true;
-  const def = bossForStage(state.stage);
+  const def = bossForStage(state.stage, state.bossOrder);
   const diff = DIFFICULTIES[state.difficulty || 'normal'];
-  const b = spawnEnemy(state, 'gull', true);
+  const b = spawnEnemy(state, 'squid', true, fx);
   b.type = def.type;
   b.boss = true;
   b.name = def.name;
-  b.hp = Math.round(def.hp * diff.bossHp); b.maxHp = b.hp; b.r = def.r;
-  b.speed = def.speed; b.dmg = Math.round(def.dmg * diff.bossDmg); b.score = def.score;
+  b.hp = Math.round(def.hp * diff.bossHp * modOf(state, 'ehp')); b.maxHp = b.hp; b.r = def.r;
+  b.speed = def.speed * modOf(state, 'espd'); b.dmg = Math.round(def.dmg * diff.bossDmg); b.score = def.score;
   b.coins = def.coins;
-  // Each heron has its own plumage, dive speed and summons — the later birds
-  // are bigger, faster-diving and call more gulls.
   b.color = def.color;
   b.dark = def.dark;
   b.diveMul = def.dive;
   b.summonN = def.summon;
   b.summonEvery = def.summonEvery;
   b.summonT = 5;
+  b.atk = def.atk; b.atkEvery = def.atkEvery; b.atkT = 4;
+  b.atkState = null; b.atkPhaseT = 0; b.shelled = false; b.dmgMul = 1; b.slamSpots = null;
   state.boss = b;
   state.banner = `${def.name} ARRIVES!`;
   state.bannerT = 3;
   audio.boss(); fx.shake(0.6);
 }
 
-// The spawn director: each stage has a budget of enemies; the stage clears
-// when the budget is spent and the pool is empty. One elite per stage (from stage
-// 2) and a boss on every 5th stage, both arriving at half the budget.
 export function updateSpawner(state, dt, fx, audio) {
-  const plan = STAGES[state.stage - 1];
+  const plan = STAGES[contentStage(state) - 1];
   state.spawnT -= dt;
   if (state.spawnT <= 0 && state.stageSpawned < plan.budget && state.enemies.length < 60) {
-    state.spawnT = plan.interval;
+    state.spawnT = plan.interval * modOf(state, 'spawn');
     const n = Math.min(plan.batch, plan.budget - state.stageSpawned);
-    for (let i = 0; i < n; i += 1) { spawnEnemy(state, pickType(state), false); state.stageSpawned += 1; }
+    for (let i = 0; i < n; i += 1) { spawnEnemy(state, pickType(state), false, fx); state.stageSpawned += 1; }
   }
-  // The elite (and the boss) arrive at half the budget — the stage's midpoint twist.
   if (plan.elite && !state.stageEliteDone && state.stageSpawned >= plan.budget / 2) {
     state.stageEliteDone = true;
     const type = state.rng.pick(['urchin', 'jelly', 'eel', 'starfish']);
-    const e = spawnEnemy(state, type, true);
+    const e = spawnEnemy(state, type, true, fx);
     state.banner = `★ ELITE ${type.toUpperCase()} — big coins!`; state.bannerT = 2.5;
     fx.burst(e.x, e.y, '#ffd166', 14, 180); audio.elite();
   }
   if (plan.boss && !state.bossSpawned && state.stageSpawned >= plan.budget / 2) {
     spawnBoss(state, fx, audio);
   }
-  // A summoning heron calls gulls while it lives — its adds do not count against
-  // the stage budget, so the fight stays a fight even after the budget is spent.
   if (state.boss && state.boss.summonN > 0) {
     state.boss.summonT -= dt;
     if (state.boss.summonT <= 0 && state.enemies.length < 55) {
       state.boss.summonT = state.boss.summonEvery;
       for (let i = 0; i < state.boss.summonN; i += 1) {
-        const g = spawnEnemy(state, 'gull', false);
-        const a = state.rng.angle();
-        g.x = state.boss.x + Math.cos(a) * 120; g.y = state.boss.y + Math.sin(a) * 90;
-        g.state = 'circle'; g.diveT = 0.8;
+        const g = spawnEnemy(state, 'squid', false, fx);
+        g.state = 'approach';
       }
       fx.burst(state.boss.x, state.boss.y, state.boss.color, 10, 160);
     }
   }
 }
 
-export function updateEnemies(state, dt) {
+const ATK_TELE = { shell: 0.5, ink: 0.5, line: 0.8, lure: 0.6, barbs: 0.5, slam: 0.9 };
+function bossAttack(state, e, dt, nx, ny, fx) {
+  if (!e.atkState) {
+    e.atkT -= dt;
+    if (e.atkT > 0) return false;
+    e.atkState = 'tele'; e.atkPhaseT = ATK_TELE[e.atk]; e.state = 'approach';
+    e.atkDx = nx; e.atkDy = ny;
+    if (e.atk === 'slam') {
+      const p = state.player;
+      e.slamSpots = [{ x: p.x, y: p.y, r: 55 }, { x: p.x + 90, y: p.y - 40, r: 55 }, { x: p.x - 80, y: p.y + 50, r: 55 }];
+    }
+    return true;
+  }
+  e.atkPhaseT -= dt;
+  if (e.atkState === 'tele') {
+    if (e.atkPhaseT > 0) return true;
+    const base = Math.atan2(e.atkDy, e.atkDx);
+    const fan = (offs, speed, r, life, color) => {
+      for (const off of offs) {
+        const a = base + off;
+        state.spits.push({ x: e.x + Math.cos(a) * e.r, y: e.y + Math.sin(a) * e.r,
+          vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, dmg: e.dmg, r, life, color });
+      }
+    };
+    if (e.atk === 'ink') fan([-0.35, 0, 0.35], 200, 10, 2.5, '#5e2a84');
+    else if (e.atk === 'barbs') fan([-0.5, -0.25, 0, 0.25, 0.5], 330, 4, 2, '#ff5d5d');
+    else if (e.atk === 'slam') {
+      for (const s of e.slamSpots) {
+        state.spits.push({ x: s.x, y: s.y, vx: 0, vy: 0, dmg: e.dmg, r: s.r, life: 0.15, color: '#ff5d73' });
+        if (fx) { fx.burst(s.x, s.y, '#ff5d73', 10, 160); if (fx.ring) fx.ring(s.x, s.y); }
+      }
+      e.slamSpots = null;
+      if (fx) fx.shake(0.4);
+    } else if (e.atk === 'shell') { e.atkState = 'retreat'; e.atkPhaseT = 2; e.shelled = true; return true; }
+    else if (e.atk === 'line') { e.atkState = 'charge'; e.atkPhaseT = 1.2; e.dmgMul = 1.5; return true; }
+    else if (e.atk === 'lure') { e.atkState = 'dash'; e.atkPhaseT = 0.6; return true; }
+    e.atkState = null; e.atkT = e.atkEvery;
+    return true;
+  }
+  if (e.atkState === 'retreat') {
+    if (e.atkPhaseT <= 0) { e.shelled = false; e.atkState = 'charge'; e.atkPhaseT = 1; }
+    return true;
+  }
+  if (e.atkState === 'charge' || e.atkState === 'dash') {
+    const mul = e.atk === 'line' ? 4 : e.atk === 'lure' ? 3.5 : 3;
+    e.x += e.atkDx * e.speed * mul * dt; e.y += e.atkDy * e.speed * mul * dt;
+    const hitEdge = e.x <= POOL.x0 + e.r || e.x >= POOL.x1 - e.r || e.y <= POOL.y0 + e.r || e.y >= POOL.y1 - e.r;
+    e.x = Math.max(POOL.x0 + e.r, Math.min(POOL.x1 - e.r, e.x));
+    e.y = Math.max(POOL.y0 + e.r, Math.min(POOL.y1 - e.r, e.y));
+    if (e.atkPhaseT <= 0 || hitEdge) {
+      e.dmgMul = 1;
+      if (e.atk === 'lure') { e.atkState = 'stun'; e.atkPhaseT = 0.5; }
+      else { e.atkState = null; e.atkT = e.atkEvery; }
+    }
+    return true;
+  }
+  if (e.atkState === 'stun') {
+    if (e.atkPhaseT <= 0) { e.atkState = null; e.atkT = e.atkEvery; }
+    return true;
+  }
+  return false;
+}
+
+export function updateEnemies(state, dt, fx) {
   const p = state.player;
   for (const e of state.enemies) {
     e.hitCd -= dt; e.flash -= dt; e.wob += dt;
     const dx = p.x - e.x, dy = p.y - e.y, d = Math.hypot(dx, dy) || 1;
     const nx = dx / d, ny = dy / d;
     let sp = e.speed;
-    if (e.type === 'jelly') { // drifters wobble sideways as they close in
+    if (e.boss && bossAttack(state, e, dt, nx, ny, fx)) continue;
+    if (e.type === 'jelly') {
       const w = Math.sin(e.wob * 2.2) * 0.6;
       e.x += (nx - ny * w) * sp * dt; e.y += (ny + nx * w) * sp * dt;
-    } else if (e.type === 'eel') { // lunges: 0.4s wind-up (still + flashing), then burst
+    } else if (e.type === 'eel') {
       e.lungeCd -= dt;
       if (e.lungeT > 0) { e.lungeT -= dt; e.x += nx * sp * 2.4 * dt; e.y += ny * sp * 2.4 * dt; }
       else if (e.windup > 0) { e.windup -= dt; if (e.windup <= 0) { e.lungeT = 0.45; e.lungeCd = 2.6; } }
       else if (e.lungeCd <= 0 && d < 260) { e.windup = 0.4; }
       else { e.x += nx * sp * 0.55 * dt; e.y += ny * sp * 0.55 * dt; }
-    } else if (e.type === 'archer') { // spitter: holds 240–360px, aims 0.35s, spits at where the crab IS
-      e.lungeCd -= dt; // reuses the eel's cooldown slot as the spit timer
+    } else if (e.type === 'archer') {
+      e.lungeCd -= dt;
       if (e.windup > 0) {
         e.windup -= dt;
         if (e.windup <= 0) {
@@ -121,14 +192,14 @@ export function updateEnemies(state, dt) {
           e.lungeCd = SPIT.cd * state.rng.range(0.85, 1.15);
         }
       } else if (e.lungeCd <= 0 && d < SPIT.range) { e.windup = SPIT.aim; }
-      else { // too far: close in; too close: back off; in band: strafe sideways
+      else {
         const want = d > 360 ? 1 : d < 240 ? -1 : 0;
         const strafe = want === 0 ? Math.sin(e.wob * 0.7) * 0.8 : 0;
         e.x += (nx * want - ny * strafe) * sp * dt; e.y += (ny * want + nx * strafe) * sp * dt;
       }
-    } else if (e.type === 'gull' || e.type.endsWith('heron')) { // swoopers circle, then dive
+    } else if (e.type === 'squid' || e.boss) {
       e.diveT -= dt;
-      const boss = e.type.endsWith('heron');
+      const boss = !!e.boss;
       if (e.state === 'approach' && d < 200) { e.state = 'circle'; e.diveT = boss ? 0.8 : 1.1; }
       if (e.state === 'circle') {
         const t = e.wob * 1.4;
@@ -140,12 +211,10 @@ export function updateEnemies(state, dt) {
         e.x += nx * sp * mul * dt; e.y += ny * sp * mul * dt;
         if (e.diveT <= 0) e.state = 'approach';
       } else { e.x += nx * sp * dt; e.y += ny * sp * dt; }
-    } else { // chasers: straight at the crab
+    } else {
       e.x += nx * sp * dt; e.y += ny * sp * dt;
     }
   }
-  // Separation: creatures push each other apart, so they cannot stack on one spot
-  // and bite as a single blob — the swarm stays a swarm, not a wall.
   const list = state.enemies;
   for (let i = 0; i < list.length; i += 1) {
     for (let j = i + 1; j < list.length; j += 1) {
@@ -160,13 +229,13 @@ export function updateEnemies(state, dt) {
   }
 }
 
-// Starfish split into two minis when killed — the only enemy that multiplies.
 export function onEnemyKilled(state, e, fx) {
   if (e.type === 'starfish') {
     for (let i = 0; i < 2; i += 1) {
       const m = spawnEnemy(state, 'mini', false);
       m.x = e.x + (i ? 14 : -14); m.y = e.y + (i ? -10 : 10);
     }
+    if (fx) { fx.burst(e.x, e.y, '#ff8fb0', 8, 120); if (fx.ring) fx.ring(e.x, e.y); }
   }
   if (e.boss) {
     state.boss = null;
