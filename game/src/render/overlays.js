@@ -5,19 +5,19 @@ import { slotsLayout } from './layout.js';
 import {bevel, lift, pxFrame, pxPanel, txt, px, vt} from './polish.js';
 import { SLOT_COUNT, loadSlot } from '../save.js';
 
-const BIG = { x: 140, y: 60, w: 1000, h: 580 };
-const BIG_CLOSE = { x: 560, y: 576, w: 160, h: 44 };
+const BIG = () => ({ x: POOL.cx - 550, y: 50, w: 1100, h: 600 });
+const BIG_CLOSE = () => ({ x: POOL.cx - 80, y: 586, w: 160, h: 44 });
 const FEAT_PANEL = { x: 280, y: 60, w: 720, h: 570 };
 const FEAT_CLOSE = { x: 560, y: 560, w: 160, h: 44 };
-const SET_PANEL = { x: 440, y: 240, w: 400, h: 240 };
-const SET_CLOSE = { x: 560, y: 420, w: 160, h: 44 };
+const SET_PANEL = () => ({ x: POOL.cx - 200, y: 240, w: 400, h: 240 });
+const SET_CLOSE = () => ({ x: POOL.cx - 80, y: 420, w: 160, h: 44 });
 const SET_SOUND = { x: 640, y: 300, w: 120, h: 36 };
 const SET_MUSIC = { x: 640, y: 350, w: 120, h: 36 };
 
 export function overlayLayout(state) {
-  if (state.overlay === 'help') return { close: BIG_CLOSE, panel: BIG };
+  if (state.overlay === 'help') return { close: BIG_CLOSE(), panel: BIG() };
   if (state.overlay === 'feats') return { close: FEAT_CLOSE, panel: FEAT_PANEL };
-  if (state.overlay === 'settings') return { close: SET_CLOSE, sound: SET_SOUND, music: SET_MUSIC, panel: SET_PANEL };
+  if (state.overlay === 'settings') return { close: SET_CLOSE(), sound: SET_SOUND, music: SET_MUSIC, panel: SET_PANEL() };
   if (state.overlay === 'slots') return slotsLayout();
   return null;
 }
@@ -28,8 +28,8 @@ function panel(ctx, p) {
 
 function closeButton(ctx, b) {
   bevel(ctx, b.x, b.y, b.w, b.h, 8, '#ffe08a', '#f0b23e', PAL.gold, 2);
-  ctx.font = px(11); ctx.textAlign = 'center';
-  txt(ctx, 'CLOSE', b.x + b.w / 2, b.y + 29, '#062a33', 2, 0);
+  ctx.font = px(13); ctx.textAlign = 'center';
+  txt(ctx, 'CLOSE', b.x + b.w / 2, b.y + 30, '#062a33', 0, 0);
 }
 
 function dimHint(ctx, y) {
@@ -45,24 +45,25 @@ const BEHAVIOUR = {
 };
 
 export function drawHelp(ctx, state) {
-  ctx.fillStyle = 'rgba(6,42,51,0.6)'; ctx.fillRect(0, 0, 1280, 720);
-  panel(ctx, BIG);
+  ctx.fillStyle = 'rgba(6,42,51,0.6)'; ctx.fillRect(0, 0, POOL.x1, 720);
+  const px0 = POOL.cx - 550;
+  panel(ctx, BIG());
   ctx.textAlign = 'center';
   ctx.font = px(17);
   txt(ctx, 'HOW TO PLAY', POOL.cx, 100, PAL.gold);
   ctx.textAlign = 'left'; ctx.font = px(9);
-  txt(ctx, 'CONTROLS', 180, 128, PAL.gold);
+  txt(ctx, 'CONTROLS', px0 + 40, 128, PAL.gold);
   ctx.font = vt(19);
   const left = ['WASD / ARROWS — move', 'SPACE — dash', '↑ ↓ — menu · ENTER — choose', 'P / ESC — pause'];
   const right = ['1–5 — buy a card', 'R — reroll the hand', 'ENTER — continue', 'M — mute · H — help · E — potion'];
-  left.forEach((s, i) => txt(ctx, s, 180, 150 + i * 20, PAL.text));
-  right.forEach((s, i) => txt(ctx, s, 700, 150 + i * 20, PAL.text));
+  left.forEach((s, i) => txt(ctx, s, px0 + 40, 150 + i * 20, PAL.text));
+  right.forEach((s, i) => txt(ctx, s, px0 + 560, 150 + i * 20, PAL.text));
   ctx.font = px(9);
-  txt(ctx, 'THE REEF — 7 CREATURES', 180, 232, PAL.gold);
+  txt(ctx, 'THE REEF — 7 CREATURES', px0 + 40, 232, PAL.gold);
   for (let i = 0; i < CREATURE_ORDER.length; i += 1) {
     const type = CREATURE_ORDER[i];
     const def = ENEMIES[type];
-    const cx = 210 + i * 135;
+    const cx = px0 + 70 + i * 145;
     drawEnemy(ctx, { type, x: cx, y: 260, r: 13, color: def.color, dark: def.dark,
       hp: 1, maxHp: 1, flash: 0, wob: 0.5, elite: false }, 0, Math.PI / 2);
     ctx.font = px(8); ctx.textAlign = 'center';
@@ -72,10 +73,10 @@ export function drawHelp(ctx, state) {
     ctx.textAlign = 'left';
   }
   ctx.font = px(9);
-  txt(ctx, 'SEA BEASTS — ONE EVERY 5 STAGES', 180, 326, PAL.gold);
+  txt(ctx, 'SEA BEASTS — ONE EVERY 5 STAGES', px0 + 40, 326, PAL.gold);
   for (let i = 0; i < BOSS_STAGES.length; i += 1) {
     const b = bossForStage(BOSS_STAGES[i].stage, state.bossOrder);
-    const hx = 180 + i * 158;
+    const hx = px0 + 40 + i * 175;
     ctx.fillStyle = b.color;
     ctx.fillRect(hx, 339, 10, 10);
     ctx.font = px(8);
@@ -84,21 +85,21 @@ export function drawHelp(ctx, state) {
     txt(ctx, `STAGE ${b.stage} · ${b.hp} HP`, hx + 16, 364, PAL.dim);
   }
   ctx.font = px(9);
-  txt(ctx, 'TIPS', 180, 384, PAL.gold);
+  txt(ctx, 'TIPS', px0 + 40, 384, PAL.gold);
   ctx.font = vt(19);
-  txt(ctx, 'Weapons fire on their own — dodge and position.', 180, 402, PAL.text);
-  txt(ctx, 'Coins buy cards after every stage. A new weapon beats a small upgrade.', 180, 419, PAL.text);
-  txt(ctx, 'Slain creatures grant XP. Level up to choose 1 of 3 upgrades — skills have no level cap.', 180, 436, PAL.text);
-  txt(ctx, 'Archers shoot from stage 12 — never stand still.', 180, 453, PAL.text);
-  txt(ctx, `ARMOR absorbs damage before HP. Clear a boss to gain +${ARMOR_PER_BOSS} ARMOR. Armor does not heal.`, 180, 470, PAL.text);
-  txt(ctx, 'Stages go on forever — each loop, foes grow stronger. Each stage is generated fresh every run.', 180, 487, PAL.text);
+  txt(ctx, 'Weapons fire on their own — dodge and position.', px0 + 40, 402, PAL.text);
+  txt(ctx, 'Coins buy cards after every stage. A new weapon beats a small upgrade.', px0 + 40, 419, PAL.text);
+  txt(ctx, 'Slain creatures grant XP. Level up to choose 1 of 3 upgrades — skills have no level cap.', px0 + 40, 436, PAL.text);
+  txt(ctx, 'Archers shoot from stage 12 — never stand still.', px0 + 40, 453, PAL.text);
+  txt(ctx, `ARMOR absorbs damage before HP. Clear a boss to gain +${ARMOR_PER_BOSS} ARMOR. Armor does not heal.`, px0 + 40, 470, PAL.text);
+  txt(ctx, 'Stages go on forever — each loop, foes grow stronger. Each stage is generated fresh every run.', px0 + 40, 487, PAL.text);
   ctx.font = px(9);
-  txt(ctx, 'EFFECTS — ONE PER 5 STAGES', 180, 508, PAL.gold);
+  txt(ctx, 'EFFECTS — ONE PER 5 STAGES', px0 + 40, 508, PAL.gold);
   ctx.font = vt(15);
   MODIFIERS.forEach((m, i) => {
-    txt(ctx, `${m.n} — ${m.d}`, i < 3 ? 180 : 700, 528 + (i % 3) * 18, PAL.text);
+    txt(ctx, `${m.n} — ${m.d}`, i < 3 ? px0 + 40 : px0 + 560, 528 + (i % 3) * 18, PAL.text);
   });
-  closeButton(ctx, BIG_CLOSE);
+  closeButton(ctx, BIG_CLOSE());
   dimHint(ctx, 664);
 }
 
@@ -107,7 +108,7 @@ export function drawAchievements(ctx, state) {
   const total = FEAT_IDS.reduce((n, id) => n + featTier(id, p[id]), 0);
   const max = FEAT_IDS.reduce((n, id) => n + FEAT_TIERS[id].length, 0);
   const fmt = (n) => n.toLocaleString('en-US');
-  ctx.fillStyle = 'rgba(6,42,51,0.6)'; ctx.fillRect(0, 0, 1280, 720);
+  ctx.fillStyle = 'rgba(6,42,51,0.6)'; ctx.fillRect(0, 0, POOL.x1, 720);
   panel(ctx, FEAT_PANEL);
   ctx.textAlign = 'center';
   ctx.font = px(19);
@@ -135,7 +136,7 @@ export function drawAchievements(ctx, state) {
 
 export function drawSlots(ctx, state) {
   const L = slotsLayout();
-  ctx.fillStyle = 'rgba(6,42,51,0.6)'; ctx.fillRect(0, 0, 1280, 720);
+  ctx.fillStyle = 'rgba(6,42,51,0.6)'; ctx.fillRect(0, 0, POOL.x1, 720);
   panel(ctx, L.panel);
   ctx.textAlign = 'center';
   ctx.font = px(19);
@@ -183,8 +184,8 @@ export function drawSlots(ctx, state) {
 export function drawSettings(ctx, state) {
   const audio = state.audio || {};
   const soundOn = !audio.muted, musicOn = audio.music !== false;
-  ctx.fillStyle = 'rgba(6,42,51,0.6)'; ctx.fillRect(0, 0, 1280, 720);
-  panel(ctx, SET_PANEL);
+  ctx.fillStyle = 'rgba(6,42,51,0.6)'; ctx.fillRect(0, 0, POOL.x1, 720);
+  panel(ctx, SET_PANEL());
   ctx.textAlign = 'center';
   ctx.font = px(17);
   txt(ctx, 'SETTINGS', POOL.cx, 280, PAL.gold);
@@ -198,7 +199,7 @@ export function drawSettings(ctx, state) {
     ctx.font = px(10); ctx.textAlign = 'center';
     txt(ctx, on ? 'ON' : 'OFF', row.x + row.w / 2, row.y + 25, on ? '#fff' : PAL.dim);
   }
-  closeButton(ctx, SET_CLOSE);
+  closeButton(ctx, SET_CLOSE());
   ctx.textAlign = 'center';
   ctx.font = vt(18);
   txt(ctx, 'M mutes everything', POOL.cx, 504, PAL.dim);

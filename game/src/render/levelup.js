@@ -5,7 +5,7 @@ import {pxPanel, txt, px, vt} from './polish.js';
 
 export function drawLevelUp(ctx, state, hover) {
   const L = levelupLayout();
-  ctx.fillStyle = 'rgba(6,42,51,0.78)'; ctx.fillRect(0, 0, 1280, 720);
+  ctx.fillStyle = 'rgba(6,42,51,0.78)'; ctx.fillRect(0, 0, POOL.x1, 720);
   ctx.textAlign = 'center';
   ctx.font = px(32);
   txt(ctx, '★ LEVEL UP! ★', POOL.cx, 150, PAL.gold, 3);

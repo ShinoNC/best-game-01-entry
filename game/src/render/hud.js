@@ -68,20 +68,20 @@ export function drawHud(ctx, state, t) {
     }
   }
   ctx.font = px(9); ctx.textAlign = 'left';
-  heart(ctx, 498, 663, 8, PAL.hp);
-  txt(ctx, `${Math.ceil(p.hp)}/${p.maxHp}`, 510, 670, PAL.text, 3);
+  heart(ctx, POOL.cx - 142, 663, 8, PAL.hp);
+  txt(ctx, `${Math.ceil(p.hp)}/${p.maxHp}`, POOL.cx - 130, 670, PAL.text, 3);
   if (state.ups.shell > 0) {
     ctx.textAlign = 'right';
-    txt(ctx, `Lv${state.ups.shell}`, 790, 670, PAL.gold, 3);
+    txt(ctx, `Lv${state.ups.shell}`, POOL.cx + 150, 670, PAL.gold, 3);
   }
-  pxBar(ctx, 490, 677, 300, 14, p.hp / p.maxHp, PAL.hp, 12);
+  pxBar(ctx, POOL.cx - 150, 677, 300, 14, p.hp / p.maxHp, PAL.hp, 12);
   ctx.font = px(8); ctx.textAlign = 'left';
-  txt(ctx, `Lv${state.level}`, 490, 706, PAL.xp, 3);
-  pxBar(ctx, 530, 697, 260, 8, Math.min(1, state.xp / state.xpNext), PAL.xp, 10);
+  txt(ctx, `Lv${state.level}`, POOL.cx - 150, 706, PAL.xp, 3);
+  pxBar(ctx, POOL.cx - 110, 697, 260, 8, Math.min(1, state.xp / state.xpNext), PAL.xp, 10);
   if (p.armor > 0) {
     ctx.font = px(9);
     const num = `${p.armor}`;
-    const x0 = 640 - (ctx.measureText(num).width + 16) / 2;
+    const x0 = POOL.cx - (ctx.measureText(num).width + 16) / 2;
     ctx.fillStyle = PAL.armor;
     ctx.fillRect(x0, 657, 12, 10);
     ctx.fillRect(x0 + 2, 667, 8, 4);
@@ -103,7 +103,7 @@ export function drawHud(ctx, state, t) {
   for (let i = 0; i < UPGRADE_DEFS.length; i += 1) {
     const d = UPGRADE_DEFS[i];
     const lv = state.ups[d.id];
-    const bx = 1200 - (UPGRADE_DEFS.length - 1 - i) * 56, by = 658;
+    const bx = POOL.x1 - 80 - (UPGRADE_DEFS.length - 1 - i) * 56, by = 658;
     pxFrame(ctx, bx - 2, by - 2, 56, 56, lv > 0 ? '#7fe0c3' : 'rgba(255,255,255,0.25)', 2);
     ctx.fillStyle = dither(ctx, lv > 0 ? 'rgba(127,224,195,0.22)' : 'rgba(255,255,255,0.08)',
       'rgba(0,0,0,0.25)');
@@ -116,7 +116,7 @@ export function drawHud(ctx, state, t) {
   }
   ctx.textAlign = 'right';
   ctx.font = px(9);
-  txt(ctx, p.dashCd <= 0 ? 'DASH READY' : `DASH ${p.dashCd.toFixed(1)}s`, 1240, 627, PAL.text, 3);
+  txt(ctx, p.dashCd <= 0 ? 'DASH READY' : `DASH ${p.dashCd.toFixed(1)}s`, POOL.x1 - 40, 627, PAL.text, 3);
   if (state.bannerT > 0) {
     ctx.textAlign = 'center'; ctx.globalAlpha = Math.min(1, state.bannerT);
     ctx.font = px(19);

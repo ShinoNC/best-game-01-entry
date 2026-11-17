@@ -4,6 +4,7 @@ import { weaponStatsFor } from './weapons.js';
 import { drawCrab, drawEnemy } from './render/creatures.js';
 import { drawPool } from './render/pool.js';
 import { drawHud, drawPaused } from './render/hud.js';
+import { POTION_BOX } from './render/layout.js';
 import { drawTitle } from './render/title.js';
 import { drawAchievements, drawHelp, drawSettings, drawSlots } from './render/overlays.js';
 import { drawStageMenu } from './render/menu.js';
@@ -38,7 +39,7 @@ export function createRenderer(canvas) {
     render(state, fx, t, alpha = 1, hover = null) {
       if (window.innerWidth !== cssW || window.innerHeight !== cssH) resize();
       const { scale, ox, oy, effW } = viewTransform();
-      POOL.x1 = effW; POOL.cx = effW / 2; POOL.rx = effW / 2;
+      POOL.x1 = effW; POOL.cx = effW / 2; POOL.rx = effW / 2; POTION_BOX.x = POOL.cx + 160;
       const s = scale * dpr;
       const oxd = ox * dpr, oyd = oy * dpr;
       // Re-assert every frame: canvas resize resets all context state.
