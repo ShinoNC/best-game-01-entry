@@ -100,8 +100,10 @@ export function txt(ctx, text, x, y, fill, lw = 2, sh = 2) {
     ctx.fillStyle = 'rgba(2,16,20,0.9)';
     ctx.fillText(text, x + sh, y + sh);
   }
-  ctx.strokeStyle = 'rgba(4,26,32,0.8)'; ctx.lineWidth = lw; ctx.lineJoin = 'miter';
-  ctx.strokeText(text, x, y);
+  if (lw) {
+    ctx.strokeStyle = 'rgba(4,26,32,0.8)'; ctx.lineWidth = lw; ctx.lineJoin = 'miter';
+    ctx.strokeText(text, x, y);
+  }
   ctx.fillStyle = fill; ctx.fillText(text, x, y);
   ctx.restore();
 }

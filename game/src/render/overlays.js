@@ -7,17 +7,17 @@ import { SLOT_COUNT, loadSlot } from '../save.js';
 
 const BIG = () => ({ x: POOL.cx - 550, y: 50, w: 1100, h: 600 });
 const BIG_CLOSE = () => ({ x: POOL.cx - 80, y: 586, w: 160, h: 44 });
-const FEAT_PANEL = { x: 280, y: 60, w: 720, h: 570 };
-const FEAT_CLOSE = { x: 560, y: 560, w: 160, h: 44 };
+const FEAT_PANEL = () => ({ x: POOL.cx - 360, y: 60, w: 720, h: 570 });
+const FEAT_CLOSE = () => ({ x: POOL.cx - 80, y: 560, w: 160, h: 44 });
 const SET_PANEL = () => ({ x: POOL.cx - 200, y: 240, w: 400, h: 240 });
 const SET_CLOSE = () => ({ x: POOL.cx - 80, y: 420, w: 160, h: 44 });
-const SET_SOUND = { x: 640, y: 300, w: 120, h: 36 };
-const SET_MUSIC = { x: 640, y: 350, w: 120, h: 36 };
+const SET_SOUND = () => ({ x: POOL.cx, y: 300, w: 120, h: 36 });
+const SET_MUSIC = () => ({ x: POOL.cx, y: 350, w: 120, h: 36 });
 
 export function overlayLayout(state) {
   if (state.overlay === 'help') return { close: BIG_CLOSE(), panel: BIG() };
-  if (state.overlay === 'feats') return { close: FEAT_CLOSE, panel: FEAT_PANEL };
-  if (state.overlay === 'settings') return { close: SET_CLOSE(), sound: SET_SOUND, music: SET_MUSIC, panel: SET_PANEL() };
+  if (state.overlay === 'feats') return { close: FEAT_CLOSE(), panel: FEAT_PANEL() };
+  if (state.overlay === 'settings') return { close: SET_CLOSE(), sound: SET_SOUND(), music: SET_MUSIC(), panel: SET_PANEL() };
   if (state.overlay === 'slots') return slotsLayout();
   return null;
 }
@@ -109,7 +109,7 @@ export function drawAchievements(ctx, state) {
   const max = FEAT_IDS.reduce((n, id) => n + FEAT_TIERS[id].length, 0);
   const fmt = (n) => n.toLocaleString('en-US');
   ctx.fillStyle = 'rgba(6,42,51,0.6)'; ctx.fillRect(0, 0, POOL.x1, 720);
-  panel(ctx, FEAT_PANEL);
+  panel(ctx, FEAT_PANEL());
   ctx.textAlign = 'center';
   ctx.font = px(19);
   txt(ctx, 'ACHIEVEMENTS', POOL.cx, 105, PAL.gold);
@@ -123,14 +123,14 @@ export function drawAchievements(ctx, state) {
     const y = 172 + i * 44;
     ctx.textAlign = 'left';
     ctx.font = px(11);
-    txt(ctx, `${maxed ? '★' : '☆'} ${FEAT_NAMES[id]}${tier > 0 ? ` ${ROMAN[tier]}` : ''}`, 330, y, tier > 0 ? PAL.gold : PAL.dim);
+    txt(ctx, `${maxed ? '★' : '☆'} ${FEAT_NAMES[id]}${tier > 0 ? ` ${ROMAN[tier]}` : ''}`, POOL.cx - 310, y, tier > 0 ? PAL.gold : PAL.dim);
     ctx.font = vt(18);
-    txt(ctx, maxed ? `${fmt(p[id])} ${FEAT_UNITS[id]} — MAX` : `${fmt(p[id])} / ${fmt(tiers[tier])} ${FEAT_UNITS[id]}`, 330, y + 22, tier > 0 ? PAL.text : PAL.dim);
+    txt(ctx, maxed ? `${fmt(p[id])} ${FEAT_UNITS[id]} — MAX` : `${fmt(p[id])} / ${fmt(tiers[tier])} ${FEAT_UNITS[id]}`, POOL.cx - 310, y + 22, tier > 0 ? PAL.text : PAL.dim);
     ctx.textAlign = 'right';
     ctx.font = px(9);
-    txt(ctx, maxed ? 'MAX' : `TIER ${tier}/${tiers.length}`, 950, y, maxed ? '#7fe0c3' : PAL.dim);
+    txt(ctx, maxed ? 'MAX' : `TIER ${tier}/${tiers.length}`, POOL.cx + 310, y, maxed ? '#7fe0c3' : PAL.dim);
   }
-  closeButton(ctx, FEAT_CLOSE);
+  closeButton(ctx, FEAT_CLOSE());
   dimHint(ctx, 655);
 }
 
@@ -189,10 +189,10 @@ export function drawSettings(ctx, state) {
   ctx.textAlign = 'center';
   ctx.font = px(17);
   txt(ctx, 'SETTINGS', POOL.cx, 280, PAL.gold);
-  for (const [row, on, label] of [[SET_SOUND, soundOn, 'SOUND'], [SET_MUSIC, musicOn, 'MUSIC']]) {
+  for (const [row, on, label] of [[SET_SOUND(), soundOn, 'SOUND'], [SET_MUSIC(), musicOn, 'MUSIC']]) {
     ctx.textAlign = 'left';
     ctx.font = px(11);
-    txt(ctx, label, 480, row.y + 25, PAL.text);
+    txt(ctx, label, POOL.cx - 160, row.y + 25, PAL.text);
     ctx.fillStyle = on ? '#2f8f6b' : 'rgba(255,255,255,0.15)';
     ctx.fillRect(row.x, row.y, row.w, row.h);
     pxFrame(ctx, row.x, row.y, row.w, row.h, PAL.foam, 2);
