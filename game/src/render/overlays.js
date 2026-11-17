@@ -1,4 +1,4 @@
-import { ARMOR_PER_BOSS, BOSS_STAGES, CREATURE_NAMES, CREATURE_ORDER, ENEMIES, FEAT_IDS, FEAT_NAMES, FEAT_TIERS, FEAT_UNITS, MODIFIERS, PAL, VIEW_W, bossForStage } from '../config.js';
+import { POOL, ARMOR_PER_BOSS, BOSS_STAGES, CREATURE_NAMES, CREATURE_ORDER, ENEMIES, FEAT_IDS, FEAT_NAMES, FEAT_TIERS, FEAT_UNITS, MODIFIERS, PAL, bossForStage } from '../config.js';
 import { ROMAN, featProgress, featTier } from '../meta.js';
 import { drawEnemy } from './creatures.js';
 import { slotsLayout } from './layout.js';
@@ -35,7 +35,7 @@ function closeButton(ctx, b) {
 function dimHint(ctx, y) {
   ctx.textAlign = 'center';
   ctx.font = vt(18);
-  txt(ctx, 'H / ESC / click outside also closes', VIEW_W / 2, y, PAL.dim);
+  txt(ctx, 'H / ESC / click outside also closes', POOL.cx, y, PAL.dim);
 }
 
 const BEHAVIOUR = {
@@ -49,7 +49,7 @@ export function drawHelp(ctx, state) {
   panel(ctx, BIG);
   ctx.textAlign = 'center';
   ctx.font = px(17);
-  txt(ctx, 'HOW TO PLAY', VIEW_W / 2, 100, PAL.gold);
+  txt(ctx, 'HOW TO PLAY', POOL.cx, 100, PAL.gold);
   ctx.textAlign = 'left'; ctx.font = px(9);
   txt(ctx, 'CONTROLS', 180, 128, PAL.gold);
   ctx.font = vt(19);
@@ -111,9 +111,9 @@ export function drawAchievements(ctx, state) {
   panel(ctx, FEAT_PANEL);
   ctx.textAlign = 'center';
   ctx.font = px(19);
-  txt(ctx, 'ACHIEVEMENTS', VIEW_W / 2, 105, PAL.gold);
+  txt(ctx, 'ACHIEVEMENTS', POOL.cx, 105, PAL.gold);
   ctx.font = px(10);
-  txt(ctx, `${total} / ${max} TIERS EARNED`, VIEW_W / 2, 142, PAL.gold);
+  txt(ctx, `${total} / ${max} TIERS EARNED`, POOL.cx, 142, PAL.gold);
   for (let i = 0; i < FEAT_IDS.length; i += 1) {
     const id = FEAT_IDS[i];
     const tier = featTier(id, p[id]);
@@ -139,9 +139,9 @@ export function drawSlots(ctx, state) {
   panel(ctx, L.panel);
   ctx.textAlign = 'center';
   ctx.font = px(19);
-  txt(ctx, 'CHOOSE A SAVE SLOT', VIEW_W / 2, 105, PAL.gold);
+  txt(ctx, 'CHOOSE A SAVE SLOT', POOL.cx, 105, PAL.gold);
   ctx.font = vt(20);
-  txt(ctx, 'Pick a slot to continue — or an empty slot to start fresh.', VIEW_W / 2, 132, PAL.dim);
+  txt(ctx, 'Pick a slot to continue — or an empty slot to start fresh.', POOL.cx, 132, PAL.dim);
   for (let i = 0; i < SLOT_COUNT; i += 1) {
     const c = L.cards[i];
     const s = loadSlot(i);
@@ -187,7 +187,7 @@ export function drawSettings(ctx, state) {
   panel(ctx, SET_PANEL);
   ctx.textAlign = 'center';
   ctx.font = px(17);
-  txt(ctx, 'SETTINGS', VIEW_W / 2, 280, PAL.gold);
+  txt(ctx, 'SETTINGS', POOL.cx, 280, PAL.gold);
   for (const [row, on, label] of [[SET_SOUND, soundOn, 'SOUND'], [SET_MUSIC, musicOn, 'MUSIC']]) {
     ctx.textAlign = 'left';
     ctx.font = px(11);
@@ -201,5 +201,5 @@ export function drawSettings(ctx, state) {
   closeButton(ctx, SET_CLOSE);
   ctx.textAlign = 'center';
   ctx.font = vt(18);
-  txt(ctx, 'M mutes everything', VIEW_W / 2, 504, PAL.dim);
+  txt(ctx, 'M mutes everything', POOL.cx, 504, PAL.dim);
 }

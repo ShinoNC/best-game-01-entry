@@ -1,4 +1,4 @@
-import { CREATURE_NAMES, PAL, STAGES, VIEW_H, VIEW_W, WEAPON_ORDER, bossForStage, clusterMod, clusterOf, contentStage, nextTypes } from '../config.js';
+import { CREATURE_NAMES, PAL, POOL, STAGES, VIEW_H, WEAPON_ORDER, bossForStage, clusterMod, clusterOf, contentStage, nextTypes } from '../config.js';
 import { UPGRADE_DEFS } from '../upgrades.js';
 import { comboMult } from '../world.js';
 import { drawCoin, drawPotion, drawSkillIcon, drawWeaponIcon, heart } from './icons.js';
@@ -8,12 +8,12 @@ import {dither, pxBar, pxFrame, pxPanel, txt, px, vt} from './polish.js';
 export function drawHud(ctx, state, t) {
   const p = state.player;
   ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-  // Top/bottom strips: semi-transparent so the play area shows through (POOL is full-height).
-  ctx.fillStyle = dither(ctx, 'rgba(13,74,92,0.78)', 'rgba(4,26,32,0.78)');
-  ctx.fillRect(0, 0, VIEW_W, 72);
-  ctx.fillRect(0, VIEW_H - 72, VIEW_W, 72);
+  // Top/bottom strips: high-contrast dither.
+  ctx.fillStyle = dither(ctx, 'rgba(13,74,92,0.95)', 'rgba(4,26,32,0.95)');
+  ctx.fillRect(0, 0, POOL.x1, 72);
+  ctx.fillRect(0, VIEW_H - 72, POOL.x1, 72);
   // Pixel divider: alternating gold / dark blocks.
-  for (let x = 0; x < VIEW_W; x += 16) {
+  for (let x = 0; x < POOL.x1; x += 16) {
     ctx.fillStyle = (x / 16) % 2 === 0 ? 'rgba(255,209,102,0.75)' : 'rgba(4,26,32,0.95)';
     ctx.fillRect(x, 69, 16, 4);
     ctx.fillRect(x, VIEW_H - 76, 16, 4);
@@ -33,25 +33,25 @@ export function drawHud(ctx, state, t) {
   txt(ctx, `EFFECT (STAGES ${c0}–${c1}): ${mod.n}`, 28, 64, PAL.gold);
   ctx.textAlign = 'right';
   ctx.font = px(19);
-  txt(ctx, `SCORE ${state.score}`, 1252, 38, PAL.gold);
+  txt(ctx, `SCORE ${state.score}`, POOL.x1 - 28, 38, PAL.gold);
   ctx.font = px(9);
   const coinTxt = `${state.coins} COINS · COMBO ×${comboMult(state)}`;
-  txt(ctx, coinTxt, 1252, 60, PAL.gold);
-  drawCoin(ctx, 1252 - ctx.measureText(coinTxt).width - 13, 55, 8);
+  txt(ctx, coinTxt, POOL.x1 - 28, 60, PAL.gold);
+  drawCoin(ctx, POOL.x1 - 28 - ctx.measureText(coinTxt).width - 13, 55, 8);
   if (STAGES[contentStage(state) - 1].boss && !state.bossSpawned && !state.boss) {
     const boss = bossForStage(state.stage, state.bossOrder);
     const warn = `⚠ ${boss ? boss.name : 'THE BEAST'} IS COMING ⚠`;
     ctx.font = px(11);
     const ww = ctx.measureText(warn).width + 40;
-    pxPanel(ctx, VIEW_W / 2 - ww / 2, 78, ww, 32, 'rgba(6,42,51,0.85)', 'rgba(4,26,32,0.85)', '#ff5d73');
+    pxPanel(ctx, POOL.cx - ww / 2, 78, ww, 32, 'rgba(6,42,51,0.85)', 'rgba(4,26,32,0.85)', '#ff5d73');
     ctx.textAlign = 'center';
-    txt(ctx, warn, VIEW_W / 2, 100, `rgba(255,93,115,${0.6 + 0.4 * Math.sin(t * 6)})`);
+    txt(ctx, warn, POOL.cx, 100, `rgba(255,93,115,${0.6 + 0.4 * Math.sin(t * 6)})`);
   }
   if (state.boss) {
-    pxPanel(ctx, VIEW_W / 2 - 190, 78, 380, 34, 'rgba(6,42,51,0.85)', 'rgba(4,26,32,0.85)', '#ff5d73');
+    pxPanel(ctx, POOL.cx - 190, 78, 380, 34, 'rgba(6,42,51,0.85)', 'rgba(4,26,32,0.85)', '#ff5d73');
     ctx.textAlign = 'center'; ctx.font = px(9);
-    txt(ctx, state.boss.name, VIEW_W / 2, 94, '#e8e4d8');
-    pxBar(ctx, VIEW_W / 2 - 180, 100, 360, 6, state.boss.hp / state.boss.maxHp, '#ff5d73', 12);
+    txt(ctx, state.boss.name, POOL.cx, 94, '#e8e4d8');
+    pxBar(ctx, POOL.cx - 180, 100, 360, 6, state.boss.hp / state.boss.maxHp, '#ff5d73', 12);
   }
   for (let i = 0; i < WEAPON_ORDER.length; i += 1) {
     const id = WEAPON_ORDER[i];
@@ -121,8 +121,8 @@ export function drawHud(ctx, state, t) {
     ctx.textAlign = 'center'; ctx.globalAlpha = Math.min(1, state.bannerT);
     ctx.font = px(19);
     const bw = ctx.measureText(state.banner).width + 56;
-    pxPanel(ctx, VIEW_W / 2 - bw / 2, 146, bw, 40, 'rgba(6,42,51,0.88)', 'rgba(4,26,32,0.88)', PAL.gold);
-    txt(ctx, state.banner, VIEW_W / 2, 175, PAL.gold);
+    pxPanel(ctx, POOL.cx - bw / 2, 146, bw, 40, 'rgba(6,42,51,0.88)', 'rgba(4,26,32,0.88)', PAL.gold);
+    txt(ctx, state.banner, POOL.cx, 175, PAL.gold);
     ctx.globalAlpha = 1;
   }
   const hint = state.phase === 'play' && state.hints && state.hints.cur;
@@ -134,23 +134,23 @@ export function drawHud(ctx, state, t) {
     const w = tw + 44 + 30;
     const y = 105;
     ctx.globalAlpha = alpha;
-    pxPanel(ctx, VIEW_W / 2 - w / 2, y - 24, w, 44, 'rgba(6,42,51,0.88)', 'rgba(4,26,32,0.88)', PAL.gold);
+    pxPanel(ctx, POOL.cx - w / 2, y - 24, w, 44, 'rgba(6,42,51,0.88)', 'rgba(4,26,32,0.88)', PAL.gold);
     // Pixel diamond marker.
-    const dx = VIEW_W / 2 - w / 2 + 24, dy = y - 3;
+    const dx = POOL.cx - w / 2 + 24, dy = y - 3;
     ctx.fillStyle = PAL.gold;
     ctx.fillRect(dx - 2, dy - 8, 4, 4); ctx.fillRect(dx - 6, dy - 4, 12, 4);
     ctx.fillRect(dx - 2, dy, 4, 4); ctx.fillRect(dx - 6, dy - 4, 4, 4); ctx.fillRect(dx + 2, dy - 4, 4, 4);
     ctx.textAlign = 'center';
-    txt(ctx, hint.text, VIEW_W / 2 + 15, y + 5, PAL.text);
+    txt(ctx, hint.text, POOL.cx + 15, y + 5, PAL.text);
     ctx.globalAlpha = 1;
   }
 }
 
 export function drawPaused(ctx) {
-  ctx.fillStyle = 'rgba(6,42,51,0.7)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  ctx.fillStyle = 'rgba(6,42,51,0.7)'; ctx.fillRect(0, 0, POOL.x1, VIEW_H);
   ctx.textAlign = 'center';
   ctx.font = px(35);
-  txt(ctx, 'PAUSED', VIEW_W / 2, 330, PAL.text, 3);
+  txt(ctx, 'PAUSED', POOL.cx, 330, PAL.text, 3);
   ctx.font = vt(27);
-  txt(ctx, 'P / Esc — resume      M — mute      H — help      R — restart', VIEW_W / 2, 380, PAL.dim);
+  txt(ctx, 'P / Esc — resume      M — mute      H — help      R — restart', POOL.cx, 380, PAL.dim);
 }

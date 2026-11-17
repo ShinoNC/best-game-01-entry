@@ -1,4 +1,4 @@
-import { PAL, VIEW_W } from '../config.js';
+import { POOL, PAL } from '../config.js';
 import { drawSkillIcon } from './icons.js';
 import { levelupLayout } from './layout.js';
 import {pxPanel, txt, px, vt} from './polish.js';
@@ -8,11 +8,11 @@ export function drawLevelUp(ctx, state, hover) {
   ctx.fillStyle = 'rgba(6,42,51,0.78)'; ctx.fillRect(0, 0, 1280, 720);
   ctx.textAlign = 'center';
   ctx.font = px(32);
-  txt(ctx, '★ LEVEL UP! ★', VIEW_W / 2, 150, PAL.gold, 3);
+  txt(ctx, '★ LEVEL UP! ★', POOL.cx, 150, PAL.gold, 3);
   ctx.font = px(14);
-  txt(ctx, `YOU ARE NOW LEVEL ${state.level} — CHOOSE AN UPGRADE`, VIEW_W / 2, 196, PAL.text, 3);
+  txt(ctx, `YOU ARE NOW LEVEL ${state.level} — CHOOSE AN UPGRADE`, POOL.cx, 196, PAL.text, 3);
   ctx.font = px(12);
-  txt(ctx, '+5 MAX HP', VIEW_W / 2, 228, PAL.hp, 3);
+  txt(ctx, '+5 MAX HP', POOL.cx, 228, PAL.hp, 3);
   const choices = state.levelChoices || [];
   for (let i = 0; i < L.cards.length; i += 1) {
     const b = L.cards[i];
@@ -33,5 +33,5 @@ export function drawLevelUp(ctx, state, hover) {
     }
   }
   ctx.font = vt(20);
-  txt(ctx, 'Press 1 / 2 / 3 or click a card', VIEW_W / 2, 540, PAL.dim);
+  txt(ctx, 'Press 1 / 2 / 3 or click a card', POOL.cx, 540, PAL.dim);
 }

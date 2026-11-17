@@ -28,15 +28,17 @@ export function createRenderer(canvas) {
   resize();
 
   function viewTransform() {
-    const scale = Math.min(cssW / VIEW_W, cssH / VIEW_H);
-    return { scale, ox: (cssW - VIEW_W * scale) / 2, oy: (cssH - VIEW_H * scale) / 2, cssW, cssH, dpr };
+    const scale = cssH / VIEW_H;
+    const effW = Math.max(VIEW_W, cssW / scale);
+    return { scale, ox: (cssW - effW * scale) / 2, oy: 0, cssW, cssH, dpr, effW };
   }
 
   return {
     viewTransform,
     render(state, fx, t, alpha = 1, hover = null) {
       if (window.innerWidth !== cssW || window.innerHeight !== cssH) resize();
-      const { scale, ox, oy } = viewTransform();
+      const { scale, ox, oy, effW } = viewTransform();
+      POOL.x1 = effW; POOL.cx = effW / 2; POOL.rx = effW / 2;
       const s = scale * dpr;
       const oxd = ox * dpr, oyd = oy * dpr;
       // Re-assert every frame: canvas resize resets all context state.
@@ -203,10 +205,10 @@ export function createRenderer(canvas) {
       if (state.player.flash > 0 && state.phase === 'play') {
         const a = state.player.flash * 0.7;
         ctx.fillStyle = `rgba(255,45,85,${a})`;
-        ctx.fillRect(0, 0, VIEW_W, 18);
-        ctx.fillRect(0, VIEW_H - 18, VIEW_W, 18);
+        ctx.fillRect(0, 0, POOL.x1, 18);
+        ctx.fillRect(0, VIEW_H - 18, POOL.x1, 18);
         ctx.fillRect(0, 0, 18, VIEW_H);
-        ctx.fillRect(VIEW_W - 18, 0, 18, VIEW_H);
+        ctx.fillRect(POOL.x1 - 18, 0, 18, VIEW_H);
       }
       ctx.setTransform(s, 0, 0, s, oxd, oyd);
       if (state.phase === 'play' || state.phase === 'paused' || state.phase === 'levelup') drawHud(ctx, state, t);

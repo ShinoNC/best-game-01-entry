@@ -1,4 +1,4 @@
-import { CREATURE_ORDER, ENEMIES, PAL, VIEW_W } from '../config.js';
+import { POOL, CREATURE_ORDER, ENEMIES, PAL } from '../config.js';
 import { drawCrab, drawEnemy } from './creatures.js';
 import { MENU_ITEMS, titleLayout } from './layout.js';
 import {bevel, logoText, pxPanel, txt, px, vt} from './polish.js';
@@ -12,7 +12,7 @@ for (let i = 0; i < 24; i += 1) {
 }
 
 function drawAmbient(ctx, state) {
-  ctx.fillStyle = 'rgba(6,42,51,0.28)'; ctx.fillRect(0, 0, VIEW_W, 720);
+  ctx.fillStyle = 'rgba(6,42,51,0.28)'; ctx.fillRect(0, 0, POOL.x1, 720);
   const tt = state.shotMode ? 2.5 : performance.now() / 1000;
   for (const a of AMBIENT) {
     const def = ENEMIES[a.type];
@@ -39,7 +39,7 @@ export function drawTitle(ctx, state) {
   drawPatrolCrab(ctx, state, tt);
   ctx.textAlign = 'center';
   ctx.letterSpacing = '3px';
-  logoText(ctx, 'TIDEKEEPER', VIEW_W / 2, 112,
+  logoText(ctx, 'TIDEKEEPER', POOL.cx, 112,
     px(56),
     '#ffb35c', '#e8590c', '#4a2408', 3);
   ctx.letterSpacing = '0px';
@@ -49,10 +49,10 @@ export function drawTitle(ctx, state) {
   ];
   let tagW = 0;
   for (const p of tagParts) { ctx.font = p.f; tagW += ctx.measureText(p.t).width; }
-  pxPanel(ctx, VIEW_W / 2 - tagW / 2 - 18, 142, tagW + 36, 44,
+  pxPanel(ctx, POOL.cx - tagW / 2 - 18, 142, tagW + 36, 44,
     'rgba(6,42,51,0.72)', 'rgba(4,26,32,0.72)', PAL.gold);
   ctx.textAlign = 'left';
-  let tx = VIEW_W / 2 - tagW / 2;
+  let tx = POOL.cx - tagW / 2;
   for (const p of tagParts) {
     ctx.font = p.f;
     txt(ctx, p.t, tx, 172, PAL.gold, 3);
@@ -89,6 +89,6 @@ export function drawTitle(ctx, state) {
   ctx.textAlign = 'right';
   ctx.font = px(10);
   ctx.fillStyle = 'rgba(255,255,255,0.7)';
-  ctx.fillText('v1.1', VIEW_W - 12, 708);
+  ctx.fillText('v1.1', POOL.x1 - 12, 708);
 }
 

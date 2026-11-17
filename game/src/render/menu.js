@@ -1,4 +1,4 @@
-import { ARMOR_PER_BOSS, PAL, VIEW_H, VIEW_W, bossForStage, clusterMod, clusterOf, envForStage } from '../config.js';
+import { POOL, ARMOR_PER_BOSS, PAL, VIEW_H, bossForStage, clusterMod, clusterOf, envForStage } from '../config.js';
 import { REROLL_COST, cardStats } from '../cards.js';
 import { drawCoin, drawPips, drawPotion, drawSkillIcon, drawWeaponIcon, heart } from './icons.js';
 import { stageMenuLayout } from './layout.js';
@@ -51,27 +51,27 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
 
 export function drawStageMenu(ctx, state, hover) {
   const L = stageMenuLayout(state);
-  ctx.fillStyle = '#072a35'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  ctx.fillStyle = '#072a35'; ctx.fillRect(0, 0, POOL.x1, VIEW_H);
   ctx.textAlign = 'center';
   ctx.font = px(22);
-  txt(ctx, `★ STAGE ${state.stage} CLEAR — ${envForStage(state.stage, state.envs).name} ★`, VIEW_W / 2, 70, PAL.gold, 3);
+  txt(ctx, `★ STAGE ${state.stage} CLEAR — ${envForStage(state.stage, state.envs).name} ★`, POOL.cx, 70, PAL.gold, 3);
   const mod = clusterMod(state, state.stage);
   const c0 = clusterOf(state.stage) * 5 + 1, c1 = c0 + 4;
   ctx.font = px(9);
-  txt(ctx, `EFFECT (STAGES ${c0}–${c1}): ${mod.n} — ${mod.d}`, VIEW_W / 2, 100, PAL.xp);
+  txt(ctx, `EFFECT (STAGES ${c0}–${c1}): ${mod.n} — ${mod.d}`, POOL.cx, 100, PAL.xp);
   ctx.font = px(17);
   const ct = `${state.coins} COINS`;
   const cw = ctx.measureText(ct).width;
-  drawCoin(ctx, VIEW_W / 2 - cw / 2 - 18, 126, 12);
-  txt(ctx, ct, VIEW_W / 2 + 10, 134, PAL.gold);
+  drawCoin(ctx, POOL.cx - cw / 2 - 18, 126, 12);
+  txt(ctx, ct, POOL.cx + 10, 134, PAL.gold);
   if (bossForStage(state.stage)) {
     ctx.font = px(12);
-    txt(ctx, `+${ARMOR_PER_BOSS} ARMOR`, VIEW_W / 2, 180, PAL.armor, 3);
+    txt(ctx, `+${ARMOR_PER_BOSS} ARMOR`, POOL.cx, 180, PAL.armor, 3);
   }
   const hand = state.hand || [];
   if (hand.length === 0) {
     ctx.font = px(14);
-    txt(ctx, 'BUILD COMPLETE — NOTHING LEFT TO BUY', VIEW_W / 2, 360, PAL.foam);
+    txt(ctx, 'BUILD COMPLETE — NOTHING LEFT TO BUY', POOL.cx, 360, PAL.foam);
   }
   hand.forEach((c, i) => {
     const b = L.cards[i];
@@ -101,6 +101,6 @@ export function drawStageMenu(ctx, state, hover) {
   txt(ctx, `NEXT STAGE ${state.stage + 1} →  [Enter]`, n.x + n.w / 2, n.y + 33, '#fff');
   if (state.menuMsgT > 0 && state.menuMsg) {
     ctx.font = px(10);
-    txt(ctx, state.menuMsg, VIEW_W / 2, 570, '#ff8fa0');
+    txt(ctx, state.menuMsg, POOL.cx, 570, '#ff8fa0');
   }
 }

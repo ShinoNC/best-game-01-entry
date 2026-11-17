@@ -29,7 +29,7 @@ export function contentStage(state, pos) {
 }
 export const VIEW_W = 1280;
 export const VIEW_H = 720;
-export const POOL = { x0: 0, y0: 0, x1: 1280, y1: 720, cx: 640, cy: 360, rx: 640, ry: 360 };
+export const POOL = { x0: 0, y0: 72, x1: 1280, y1: 648, cx: 640, cy: 360, rx: 640, ry: 288 };
 
 export const ENV_BANDS = [
   { rays: 1, rain: 0, glow: 0 }, { rays: 0.8, rain: 0, glow: 0 }, { rays: 0.4, rain: 0, glow: 0 },
