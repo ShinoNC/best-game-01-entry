@@ -2,7 +2,7 @@ import { PAL } from '../config.js';
 import { imgFor } from '../sprites.js';
 import {txt, px, vt} from './polish.js';
 
-const SIDE = { guppy: 1, eel: 1, archer: 1, angler: 1 };
+const SIDE = { eel: 1, archer: 1, angler: 1 };
 const DRAW = {
   guppy: 3.0, jelly: 3.4, eel: 3.0, squid: 3.0, archer: 3.2, starfish: 2.8,
   urchin: 2.8, mini: 2.8, turtle: 3.2, octopus: 3.2, hammerhead: 3.2,
@@ -108,7 +108,9 @@ export function drawEnemy(ctx, e, t, ang) {
   const size = e.r * k;
   const flash = e.flash > 0;
   let rot = 0, sx = 1, sy = 1, bobY = 0;
-  if (SIDE[e.type]) {
+  if (e.type === 'guppy') {
+    rot = face;
+  } else if (SIDE[e.type]) {
     rot = face - Math.PI;
   } else if (e.type === 'jelly') {
     const pu = 1 + Math.sin(t * 3 + e.wob) * 0.08;
