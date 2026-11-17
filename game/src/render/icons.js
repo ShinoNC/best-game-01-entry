@@ -16,7 +16,6 @@ export function heart(ctx, x, y, r, c) {
   ctx.fillRect(x - r + cell, y - r + cell, cell, cell);
 }
 
-// Bitmap icons: 12x12 grid. 'k' = outline, 'w' = white, 'a'/'b'/'c' = palette.
 function bitmap(ctx, rows, pal, x, y, s) {
   const n = rows.length;
   const cell = s / n;

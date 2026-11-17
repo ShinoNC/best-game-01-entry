@@ -28,6 +28,7 @@ export function readMeta() {
     maxSkills: m.maxSkills || 0,
     maxWeaponLv: m.maxWeaponLv || 0,
     maxSkillLv: m.maxSkillLv || 0,
+    bestScore: m.bestScore || 0,
   };
 }
 
@@ -75,6 +76,7 @@ export function checkFeats(state, killed) {
   meta.maxWeaponLv = p.weaponmaster; meta.maxSkillLv = p.skillexpert;
   const earned = [];
   let dirty = !!killed;
+  if (state.score > (meta.bestScore || 0)) { meta.bestScore = state.score; dirty = true; }
   for (const id of FEAT_IDS) {
     if (featTier(id, p[id]) > featTier(id, oldP[id])) earned.push({ id, tier: featTier(id, p[id]) });
     if (p[id] !== oldP[id]) dirty = true;

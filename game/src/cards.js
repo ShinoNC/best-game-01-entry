@@ -13,7 +13,6 @@ export const POTION_MAX = 5;
 
 function shopEntry(wid) { return SHOP.find((s) => s.id === wid); }
 
-// Upgrade price: defined to Lv5, then Lv5 price ×1.3/level (round to 5).
 function upPrice(entry, lv) {
   const ups = entry.up;
   if (lv <= ups.length) return ups[lv - 1];

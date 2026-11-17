@@ -77,7 +77,6 @@ export function pxPanel(ctx, x, y, w, h, fill, dark, border, light) {
   ctx.fillRect(x + 5, y + 5, 2, h - 10);
 }
 
-// Chunky pixel button/panel (r/bw kept for call-site compatibility).
 export function bevel(ctx, x, y, w, h, r, top, bottom, border, bw = 2) {
   pxPanel(ctx, x, y, w, h, top, bottom, border);
 }
@@ -122,7 +121,6 @@ function shade(hex) {
   return `rgb(${r},${g},${b})`;
 }
 
-// Segmented pixel bar: stepped frame, large segments, dithered fill.
 export function pxBar(ctx, x, y, w, h, frac, fill, segs, dark) {
   const n = segs || 10;
   const gap = 3;

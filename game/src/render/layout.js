@@ -37,7 +37,6 @@ export function overLayout() {
   };
 }
 
-// HUD potion box (bottom strip): click or E to drink. Shared with main.js.
 export const POTION_BOX = { x: 800, y: 656, w: 56, h: 56 };
 
 // Slot screen: 3 vertical cards in the overlay panel.
