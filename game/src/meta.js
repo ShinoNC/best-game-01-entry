@@ -1,7 +1,4 @@
-// Meta-progression: the game remembers. Best score per difficulty, unlocked
-// feats, and the last three runs — all in localStorage, all shown on the
-// title and the end screen. Every read is guarded (private mode, corrupt
-// JSON) and falls back to an empty record, never a crash.
+// Meta-progression: best per difficulty, feats, last runs — in localStorage.
 import { DIFF_ORDER, FEATS } from './config.js';
 
 const BESTS_KEY = 'tidekeeper-bests';
@@ -34,7 +31,7 @@ export function readMeta() {
   return {
     bests,
     feats: Array.isArray(feats) ? feats.filter((id) => FEATS.some((f) => f.id === id)) : [],
-    runs: Array.isArray(runs) ? runs.slice(0, 3) : [],
+    runs: Array.isArray(runs) ? runs.slice(0, 9) : [], // 3 per difficulty for HISTORY
   };
 }
 
@@ -68,7 +65,7 @@ export function recordRun(state, meta) {
     won: state.result === 'won', stage: state.stage, score: state.score,
     diff, time: Math.round(state.time),
   };
-  const runs = [run, ...meta.runs].slice(0, 3);
+  const runs = [run, ...meta.runs].slice(0, 9); // keep 3 per difficulty for HISTORY
   const next = { bests, feats, runs };
   writeJson(BESTS_KEY, bests);
   writeJson(FEATS_KEY, feats);

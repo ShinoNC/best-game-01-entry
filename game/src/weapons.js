@@ -1,18 +1,10 @@
-// Weapons (criterion 2): six tools with six feels, bought with coins earned
-// by killing creatures. ALL owned weapons fire at once, each on its own
-// cooldown — there is no equipped weapon. A new weapon is ADDED, never
-// replaces one. Each fires at the nearest creature in ITS range (laser =
-// fixed horizontal beams; Lv5 laser = TWO beams). The upgrade tracks
-// (claws/tempo/reach) multiply the damage/rate/range of ALL weapons, so
-// every upgrade stays meaningful. The stage-clear menu (cards.js) owns
-// buying: new weapons, weapon level-ups and skill cards are all cards
-// with coin prices.
+// Weapons: six tools with six feels. ALL owned weapons fire at once, each at the nearest creature in ITS range.
 import { WEAPON_MAX } from './config.js';
 
 // The weapon table: five levels each. Lv1 bow = 1 arrow, Lv1 blaster =
 // 1 pellet — more projectiles, faster fire and more damage per level.
 export const WEAPONS = {
-  claw: { name: 'CLAW', icon: '✂', desc: 'Slow heavy cleave, wide arc',
+  claw: { name: 'CLAW', icon: '✂',
     levels: [
       { dmg: 14, rate: 0.60, range: 140, arc: 1.6, hits: 4 },
       { dmg: 16, rate: 0.55, range: 148, arc: 1.65, hits: 4 },
@@ -20,7 +12,7 @@ export const WEAPONS = {
       { dmg: 20, rate: 0.46, range: 162, arc: 1.75, hits: 5 },
       { dmg: 23, rate: 0.42, range: 170, arc: 1.85, hits: 6 },
     ] },
-  bow: { name: 'BUBBLE BOW', icon: '⌖', desc: 'Long-range piercing arrows',
+  bow: { name: 'BUBBLE BOW', icon: '⌖',
     levels: [
       { dmg: 22, rate: 0.80, range: 420, arrows: 1, pierce: 2 },
       { dmg: 25, rate: 0.74, range: 440, arrows: 2, pierce: 2 },
@@ -28,7 +20,7 @@ export const WEAPONS = {
       { dmg: 32, rate: 0.62, range: 480, arrows: 3, pierce: 2 },
       { dmg: 36, rate: 0.56, range: 500, arrows: 3, pierce: 3 },
     ] },
-  blaster: { name: 'INK BLASTER', icon: '✦', desc: 'Rapid spread of ink pellets',
+  blaster: { name: 'INK BLASTER', icon: '✦',
     levels: [
       { dmg: 9, rate: 0.42, range: 320, pellets: 1 },
       { dmg: 10, rate: 0.38, range: 330, pellets: 2 },
@@ -36,7 +28,7 @@ export const WEAPONS = {
       { dmg: 12, rate: 0.30, range: 350, pellets: 4 },
       { dmg: 14, rate: 0.26, range: 365, pellets: 5 },
     ] },
-  shell: { name: 'HOMING SHELL', icon: '◎', desc: 'Slow shell that chases prey',
+  shell: { name: 'HOMING SHELL', icon: '◎',
     levels: [
       { dmg: 26, rate: 1.10, range: 480, turn: 3.2, speed: 380 },
       { dmg: 29, rate: 1.05, range: 500, turn: 3.4, speed: 380 },
@@ -44,7 +36,7 @@ export const WEAPONS = {
       { dmg: 36, rate: 0.95, range: 540, turn: 3.8, speed: 400 },
       { dmg: 41, rate: 0.88, range: 560, turn: 4.0, speed: 410 },
     ] },
-  spin: { name: 'WHIRLPOOL SPIN', icon: '↻', desc: 'Ring blast around the crab',
+  spin: { name: 'WHIRLPOOL SPIN', icon: '↻',
     levels: [
       { dmg: 16, rate: 1.60, range: 150 },
       { dmg: 18, rate: 1.50, range: 160 },
@@ -52,7 +44,7 @@ export const WEAPONS = {
       { dmg: 23, rate: 1.30, range: 180 },
       { dmg: 26, rate: 1.20, range: 195 },
     ] },
-  laser: { name: 'LASER GUN', icon: '≋', desc: 'Fixed horizontal beam',
+  laser: { name: 'LASER GUN', icon: '≋',
     levels: [
       { dmg: 30, rate: 1.40, range: 300, beams: 1 },
       { dmg: 36, rate: 1.30, range: 360, beams: 1 },

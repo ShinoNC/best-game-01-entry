@@ -1,11 +1,9 @@
-// The creatures: the crab (with weapon effects) and the seven enemy types, each
-// drawn and animated its own way — jellies pulse, eels wiggle, gulls flap, archers aim.
+// The creatures: the crab (with weapon effects) and the seven enemy types.
 import { PAL } from '../config.js';
 import { star } from './icons.js';
 
 export function drawCrab(ctx, p, t, clawStats, spinStats) {
   const s = p.radius / 20; // every part scales with the radius
-  // Soft shadow under the crab: it sits IN the pool, not on top of it.
   ctx.fillStyle = 'rgba(4,26,32,0.35)';
   ctx.beginPath(); ctx.ellipse(p.x, p.y + p.radius * 0.8, p.radius * 1.05, p.radius * 0.42, 0, 0, Math.PI * 2); ctx.fill();
   ctx.save(); ctx.translate(p.x, p.y);
@@ -13,17 +11,14 @@ export function drawCrab(ctx, p, t, clawStats, spinStats) {
   if (blink) ctx.globalAlpha = 0.45;
   ctx.rotate(p.angle);
   ctx.scale(s, s);
-  // Walk cycle: legs paddle and the body bobs only while moving.
   const mv = p.moving || 0;
   const wig = Math.sin(t * 16) * (2 + 4 * mv);
   ctx.translate(0, Math.sin(t * 16) * 1.5 * mv);
-  // Legs: six strokes paddling as it moves.
   ctx.strokeStyle = PAL.crabDark; ctx.lineWidth = 3; ctx.lineCap = 'round';
   for (let sgn = -1; sgn <= 1; sgn += 1) {
     ctx.beginPath(); ctx.moveTo(-6 + sgn * 8, -14); ctx.lineTo(-10 + sgn * 8, -22 - wig * sgn); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(-6 + sgn * 8, 14); ctx.lineTo(-10 + sgn * 8, 22 + wig * sgn); ctx.stroke();
   }
-  // Claws: two pincers ahead, snapping shut on the swing.
   const snap = p.swing > 0 ? -0.5 : 0;
   for (const sgn of [-1, 1]) {
     ctx.save(); ctx.translate(16, sgn * 13); ctx.rotate(sgn * (0.5 + snap));
@@ -39,10 +34,8 @@ export function drawCrab(ctx, p, t, clawStats, spinStats) {
   ctx.beginPath(); ctx.arc(-4, 0, 14, Math.PI * 0.5, Math.PI * 1.5); ctx.fill();
   ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.arc(-4, 0, 9, Math.PI * 0.6, Math.PI * 1.4); ctx.stroke();
-  // Facing chevron on the nose: the walking direction reads instantly.
   ctx.fillStyle = 'rgba(255,255,255,0.9)';
   ctx.beginPath(); ctx.moveTo(17, 0); ctx.lineTo(10, -5); ctx.lineTo(10, 5); ctx.closePath(); ctx.fill();
-  // Eyes on stalks, looking where it walks — they are the face.
   for (const sgn of [-1, 1]) {
     ctx.strokeStyle = PAL.crabDark; ctx.lineWidth = 2.5;
     ctx.beginPath(); ctx.moveTo(12, sgn * 6); ctx.lineTo(19, sgn * 10); ctx.stroke();
@@ -50,7 +43,6 @@ export function drawCrab(ctx, p, t, clawStats, spinStats) {
     ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(21.5, sgn * 10, 2.8, 0, Math.PI * 2); ctx.fill();
   }
   ctx.restore();
-  // Claw-swing arc: a gold swoosh from the claw's live stats — longer reach reads longer.
   if (p.swing > 0 && clawStats) {
     const prog = 1 - p.swing / 0.18; // 0 -> 1 across the swing
     const r = clawStats.range * 0.8, arc = clawStats.arc || 1.6;
@@ -65,7 +57,6 @@ export function drawCrab(ctx, p, t, clawStats, spinStats) {
     ctx.beginPath(); ctx.arc(0, 0, r, lead - 0.55, lead + 0.15); ctx.stroke();
     ctx.restore();
   }
-  // Whirlpool ring: an expanding teal ring as the spin blast goes off.
   if (p.spin > 0 && spinStats) {
     const prog = 1 - p.spin / 0.3; // 0 -> 1 across the blast
     ctx.save(); ctx.translate(p.x, p.y);
@@ -77,7 +68,6 @@ export function drawCrab(ctx, p, t, clawStats, spinStats) {
     ctx.beginPath(); ctx.arc(0, 0, 30 + prog * (spinStats.range - 30), 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
-  // Laser beams: thin horizontal lines, fading fast — one right, two (left + right) at max level.
   if (p.laser > 0) {
     const a = (p.laser / 0.15) * 0.75;
     const dirs = p.laserBeams >= 2 ? [1, -1] : [1];
@@ -102,7 +92,6 @@ export function drawEnemy(ctx, e, t, ang) {
   if (e.flash > 0) ctx.globalAlpha = 0.6;
   const flash = e.flash > 0;
   if (e.type === 'jelly') {
-    // Dome faces the crab, tentacles trail behind; the bell pulses as it swims.
     ctx.rotate(face + Math.PI / 2);
     const pu = 1 + Math.sin(t * 3 + e.wob) * 0.08;
     ctx.scale(1 / pu, pu);
@@ -131,7 +120,6 @@ export function drawEnemy(ctx, e, t, ang) {
     ctx.fillStyle = 'rgba(255,255,255,0.25)';
     ctx.beginPath(); ctx.arc(-e.r * 0.2, -e.r * 0.2, e.r * 0.25, 0, Math.PI * 2); ctx.fill();
   } else if (e.type === 'starfish' || e.type === 'mini') {
-    // Crawl: the star rocks side to side and breathes as it moves.
     const rock = Math.sin(t * 2 + e.wob) * 0.15;
     const pu = 1 + Math.sin(t * 3 + e.wob) * 0.05;
     ctx.rotate(rock); ctx.scale(pu, pu);
@@ -139,7 +127,6 @@ export function drawEnemy(ctx, e, t, ang) {
     ctx.fillStyle = flash ? '#fff' : e.dark;
     ctx.beginPath(); ctx.arc(0, 0, e.r * 0.25, 0, Math.PI * 2); ctx.fill();
   } else if (e.type === 'eel') {
-    // A segmented body that wiggles as it swims; the head leads, fins trail.
     if (e.windup > 0) ctx.translate(Math.sin(t * 60) * 2, Math.cos(t * 47) * 2); // tremble: the lunge is coming
     ctx.rotate(face);
     for (let i = 4; i >= 0; i -= 1) {
@@ -173,7 +160,6 @@ export function drawEnemy(ctx, e, t, ang) {
       ctx.beginPath(); ctx.arc(e.r * 1.85, 0, 3 + (0.35 - e.windup) * 12, 0, Math.PI * 2); ctx.fill();
     }
   } else if (e.type === 'gull' || e.type.endsWith('heron')) {
-    // Flying birds cast a soft shadow on the water below — height reads at once.
     ctx.fillStyle = 'rgba(4,26,32,0.22)';
     ctx.beginPath(); ctx.ellipse(0, e.r * 2.4, e.r * 1.1, e.r * 0.45, 0, 0, Math.PI * 2); ctx.fill();
     ctx.rotate(face);
@@ -221,12 +207,10 @@ export function drawEnemy(ctx, e, t, ang) {
   if (e.elite) { // gold ring + star: elites are worth hunting
     ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(e.x, e.y, e.r + 7, 0, Math.PI * 2); ctx.stroke();
-    // The star sits ABOVE the HP bar, so the bar never cuts through it.
     ctx.fillStyle = '#ffd166'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
     ctx.fillText('★', e.x, e.y - e.r - 26);
   }
-  // HP bars only on elites + boss: regulars flash white when hit, which is
-  // enough feedback — fifteen red bars over the pool read as clutter.
+// HP bars only on elites + boss.
   if (e.hp < e.maxHp && (e.elite || e.boss)) {
     const w = e.r * 2;
     ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(e.x - w / 2, e.y - e.r - 10, w, 5);

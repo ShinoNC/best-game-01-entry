@@ -1,6 +1,4 @@
-// Seeded RNG (mulberry32) + small helpers. Every run with the same seed plays the
-// same way, so screenshots are deterministic and playtests are reproducible.
-// Criterion 1: the same seed always gives the same game, the judge can trust the shots.
+// Seeded RNG (mulberry32). Same seed = same game.
 export function createRandom(seed) {
   let a = seed >>> 0;
   return {

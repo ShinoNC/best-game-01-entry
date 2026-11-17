@@ -1,7 +1,4 @@
-// Screen layouts the game and the click handling share: the stage-clear
-// menu's card/button boxes and the title screen's difficulty buttons.
-// FIXED and CENTRED, so the drawn boxes and the hit-boxes can never drift
-// apart — main.js hit-tests with these same functions.
+// Screen layouts the game and the click handling share: FIXED and CENTRED.
 import { DIFF_ORDER, VIEW_W } from '../config.js';
 
 export const SCREEN_TITLE = 'title';
@@ -25,12 +22,19 @@ export function stageMenuLayout(state) {
   };
 }
 
-// Title screen difficulty buttons: 3 × 220×64, 16px gaps, y 196–260, centred.
-export const DIFF_BTN_W = 220, DIFF_BTN_H = 64, DIFF_BTN_Y = 196;
+// Title screen: difficulty buttons 3 × 220×64, y 160–224; START 320×56,
+// y 244–300; four menu buttons 220×44 each in one row, y 316–360 — all centred.
+export const DIFF_BTN_W = 220, DIFF_BTN_H = 64, DIFF_BTN_Y = 160;
 export function titleLayout() {
   const total = DIFF_ORDER.length * DIFF_BTN_W + (DIFF_ORDER.length - 1) * 16;
   const x0 = (VIEW_W - total) / 2;
+  const mx0 = VIEW_W / 2 - 464;
   return {
     diffs: DIFF_ORDER.map((id, i) => ({ id, x: x0 + i * (DIFF_BTN_W + 16), y: DIFF_BTN_Y, w: DIFF_BTN_W, h: DIFF_BTN_H })),
+    start: { x: VIEW_W / 2 - 160, y: 244, w: 320, h: 56 },
+    help: { x: mx0, y: 316, w: 220, h: 44 },
+    feats: { x: mx0 + 236, y: 316, w: 220, h: 44 },
+    history: { x: mx0 + 472, y: 316, w: 220, h: 44 },
+    settings: { x: mx0 + 708, y: 316, w: 220, h: 44 },
   };
 }

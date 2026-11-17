@@ -1,11 +1,8 @@
-// The end screen: a run-summary dashboard, not running text — 6 stat
-// tiles, a feats panel, last 3 runs, the arsenal recap, the next goal,
-// and one big gold PLAY AGAIN button. Score is the measure — no letter
-// grade, the points already say how well the run went. A win points UP
-// the difficulty ladder; a loss points at the next milestone.
+// The end screen: a run-summary dashboard — 6 stat tiles, feats, last runs,
+// arsenal, next goal, one big gold PLAY AGAIN button.
 import { DIFFICULTIES, FEATS, PAL, STAGE_COUNT, VIEW_H, VIEW_W, WEAPON_MAX, WEAPON_ORDER } from '../config.js';
 import { comboMultFor } from '../world.js';
-import { drawWeaponIcon } from './icons.js';
+import { drawCoin, drawWeaponIcon } from './icons.js';
 
 export function drawOver(ctx, state) {
   const won = state.result === 'won';
@@ -29,7 +26,7 @@ export function drawOver(ctx, state) {
   ctx.fillText(`SCORE ${state.score}`, VIEW_W / 2, 186);
   // Six stat tiles, 3 x 2: big number + small label, solid dark plates.
   const tiles = [
-    [`${state.kills}`, 'SLAIN'], [`◉ ${state.coinsEarned}`, 'COINS'],
+    [`${state.kills}`, 'SLAIN'], [`${state.coinsEarned}`, 'COINS'],
     [`×${comboMultFor(state.stats.bestCombo || 0)}`, 'BEST COMBO'],
     [`${state.stats.damage}`, 'DAMAGE DEALT'],
     [`${mins}:${String(secs).padStart(2, '0')}`, 'TIME'],
@@ -40,7 +37,11 @@ export function drawOver(ctx, state) {
     ctx.fillStyle = '#0a3d4a'; ctx.fillRect(tx, ty, 190, 58);
     ctx.strokeStyle = 'rgba(159,196,189,0.35)'; ctx.lineWidth = 1; ctx.strokeRect(tx, ty, 190, 58);
     ctx.fillStyle = PAL.text; ctx.font = 'bold 24px sans-serif';
-    ctx.fillText(tiles[i][0], tx + 95, ty + 30);
+    if (i === 1) { // the COINS tile gets a drawn coin left of its number
+      const vw = ctx.measureText(tiles[i][0]).width;
+      drawCoin(ctx, tx + 95 - vw / 2 - 15, ty + 22, 10);
+      ctx.fillText(tiles[i][0], tx + 103, ty + 30);
+    } else ctx.fillText(tiles[i][0], tx + 95, ty + 30);
     ctx.fillStyle = PAL.dim; ctx.font = 'bold 12px sans-serif';
     ctx.fillText(tiles[i][1], tx + 95, ty + 50);
   }

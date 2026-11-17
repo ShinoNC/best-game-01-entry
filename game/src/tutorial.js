@@ -1,14 +1,10 @@
 // First-30-seconds tutorial: sequential, contextual, non-blocking hints.
-// Each hint shows once, fades after a few seconds, and only fires when its
-// moment arrives (an enemy approaches, a coin drops, a crowd closes in).
-// Every hint is an icon plus a short line — the picture carries the meaning.
-// Criterion 1: the goal and the controls are taught inside the game, not in a manual.
 export const HINTS = [
   { id: 'move', icon: '✥', text: 'WASD / ARROWS — move', show: 5.0,
     cond: (s) => s.time > 0.5 },
   { id: 'weapons', icon: '✂', text: 'ALL WEAPONS FIRE ON THEIR OWN — DODGE!', show: 4.5,
     cond: (s) => s.enemies.some((e) => Math.hypot(e.x - s.player.x, e.y - s.player.y) < 240) },
-  { id: 'coins', icon: '◉', text: 'COINS — BUY CARDS AFTER EACH STAGE', show: 4.5,
+  { id: 'coins', icon: '$', text: 'COINS — BUY CARDS AFTER EACH STAGE', show: 4.5,
     cond: (s) => s.coins > 0 || s.drops.length > 0 },
   { id: 'dash', icon: '»', text: 'SPACE — DASH OUT OF DANGER!', show: 4.5,
     cond: (s) => s.enemies.filter((e) => Math.hypot(e.x - s.player.x, e.y - s.player.y) < 130).length >= 3 },

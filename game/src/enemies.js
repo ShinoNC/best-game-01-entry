@@ -1,5 +1,4 @@
-// Enemies: seven behaviours + elites + six boss herons (every fifth stage).
-// Criterion 2: each type moves and threatens differently, so positioning matters.
+// Enemies: seven behaviours + elites + six boss herons.
 import { DIFFICULTIES, ELITE, ENEMIES, POOL, SPIT, STAGES, bossForStage, dmgScale, hpScale, spawnWeights, speedScale } from './config.js';
 
 let nextId = 1;
@@ -7,9 +6,9 @@ let nextId = 1;
 export function spawnEnemy(state, type, elite) {
   const def = ENEMIES[type];
   const diff = DIFFICULTIES[state.difficulty || 'normal'];
-  const a = state.rng.angle();
-  const x = POOL.cx + Math.cos(a) * POOL.rx * 1.02;
-  const y = POOL.cy + Math.sin(a) * POOL.ry * 1.02;
+  const s = Math.floor(state.rng.next() * 4), f = state.rng.next(); // one of the four edges, just outside it
+  const x = s === 1 ? POOL.x1 + 14 : s === 3 ? POOL.x0 - 14 : POOL.x0 + f * (POOL.x1 - POOL.x0);
+  const y = s === 0 ? POOL.y0 - 14 : s === 2 ? POOL.y1 + 14 : POOL.y0 + f * (POOL.y1 - POOL.y0);
   const hp = Math.round(def.hp * hpScale(state.stage) * diff.hp * (elite ? ELITE.hpMul : 1));
   const e = {
     id: nextId += 1, type, x, y, hp, maxHp: hp, r: def.r * (elite ? ELITE.sizeMul : 1),

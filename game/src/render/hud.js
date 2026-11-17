@@ -1,23 +1,18 @@
-// The HUD: two fixed bars framing the play area, the boss bar, the wave
-// banner, the tutorial hint pill, the minimap, and the INCOMING panel.
-// The pool sits between the bars (y 72–648); NO hud element floats over it.
-//   top bar (0–72): HP+SHELL (left) / stage+goal pills (centre) / score (right)
-//   bottom bar (648–720): skills + arsenal (left) / controls+best (centre) / minimap (right)
-//   boss bar y 78–112 (centre) · incoming panel y 78–116 (right) · banner y 146–186 · hint pill y 564–608
+// The HUD: two fixed bars framing the play area, boss bar, banner, hint pill, minimap, INCOMING panel.
 import { CREATURE_NAMES, DIFFICULTIES, PAL, POOL, STAGES, STAGE_COUNT, VIEW_H, VIEW_W, WEAPON_MAX, WEAPON_ORDER, bossForStage, nextTypes } from '../config.js';
 import { UPGRADE_DEFS } from '../upgrades.js';
 import { comboMult } from '../world.js';
-import { drawWeaponIcon } from './icons.js';
+import { drawCoin, drawWeaponIcon } from './icons.js';
 
 // Minimap: the whole pool in one glance — crab white, creatures coral, elite gold, boss orange.
 function drawMinimap(ctx, state, t) {
-  const mx = 1215, my = 684, mr = 30;
+  const mx = 1215, my = 684;
   ctx.fillStyle = 'rgba(6,42,51,0.78)';
-  ctx.beginPath(); ctx.arc(mx, my, mr, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(mx - 30, my - 18, 60, 36);
   ctx.strokeStyle = 'rgba(255,209,102,0.5)'; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.arc(mx, my, mr, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeRect(mx - 30, my - 18, 60, 36);
   ctx.fillStyle = 'rgba(29,138,166,0.9)';
-  ctx.beginPath(); ctx.ellipse(mx, my, 25, 13, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(mx - 25, my - 13, 50, 26);
   const dot = (wx, wy) => [mx + ((wx - POOL.cx) / POOL.rx) * 25, my + ((wy - POOL.cy) / POOL.ry) * 13];
   for (const e of state.enemies) {
     const [dx, dy] = dot(e.x, e.y);
@@ -48,7 +43,6 @@ export function drawHud(ctx, state, t) {
   ctx.fillStyle = 'rgba(6,42,51,0.92)';
   ctx.fillRect(0, 0, VIEW_W, 72);
   ctx.fillRect(0, VIEW_H - 72, VIEW_W, 72);
-  // Top-left: HP heart + bar + number, SHELL tier below.
   ctx.fillStyle = PAL.hp; ctx.font = 'bold 26px sans-serif';
   ctx.fillText('♥', 28, 38);
   ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(58, 26, 190, 18);
@@ -57,14 +51,11 @@ export function drawHud(ctx, state, t) {
   ctx.fillText(`${Math.ceil(p.hp)} / ${p.maxHp} HP`, 258, 42);
   ctx.fillStyle = PAL.gold;
   ctx.fillText(`SHELL ${'●'.repeat(p.shellTier + 1)}${'○'.repeat(3 - p.shellTier)}`, 58, 62);
-  // Top-centre: stage + difficulty. The remaining count lives in the
-  // The remaining count lives in the INCOMING panel (right), the boss name in the boss bar.
   const remaining = (STAGES[state.stage - 1].budget - state.stageSpawned) + state.enemies.length;
   const diffLabel = (DIFFICULTIES[state.difficulty || 'normal'] || DIFFICULTIES.normal).label;
   ctx.textAlign = 'center';
   ctx.fillStyle = PAL.text; ctx.font = 'bold 22px sans-serif';
   ctx.fillText(`STAGE ${state.stage} / ${STAGE_COUNT} · ${diffLabel}`, VIEW_W / 2, 32);
-  // WIN/LOSE in green/red pills — the judge checks win/lose visibility first.
   ctx.font = 'bold 13px sans-serif';
   const winTxt = 'WIN: CLEAR STAGE 30', loseTxt = 'LOSE: HP = 0';
   const w1 = ctx.measureText(winTxt).width + 20, w2 = ctx.measureText(loseTxt).width + 20;
@@ -74,13 +65,13 @@ export function drawHud(ctx, state, t) {
   ctx.fillStyle = '#fff';
   ctx.fillText(winTxt, px + w1 / 2, 58);
   ctx.fillText(loseTxt, px + w1 + 8 + w2 / 2, 58);
-  // Top-right: the score is the biggest number on screen (30px bold).
   ctx.textAlign = 'right';
   ctx.fillStyle = PAL.gold; ctx.font = 'bold 30px sans-serif';
   ctx.fillText(`SCORE ${state.score}`, VIEW_W - 28, 38);
   ctx.font = 'bold 15px sans-serif';
-  ctx.fillText(`◉ ${state.coins} COINS · COMBO ×${comboMult(state)}`, VIEW_W - 28, 60);
-  // INCOMING panel: how many are left (unspawned budget + live enemies) and what the next stage brings.
+  const coinTxt = `${state.coins} COINS · COMBO ×${comboMult(state)}`;
+  ctx.fillText(coinTxt, VIEW_W - 28, 60);
+  drawCoin(ctx, VIEW_W - 28 - ctx.measureText(coinTxt).width - 13, 55, 8);
   const nx = state.stage + 1;
   const nextBoss = nx <= STAGE_COUNT ? bossForStage(nx) : null;
   const nextLine = nextBoss ? `NEXT: ⚠ ${nextBoss.name}`
@@ -92,7 +83,6 @@ export function drawHud(ctx, state, t) {
   ctx.fillText(`STAGE ${state.stage} — ${remaining} LEFT`, 1240, 93);
   ctx.fillStyle = PAL.gold; ctx.font = 'bold 12px sans-serif';
   ctx.fillText(nextLine, 1240, 110);
-  // Boss warning on a boss stage, before the heron arrives — never a surprise.
   if (STAGES[state.stage - 1].boss && !state.bossSpawned && !state.boss) {
     const boss = bossForStage(state.stage);
     const warn = `⚠ ${boss ? boss.name : 'THE HERON'} IS COMING ⚠`;
@@ -102,7 +92,6 @@ export function drawHud(ctx, state, t) {
     ctx.fillStyle = `rgba(255,93,115,${0.6 + 0.4 * Math.sin(t * 6)})`;
     ctx.fillText(warn, VIEW_W / 2, 100);
   }
-  // Boss bar under the top bar while a heron lives.
   if (state.boss) {
     ctx.fillStyle = 'rgba(6,42,51,0.85)'; ctx.fillRect(VIEW_W / 2 - 190, 78, 380, 34);
     ctx.fillStyle = '#e8e4d8'; ctx.font = 'bold 14px sans-serif';
@@ -110,7 +99,6 @@ export function drawHud(ctx, state, t) {
     ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(VIEW_W / 2 - 180, 100, 360, 6);
     ctx.fillStyle = '#ff5d73'; ctx.fillRect(VIEW_W / 2 - 180, 100, 360 * (state.boss.hp / state.boss.maxHp), 6);
   }
-  // Bottom bar, left: the build at a glance — 6 big weapon slots, 8 tighter skill chips.
   ctx.textAlign = 'left';
   ctx.fillStyle = PAL.dim; ctx.font = 'bold 13px sans-serif';
   ctx.fillText('SKILLS', 18, 690);
@@ -143,21 +131,16 @@ export function drawHud(ctx, state, t) {
       ctx.beginPath(); ctx.arc(bx + 10 + j * 6, by + 41, 2.5, 0, Math.PI * 2); ctx.fill();
     }
   }
-  // Bottom bar, centre: controls, then best score + kills.
   ctx.textAlign = 'center';
   ctx.fillStyle = PAL.foam; ctx.font = '13px sans-serif';
-  ctx.fillText('WASD move · SPACE dash · E grab · P pause · M mute', 850, 676);
+  ctx.fillText('WASD move · SPACE dash · P pause · M mute', 850, 676);
   ctx.fillStyle = PAL.text; ctx.font = 'bold 13px sans-serif';
   ctx.fillText(`BEST ${state.best}  •  ${state.kills} slain`, 850, 700);
-  // Bottom bar, right: minimap + dash/grab pill above it.
   drawMinimap(ctx, state, t);
   ctx.textAlign = 'right';
-  ctx.fillStyle = 'rgba(6,42,51,0.85)'; ctx.fillRect(1012, 606, 240, 30);
+  ctx.fillStyle = 'rgba(6,42,51,0.85)'; ctx.fillRect(1092, 606, 160, 30);
   ctx.fillStyle = PAL.text; ctx.font = 'bold 15px sans-serif';
-  const dashTxt = p.dashCd <= 0 ? 'DASH READY' : `DASH ${p.dashCd.toFixed(1)}s`;
-  const grabTxt = p.grab ? 'HOLDING!' : p.grabCd <= 0 ? 'GRAB READY' : `GRAB ${p.grabCd.toFixed(1)}s`;
-  ctx.fillText(`${dashTxt} · ${grabTxt}`, 1240, 627);
-  // Wave / elite banner in its own zone (y 146–186), dark backdrop + gold frame.
+  ctx.fillText(p.dashCd <= 0 ? 'DASH READY' : `DASH ${p.dashCd.toFixed(1)}s`, 1240, 627);
   if (state.bannerT > 0) {
     ctx.textAlign = 'center'; ctx.globalAlpha = Math.min(1, state.bannerT);
     ctx.font = 'bold 30px sans-serif';
@@ -168,9 +151,6 @@ export function drawHud(ctx, state, t) {
     ctx.fillText(state.banner, VIEW_W / 2, 175);
     ctx.globalAlpha = 1;
   }
-  // Tutorial hint pill, bottom centre: an icon plus one short line, fading
-  // out. Play phase only — on the menu screen the cards own the player's
-  // attention.
   const hint = state.phase === 'play' && state.hints && state.hints.cur;
   if (hint) {
     const remain = state.hints.t;
@@ -196,5 +176,5 @@ export function drawPaused(ctx) {
   ctx.fillStyle = PAL.text; ctx.font = 'bold 56px sans-serif';
   ctx.fillText('PAUSED', VIEW_W / 2, 330);
   ctx.fillStyle = PAL.dim; ctx.font = '20px sans-serif';
-  ctx.fillText('P / Esc — resume      M — mute      R — restart', VIEW_W / 2, 380);
+  ctx.fillText('P / Esc — resume      M — mute      H — help      R — restart', VIEW_W / 2, 380);
 }

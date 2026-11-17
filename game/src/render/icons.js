@@ -1,6 +1,4 @@
-// Small drawn shapes every screen shares: stars, hearts, the six weapon
-// icons and the level pips. One place, so the HUD, the menu and the end
-// screen all draw the same icon for the same weapon.
+// Small drawn shapes every screen shares: stars, hearts, weapon icons, pips, coins.
 import { WEAPON_MAX } from '../config.js';
 
 export function star(ctx, x, y, r, rot, color) {
@@ -68,6 +66,19 @@ export function drawWeaponIcon(ctx, id, x, y, s, owned) {
     ctx.strokeStyle = 'rgba(127,224,195,0.6)'; ctx.lineWidth = 2.5;
     ctx.beginPath(); ctx.arc(0, 0, 6.5, 2.2, 5.6); ctx.stroke();
   }
+  ctx.restore();
+}
+
+// A drawn gold coin: dark rim, gold face, $ inside — instantly money, at any size.
+export function drawCoin(ctx, x, y, r) {
+  ctx.save();
+  ctx.fillStyle = '#c9962e';
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#ffd166';
+  ctx.beginPath(); ctx.arc(x, y, r * 0.78, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#c9962e'; ctx.font = `bold ${Math.round(r * 1.15)}px sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('$', x, y + r * 0.08);
   ctx.restore();
 }
 

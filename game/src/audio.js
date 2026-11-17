@@ -1,7 +1,17 @@
-// WebAudio SFX, synthesised — no audio files, so the game stays offline and small.
-// Criterion 3: every action answers with a sound. M toggles mute.
+// WebAudio SFX + a soft music loop, synthesised — no audio files. M toggles mute.
 export function createAudio() {
   let ctx = null, muted = false;
+  // Music: a slow C-major pentatonic arpeggio, one soft note every 0.9 s —
+  // calm tidewater under the SFX. tone() checks muted, so M silences it.
+  const MELODY = [523, 659, 784, 880, 784, 659, 587, 659];
+  let musicOn = false, musicStep = 0;
+  function musicTick() {
+    if (!musicOn) return;
+    tone(MELODY[musicStep % MELODY.length], 1.6, 'sine', 0.045);
+    musicStep += 1;
+    setTimeout(musicTick, 900);
+  }
+  function startMusic() { if (musicOn) return; musicOn = true; musicTick(); }
   function ensure() {
     if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch { return null; } }
     if (ctx && ctx.state === 'suspended') ctx.resume();
@@ -28,9 +38,11 @@ export function createAudio() {
     src.connect(f).connect(g).connect(c.destination); src.start();
   }
   return {
-    unlock() { ensure(); },
+    unlock() { ensure(); startMusic(); }, // game start = the one user gesture: audio + music on
     toggleMute() { muted = !muted; return muted; },
     get muted() { return muted; },
+    toggleMusic() { musicOn = !musicOn; if (musicOn) musicTick(); return musicOn; },
+    get music() { return musicOn; },
     pop() { tone(880, 0.09, 'sine', 0.12, 1400); },           // bubble burst / spin blast
     coin() { tone(1320, 0.07, 'sine', 0.10, 1760); },         // coin collected
     buy() { tone(660, 0.08, 'triangle', 0.12); setTimeout(() => tone(990, 0.12, 'triangle', 0.12), 70); }, // card purchase

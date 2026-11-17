@@ -1,13 +1,11 @@
-// The renderer: canvas, letterbox transform, draw layers (L0 pool · L10 world
-// · L20 particles+text · L30 HUD · L40 banners · L50 modal dim · L60 modal).
-// Drawing lives in render/ (pool, creatures, hud, title, menu, over, icons).
-// Screen shake moves L0–L20 only — the HUD and menus never shake.
-import { PAL, POOL, VIEW_H, VIEW_W } from './config.js';
+// The renderer: canvas, letterbox transform, draw layers. Drawing lives in render/.
+import { PAL, VIEW_H, VIEW_W } from './config.js';
 import { weaponStatsFor } from './weapons.js';
 import { drawCrab, drawEnemy } from './render/creatures.js';
 import { drawPool } from './render/pool.js';
 import { drawHud, drawPaused } from './render/hud.js';
 import { drawTitle } from './render/title.js';
+import { drawAchievements, drawHelp, drawHistory, drawSettings } from './render/overlays.js';
 import { drawStageMenu } from './render/menu.js';
 import { drawOver } from './render/over.js';
 import { heart } from './render/icons.js';
@@ -114,8 +112,6 @@ export function createRenderer(canvas) {
           ctx.strokeStyle = '#a894c4'; ctx.lineWidth = 2;
           ctx.beginPath(); ctx.arc(b.x, b.y, b.r * 0.55, t * 6, t * 6 + Math.PI * 1.5); ctx.stroke();
           ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.x - 2, b.y - 2, 2, 0, Math.PI * 2); ctx.fill();
-        } else if (b.kind === 'thrown') { // a hurled creature, tumbling through the air
-          drawEnemy(ctx, { ...b.thrown, x: b.x, y: b.y }, t * 6, Math.atan2(b.vy, b.vx));
         }
       }
       for (const s of state.spits) { // enemy spit: a bright droplet, easy to see and dodge
@@ -131,10 +127,6 @@ export function createRenderer(canvas) {
         drawCrab(ctx, { ...p, x: lerp(p.px ?? p.x, p.x), y: lerp(p.py ?? p.y, p.y) }, t,
           weaponStatsFor(state, 'claw'),
           state.weapons.spin > 0 ? weaponStatsFor(state, 'spin') : null);
-        if (p.grab) { // the held creature, overhead and wriggling to escape
-          const ix = lerp(p.px ?? p.x, p.x), iy = lerp(p.py ?? p.y, p.y);
-          drawEnemy(ctx, { ...p.grab, x: ix + Math.sin(t * 10) * 4, y: iy - 52 }, t * 2, p.angle);
-        }
       }
       fx.draw(ctx);
       // Hurt vignette: red edges while the crab is flashing from a hit.
@@ -152,6 +144,10 @@ export function createRenderer(canvas) {
       if (state.phase === 'stageclear') drawStageMenu(ctx, state, hover); // no HUD here — its own title owns the top
       if (state.phase === 'paused') drawPaused(ctx);
       if (state.phase === 'over') drawOver(ctx, state);
+      if (state.overlay === 'help') drawHelp(ctx, state);
+      else if (state.overlay === 'feats') drawAchievements(ctx, state);
+      else if (state.overlay === 'history') drawHistory(ctx, state);
+      else if (state.overlay === 'settings') drawSettings(ctx, state);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
     },
   };

@@ -1,11 +1,4 @@
-// Keyboard + mouse, read once per frame. WASD/arrows move, Space/Shift dash,
-// 1–5 buy a menu card, R rerolls the hand, P/Esc pause, M mute, R restart (on
-// the pause / game-over screens). Weapons attack on their own — the mouse
-// never triggers them; clicks only work the menus.
-// Mouse coordinates are CSS pixels (the canvas is 100% of the viewport, so
-// clientX minus the rect edge IS the CSS-pixel position). The renderer maps
-// CSS pixels to logical game units, so the mapping stays exact at any
-// devicePixelRatio — the backing store may be denser, the coordinates are not.
+// Keyboard + mouse, read once per frame. WASD move, Space dash, 1-5 buy, R reroll, P/Esc pause, M mute, H help.
 export const ACTION_CONFIRM = 'confirm';
 export const ACTION_PAUSE = 'pause';
 export const ACTION_MUTE = 'mute';
@@ -52,12 +45,12 @@ export function createInput(canvas) {
       return { x, y };
     },
     dashHeld() { return keys.has(' ') || keys.has('shift'); },
-    grabPressed() { return this.wasPressed('e'); },
     // Edge-triggered: true once per physical press.
     wasPressed(...names) { return names.some((n) => pressed.has(n)); },
     confirmPressed() { return this.wasPressed('enter', ' '); },
     pausePressed() { return this.wasPressed('p', 'escape'); },
     mutePressed() { return this.wasPressed('m'); },
+    helpPressed() { return this.wasPressed('h'); },
     restartPressed() { return this.wasPressed('r'); },
     rerollPressed() { return this.wasPressed('r'); },
     numberPressed() {

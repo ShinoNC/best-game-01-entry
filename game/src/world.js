@@ -1,5 +1,4 @@
-// The fixed-step simulation: spawn, move, collide, collect, win, lose. One step
-// is 1/60 s; the renderer never touches this state, so replays are exact.
+// The fixed-step simulation: spawn, move, collide, collect, win, lose.
 import { COMBO_MAX, COMBO_WINDOW, ENEMIES, POOL, STAGES, STAGE_COUNT, bossForStage } from './config.js';
 import { onEnemyKilled, updateEnemies, updateSpawner } from './enemies.js';
 import { hurtPlayer, nearestEnemy, updatePlayer } from './player.js';
@@ -8,7 +7,6 @@ import { updateHints } from './tutorial.js';
 
 export const STEP = 1 / 60;
 
-// Score multiplier from the kill chain: every 4 chained kills raise it by one, up to ×8.
 export function comboMultFor(chain) {
   return 1 + Math.min(COMBO_MAX - 1, Math.floor(chain / 4));
 }
@@ -19,7 +17,6 @@ function noteCoins(state) {
 }
 
 function dropCoins(state, e) {
-  // Coins are the menu currency: every kill pays, elites pay more, the heron pays most.
   for (let i = 0; i < e.coins; i += 1) {
     state.drops.push({
       kind: 'coin', x: e.x + state.rng.range(-30, 30), y: e.y + state.rng.range(-30, 30),
@@ -33,7 +30,6 @@ function dropCoins(state, e) {
 }
 
 function killEnemy(state, e, fx, audio) {
-  // Chain the combo: the popup shows the multiplied score.
   state.kills += 1;
   state.combo += 1; state.comboT = COMBO_WINDOW;
   if (state.combo > state.stats.bestCombo) state.stats.bestCombo = state.combo;
@@ -47,12 +43,10 @@ function killEnemy(state, e, fx, audio) {
   dropCoins(state, e);
 }
 
-// Creatures left in this stage: unspawned budget + live enemies (minis count).
 export function stageRemaining(state) {
   return (STAGES[state.stage - 1].budget - state.stageSpawned) + state.enemies.length;
 }
 
-// Advance to the next stage after the menu: resets stage counters, announces the stage.
 export function nextStage(state, audio) {
   state.stage += 1;
   state.stageSpawned = 0; state.stageEliteDone = false;
@@ -67,6 +61,10 @@ export function nextStage(state, audio) {
   if (boss) {
     state.banner = `⚠ STAGE ${state.stage} — ${boss.name}! ⚠`; state.bannerT = 3;
     if (audio) audio.elite();
+  } else if (state.stage === 11) {
+    state.banner = 'THE TIDE DEEPENS — DEEP REEF'; state.bannerT = 3;
+  } else if (state.stage === 21) {
+    state.banner = '⚠ STORM TIDE! ⚠'; state.bannerT = 3;
   } else {
     state.banner = `STAGE ${state.stage} — THE TIDE RISES`; state.bannerT = 2.5;
   }
@@ -76,13 +74,11 @@ export function stepWorld(state, input, dt, fx, audio) {
   if (state.phase !== 'play') return;
   state.time += dt;
   const p = state.player;
-  // Snapshot positions BEFORE the step: the renderer interpolates between these and the new ones.
   p.px = p.x; p.py = p.y;
   for (const e of state.enemies) { e.px = e.x; e.py = e.y; }
 
   updateHints(state, dt); // the first-30-seconds tutorial, contextual and once-only
 
-  // Stage-clear beat: budget spent, pool empty; banner 1.2 s, then the menu.
   if (state.stageClearT > 0) {
     updatePlayer(state, input, dt, fx, audio);
     state.stageClearT -= dt;
@@ -93,7 +89,6 @@ export function stepWorld(state, input, dt, fx, audio) {
         state.score += 1000 + state.stage * 100;
         audio.win();
       } else {
-        // The clear bonus (40 + 7 per stage) pays on top of kills (~2,900/run).
         state.clearBonus = 40 + state.stage * 7;
         state.coins += state.clearBonus; state.coinsEarned += state.clearBonus;
         noteCoins(state);
@@ -108,7 +103,6 @@ export function stepWorld(state, input, dt, fx, audio) {
   }
   state.bannerT -= dt;
 
-  // The combo chain decays: 3 s without a kill resets it to ×1.
   if (state.comboT > 0) {
     state.comboT -= dt;
     if (state.comboT <= 0) state.combo = 0;
@@ -118,7 +112,6 @@ export function stepWorld(state, input, dt, fx, audio) {
   updatePlayer(state, input, dt, fx, audio);
   updateEnemies(state, dt);
 
-  // Bubble Burst upgrade: a damaging ring around the crab every 6 s.
   state.bubbleT -= dt;
   if (state.ups.bubbles > 0 && state.bubbleT <= 0) {
     state.bubbleT = Math.max(3.2, 6 - state.ups.bubbles * 0.5);
@@ -134,7 +127,6 @@ export function stepWorld(state, input, dt, fx, audio) {
     audio.pop();
   }
 
-  // Bolts fly, pierce, and pop; a homing shell steers toward its target.
   for (let i = state.bolts.length - 1; i >= 0; i -= 1) {
     const b = state.bolts[i]; b.life -= dt;
     if (b.kind === 'homing') {
@@ -167,7 +159,6 @@ export function stepWorld(state, input, dt, fx, audio) {
     if (dead || Math.hypot(b.x - POOL.cx, b.y - POOL.cy) > 700) state.bolts.splice(i, 1);
   }
 
-  // Spits fly straight and pop on the crab — a still crab is a hit crab.
   for (let i = state.spits.length - 1; i >= 0; i -= 1) {
     const s = state.spits[i]; s.life -= dt; s.x += s.vx * dt; s.y += s.vy * dt;
     let dead = s.life <= 0;
@@ -178,7 +169,6 @@ export function stepWorld(state, input, dt, fx, audio) {
     if (dead || Math.hypot(s.x - POOL.cx, s.y - POOL.cy) > 700) state.spits.splice(i, 1);
   }
 
-  // Ink pools burn and slow whatever swims through them.
   for (let i = state.inks.length - 1; i >= 0; i -= 1) {
     const ink = state.inks[i]; ink.life -= dt;
     if (ink.life <= 0) { state.inks.splice(i, 1); continue; }
@@ -189,7 +179,6 @@ export function stepWorld(state, input, dt, fx, audio) {
     }
   }
 
-  // Contact damage: an enemy that touches the crab bites, then waits 0.9 s.
   for (const e of state.enemies) {
     if (e.hitCd > 0) continue;
     if (Math.hypot(e.x - p.x, e.y - p.y) < e.r + p.radius - 4) {
@@ -199,12 +188,10 @@ export function stepWorld(state, input, dt, fx, audio) {
     }
   }
 
-  // Deaths: score, coins, splits.
   for (let i = state.enemies.length - 1; i >= 0; i -= 1) {
     if (state.enemies[i].hp <= 0) { killEnemy(state, state.enemies[i], fx, audio); state.enemies.splice(i, 1); }
   }
 
-  // Coins drift toward the crab inside the magnet radius, then are eaten.
   for (let i = state.drops.length - 1; i >= 0; i -= 1) {
     const pe = state.drops[i]; pe.life -= dt; pe.bob += dt * 3;
     pe.x += pe.vx * dt; pe.y += pe.vy * dt; pe.vx *= 0.96; pe.vy *= 0.96;
@@ -218,7 +205,6 @@ export function stepWorld(state, input, dt, fx, audio) {
     } else if (pe.life <= 0) state.drops.splice(i, 1);
   }
 
-  // Pickups: heal star, bomb bubble, magnet shell.
   for (let i = state.pickups.length - 1; i >= 0; i -= 1) {
     const pk = state.pickups[i]; pk.life -= dt;
     if (Math.hypot(p.x - pk.x, p.y - pk.y) < p.radius + 16) {
@@ -232,15 +218,13 @@ export function stepWorld(state, input, dt, fx, audio) {
     } else if (pk.life <= 0) state.pickups.splice(i, 1);
   }
 
-  // Stage clear: the budget is spent and the pool is empty. Start the clear beat.
   if (state.stageSpawned >= STAGES[state.stage - 1].budget && state.enemies.length === 0
-      && !state.player.grab && state.stageClearT <= 0) {
+      && state.stageClearT <= 0) {
     state.stageClearT = 1.2;
     state.score += 100 + state.stage * 50;
     // A scratch-free stage counts toward the UNTOUCHED feat.
     if (state.stageTaken === 0) state.stats.cleanStage = true;
     state.combo = 0; state.comboT = 0; // the chain ends with the stage
-    // Vacuum the leftovers: coins on the ground are collected at once.
     let vacuumedCoins = 0;
     for (const pe of state.drops) {
       state.coins += pe.v; state.coinsEarned += pe.v; state.score += pe.v * 2; vacuumedCoins += pe.v;

@@ -1,26 +1,21 @@
-// The crab: WASD/arrows move, ALL owned weapons attack AUTOMATICALLY (each on
-// its own cooldown, aimed at the nearest creature in range; the laser fires
-// fixed horizontal beams); Space/Shift dashes (with i-frames). The player's
-// job is movement, positioning and dodging.
-import { GRAB, PAL, PLAYER, POOL, WEAPON_ORDER } from './config.js';
+// The crab: WASD moves, ALL owned weapons auto-fire, Space dashes.
+import { PAL, PLAYER, POOL, WEAPON_ORDER } from './config.js';
 import { weaponStatsFor } from './weapons.js';
 
 function clampToPool(p) {
-  const dx = (p.x - POOL.cx) / POOL.rx, dy = (p.y - POOL.cy) / POOL.ry;
-  const d = Math.hypot(dx, dy);
-  if (d > 1) { p.x = POOL.cx + (dx / d) * POOL.rx; p.y = POOL.cy + (dy / d) * POOL.ry; }
+  const r = p.radius || 0;
+  p.x = Math.max(POOL.x0 + r, Math.min(POOL.x1 - r, p.x));
+  p.y = Math.max(POOL.y0 + r, Math.min(POOL.y1 - r, p.y));
 }
 
-// Slide along the pool's edge: near the rim, the outward velocity is removed,
-// so the crab glides along the boundary instead of sticking to it.
+// Slide along the pool edge instead of sticking to it.
 function slideAtEdge(p, vx, vy) {
-  const ex = (p.x - POOL.cx) / POOL.rx, ey = (p.y - POOL.cy) / POOL.ry;
-  if (Math.hypot(ex, ey) < 0.97) return { vx, vy };
-  let nx = (p.x - POOL.cx) / (POOL.rx * POOL.rx), ny = (p.y - POOL.cy) / (POOL.ry * POOL.ry);
-  const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
-  const out = vx * nx + vy * ny;
-  if (out <= 0) return { vx, vy }; // already moving inward — leave it alone
-  return { vx: vx - nx * out, vy: vy - ny * out };
+  const r = p.radius || 0, m = 6;
+  if (p.x - r - POOL.x0 < m && vx < 0) vx = 0;
+  if (POOL.x1 - p.x - r < m && vx > 0) vx = 0;
+  if (p.y - r - POOL.y0 < m && vy < 0) vy = 0;
+  if (POOL.y1 - p.y - r < m && vy > 0) vy = 0;
+  return { vx, vy };
 }
 
 export function nearestEnemy(state, x, y, range) {
@@ -32,9 +27,7 @@ export function nearestEnemy(state, x, y, range) {
   return best;
 }
 
-// One weapon attack, aimed at `aim` (nearest creature in that weapon's range).
-// Claw cleaves an arc; bow looses piercing arrows; blaster spreads pellets;
-// shell homes; spin blasts a ring; laser fires fixed horizontal beam(s).
+// One weapon attack, aimed at the nearest creature in range.
 function fireWeapon(state, id, aim, target, fx, audio) {
   const p = state.player, w = weaponStatsFor(state, id);
   p.weapCd[id] = w.rate;
@@ -56,7 +49,6 @@ function fireWeapon(state, id, aim, target, fx, audio) {
     for (const { e } of inArc) {
       const dmg = Math.round(w.dmg * (0.9 + state.rng.next() * 0.2));
       e.hp -= dmg; e.flash = 0.12; state.stats.damage += dmg;
-      // Knockback: the claw shoves creatures away, so the crab is never simply swarmed.
       const ka = Math.atan2(e.y - p.y, e.x - p.x);
       const kb = e.elite ? 8 : 26;
       e.x += Math.cos(ka) * kb; e.y += Math.sin(ka) * kb;
@@ -125,7 +117,6 @@ function fireWeapon(state, id, aim, target, fx, audio) {
   }
 }
 
-// Is any creature on the laser's beam line? The laser only fires when something is in the way.
 function laserTarget(state, w) {
   const p = state.player;
   const dirs = w.beams >= 2 ? [1, -1] : [1];
@@ -158,7 +149,6 @@ export function updatePlayer(state, input, dt, fx, audio) {
     p.angle = Math.atan2(mv.y, mv.x);
   }
   clampToPool(p); // safety net — the slide above already keeps the crab inside
-  // Dash on Space/Shift, with a burst, i-frames and a whoosh.
   if (input.dashHeld() && p.dashCd <= 0 && (mv.x || mv.y)) {
     p.dashCd = PLAYER.dashCd; p.dashT = PLAYER.dashTime;
     p.dashVx = mv.x * PLAYER.dashSpeed; p.dashVy = mv.y * PLAYER.dashSpeed;
@@ -166,41 +156,7 @@ export function updatePlayer(state, input, dt, fx, audio) {
     state.stats.dashes += 1;
     fx.bubbles(p.x, p.y, 8); audio.dash();
   }
-  // Claw Grab (E): snatch the nearest small creature (never elite/heron) and
-  // hold it overhead; press E again to hurl it. The held creature leaves the
-  // enemy array, so the stage-clear check waits for it.
-  p.grabCd -= dt;
-  if (input.grabPressed && input.grabPressed() && p.grabCd <= 0) {
-    if (!p.grab) {
-      let t = null, bd = GRAB.range * GRAB.range;
-      for (const e of state.enemies) {
-        const d2 = (e.x - p.x) ** 2 + (e.y - p.y) ** 2;
-        if (!e.elite && !e.boss && d2 < bd) { bd = d2; t = e; }
-      }
-      if (t) {
-        p.grab = t; p.grabT = GRAB.hold;
-        state.enemies.splice(state.enemies.indexOf(t), 1);
-        audio.pop();
-      }
-    } else {
-      const t = p.grab; p.grab = null;
-      const aim = nearestEnemy(state, p.x, p.y, 500);
-      const a = aim ? Math.atan2(aim.y - p.y, aim.x - p.x) : p.angle;
-      state.bolts.push({ x: p.x, y: p.y, vx: Math.cos(a) * GRAB.speed, vy: Math.sin(a) * GRAB.speed,
-        dmg: GRAB.base + (t.maxHp || t.hp), pierce: 0, r: t.r + 4, life: 1.5, kind: 'thrown', thrown: t });
-      p.grabCd = GRAB.cd;
-      fx.bubbles(p.x, p.y, 4); audio.bolt();
-    }
-  }
-  if (p.grab) {
-    p.grabT -= dt;
-    if (p.grabT <= 0) { // it struggles free and swims off
-      p.grab.x = p.x + 30; p.grab.y = p.y + 30;
-      state.enemies.push(p.grab); p.grab = null; p.grabCd = GRAB.cd;
-    }
-  }
-  // Auto-attack: EVERY owned weapon fires on its own cooldown, each aimed at
-  // the nearest creature in ITS range. The crab faces the nearest creature overall.
+// Auto-attack: EVERY owned weapon fires on its own cooldown.
   const face = nearestEnemy(state, p.x, p.y, 560);
   if (face) p.angle = Math.atan2(face.y - p.y, face.x - p.x);
   for (const id of WEAPON_ORDER) {
@@ -218,18 +174,11 @@ export function updatePlayer(state, input, dt, fx, audio) {
 export function hurtPlayer(state, dmg, fx, audio) {
   const p = state.player;
   if (p.iframes > 0 || state.phase !== 'play') return;
-  if (p.grab) { // a hit knocks the held creature free
-    p.grab.x = p.x + 20; p.grab.y = p.y + 20;
-    state.enemies.push(p.grab); p.grab = null; p.grabCd = GRAB.cd;
-  }
-  // A sturdier shell soaks a flat slice of every hit.
   const soaked = Math.min(4, state.ups.shell * 1);
   const real = Math.max(1, dmg - soaked);
   p.hp -= real; p.iframes = PLAYER.iframes; p.flash = 0.25;
   state.stats.taken += real;
   state.stageTaken += real; // any damage this stage voids UNTOUCHED for it
-  // A hit shoves nearby creatures back a little — breathing room, so the
-  // crab is not instantly re-bitten by the same swarm.
   for (const e of state.enemies) {
     const d = Math.hypot(e.x - p.x, e.y - p.y);
     if (d < 60 + e.r) {

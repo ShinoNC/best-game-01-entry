@@ -2,10 +2,17 @@
 export const STAGE_COUNT = 30; // a full run is ~20–25 minutes
 export const VIEW_W = 1280;
 export const VIEW_H = 720;
-export const POOL = { cx: 640, cy: 360, rx: 556, ry: 288 }; // y 72–648: between the HUD bars
+export const POOL = { x0: 4, y0: 74, x1: 1276, y1: 646, cx: 640, cy: 360, rx: 636, ry: 286 }; // full rectangle between the HUD bars (top 0–72, bottom 648–720); rx/ry = half-extents
 export const BEST_KEY = 'tidekeeper-best';
 
-// Palette: deep teal water, warm sand, orange crab — one identity, readable at a glance.
+// Environments: the water changes by stage band — SHALLOWS / DEEP REEF / STORM TIDE.
+export const ENVS = [
+  { name: 'SHALLOWS', water: '#12708a', water2: '#1d8aa6', sand: '#c9a86a', weed: '#2f8f6b', weed2: '#4fae7d', rays: 1, rain: 0, glow: 0 },
+  { name: 'DEEP REEF', water: '#0a4058', water2: '#0e5a75', sand: '#8a7a5a', weed: '#b04a7a', weed2: '#d97aa8', rays: 0.4, rain: 0, glow: 0 },
+  { name: 'STORM TIDE', water: '#0d1b2e', water2: '#1a2f4a', sand: '#5a6270', weed: '#2a5a6a', weed2: '#3a7a8a', rays: 0, rain: 1, glow: 1 },
+];
+export function envForStage(stage) { return ENVS[stage <= 10 ? 0 : stage <= 20 ? 1 : 2]; }
+
 export const PAL = {
   deep: '#062a33', water: '#12708a', water2: '#1d8aa6', sand: '#c9a86a',
   sand2: '#e0c48f', foam: '#bfe8e0', crab: '#ff7a3c', crabDark: '#d94f1e',
@@ -18,7 +25,6 @@ export const PLAYER = {
   radius: 30, speed: 245, hp: 100,
   dashCd: 3.0, dashSpeed: 640, dashTime: 0.18, magnet: 75, iframes: 0.5,
 };
-// Enemy table: guppy swarms, jelly drifts, urchin tanks, starfish splits, eel lunges, gull swoops, archer spits.
 export const ENEMIES = {
   guppy:    { hp: 10, speed: 102, dmg: 4,  r: 10, score: 10, coins: 1, color: '#ffd166', dark: '#c9962e' },
   jelly:    { hp: 24, speed: 56,  dmg: 7,  r: 16, score: 20, coins: 2, color: '#c9a7ff', dark: '#8a6fd6' },
@@ -31,7 +37,6 @@ export const ENEMIES = {
 };
 export const SPIT = { speed: 240, r: 6, cd: 3.0, range: 420, aim: 0.35, life: 2.5 }; // archerfish water jet
 export const ELITE = { hpMul: 3.6, dmgMul: 1.5, sizeMul: 1.55, score: 150, coins: 5 };
-// Six boss herons, one per fifth stage; later birds are bigger, faster, summon more gulls.
 export const BOSSES = [
   { stage: 5, type: 'heron', name: 'THE GREAT HERON', hp: 1600, speed: 118, dmg: 18, r: 46, score: 500, coins: 25, color: '#e8e4d8', dark: '#8a8578', dive: 2.1, summon: 0, summonEvery: 7 },
   { stage: 10, type: 'stormheron', name: 'THE STORM HERON', hp: 2600, speed: 132, dmg: 22, r: 52, score: 1000, coins: 50, color: '#8a93b8', dark: '#4a5178', dive: 2.6, summon: 2, summonEvery: 7 },
@@ -42,19 +47,17 @@ export const BOSSES = [
 ];
 export function bossForStage(stage) { return BOSSES.find((b) => b.stage === stage) || null; }
 
-// Spawn plan: budget 34 → 144, interval 0.90 → 0.45 s, batch 2 → 5, one elite from stage 2, boss every fifth.
 export const STAGES = Array.from({ length: STAGE_COUNT }, (_, i) => {
   const stage = i + 1;
   const boss = stage % 5 === 0;
   return {
     budget: Math.round((34 + (stage - 1) * 3.8) * (boss ? 0.7 : 1)),
-    interval: Math.max(0.45, 0.90 - (stage - 1) * 0.032),
-    batch: Math.min(5, 2 + Math.floor((stage - 1) / 6)),
+    interval: Math.max(0.35, 0.75 - (stage - 1) * 0.030),
+    batch: Math.min(6, 3 + Math.floor((stage - 1) / 5)),
     elite: stage >= 2, boss,
   };
 });
 
-// Spawn weights shift with the stage. Archers: none before 12, main pressure 12–19, a few only 26–30.
 export function spawnWeights(stage) {
   const w = { guppy: 10, jelly: 4, urchin: 2, starfish: 3, eel: 0, gull: 0, archer: 0 };
   if (stage >= 2) w.eel = 2;
@@ -69,39 +72,33 @@ export function spawnWeights(stage) {
   if (stage >= 26) w.archer = 1;
   return w;
 }
-// The two most common types at a stage, by spawn weight — the INCOMING panel and menu preview read this.
 export function nextTypes(stage) {
   const w = spawnWeights(stage);
   return Object.keys(w).filter((k) => w[k] > 0)
     .sort((a, b) => w[b] - w[a]).slice(0, 2);
 }
 export function hpScale(stage) {
-  // 0.55/stage to 15, 1.10/stage after. Stage 30: 25.2x enemy HP.
   if (stage <= 15) return 1 + (stage - 1) * 0.55;
   return 1 + 14 * 0.55 + (stage - 15) * 1.10;
 }
 export function dmgScale(stage) {
-  // 0.14/stage to stage 15, 0.24/stage after. Stage 30: 6.6x damage.
   if (stage <= 15) return 1 + (stage - 1) * 0.14;
   return 1 + 14 * 0.14 + (stage - 15) * 0.24;
 }
 export function speedScale(stage) { return 1 + (stage - 1) * 0.032; } // stage 30: 1.93x enemy speed
 
-// The weapon table lives in weapons.js; this file keeps only the order and level cap.
 export const WEAPON_ORDER = ['claw', 'bow', 'blaster', 'shell', 'spin', 'laser'];
 export const WEAPON_MAX = 5; // levels per weapon
 
-// Menu prices (criterion 2): real prices, escalating by tier. Maxing everything costs ~8,255 coins vs ~8,900 earned per run.
 export const SHOP = [
-  { id: 'bow', kind: 'weapon', price: 50, up: [100, 150, 210, 280], name: 'BUBBLE BOW', icon: '⌖', desc: 'Long-range piercing arrows' },
-  { id: 'blaster', kind: 'weapon', price: 110, up: [220, 290, 370, 460], name: 'INK BLASTER', icon: '✦', desc: 'Rapid spread of ink pellets' },
-  { id: 'shell', kind: 'weapon', price: 90, up: [170, 230, 300, 380], name: 'HOMING SHELL', icon: '◎', desc: 'Slow shell that chases prey' },
-  { id: 'spin', kind: 'weapon', price: 70, up: [140, 190, 250, 320], name: 'WHIRLPOOL SPIN', icon: '↻', desc: 'Ring blast around the crab' },
-  { id: 'laser', kind: 'weapon', price: 130, up: [200, 260, 330, 420], name: 'LASER GUN', icon: '≋', desc: 'Fixed horizontal beam' },
-  { id: 'claw', kind: 'weapon', price: 0, up: [60, 95, 140, 200], name: 'SHARPEN CLAWS', icon: '✂', desc: 'Claw +damage, +range' },
+  { id: 'bow', kind: 'weapon', price: 50, up: [100, 150, 210, 280], name: 'BUBBLE BOW', icon: '⌖' },
+  { id: 'blaster', kind: 'weapon', price: 110, up: [220, 290, 370, 460], name: 'INK BLASTER', icon: '✦' },
+  { id: 'shell', kind: 'weapon', price: 90, up: [170, 230, 300, 380], name: 'HOMING SHELL', icon: '◎' },
+  { id: 'spin', kind: 'weapon', price: 70, up: [140, 190, 250, 320], name: 'WHIRLPOOL SPIN', icon: '↻' },
+  { id: 'laser', kind: 'weapon', price: 130, up: [200, 260, 330, 420], name: 'LASER GUN', icon: '≋' },
+  { id: 'claw', kind: 'weapon', price: 0, up: [60, 95, 140, 200], name: 'SHARPEN CLAWS', icon: '✂' },
 ];
 
-// Difficulties: real tuning, not labels — NORMAL is balanced (all 1.0).
 export const DIFFICULTIES = {
   easy: { label: 'EASY', desc: 'gentler foes', hp: 0.85, dmg: 0.8, speed: 0.97, bossHp: 0.9, bossDmg: 0.85 },
   normal: { label: 'NORMAL', desc: 'the true tide', hp: 1, dmg: 1, speed: 1, bossHp: 1, bossDmg: 1 },
@@ -109,7 +106,6 @@ export const DIFFICULTIES = {
 };
 export const DIFF_ORDER = ['easy', 'normal', 'hard'];
 
-// Feats: seven named goals beyond winning, persisted across runs.
 export const FEATS = [
   { id: 'firstblood', name: 'FIRST BLOOD', desc: 'Slay your first creature' },
   { id: 'arsenal', name: 'FULL ARSENAL', desc: 'Own all 6 weapons in one run' },
@@ -120,16 +116,11 @@ export const FEATS = [
   { id: 'combo', name: 'COMBO ×8', desc: 'Reach combo ×8' },
 ];
 
-// The bestiary: display names for the seven creatures, shown on the title.
 export const CREATURE_NAMES = {
   guppy: 'GUPPY', jelly: 'JELLY', urchin: 'URCHIN',
   starfish: 'STARFISH', eel: 'EEL', gull: 'GULL', archer: 'ARCHER',
 };
 export const CREATURE_ORDER = ['guppy', 'jelly', 'urchin', 'starfish', 'eel', 'gull', 'archer'];
 
-// Claw Grab (E): snatch, hold, hurl — thrown creature deals base + its own max HP.
-export const GRAB = { range: 160, cd: 3.0, hold: 4.0, base: 60, speed: 520 };
-
-// Combo: kills within 3 s chain; every 4 chained kills raise the score multiplier, up to ×8.
 export const COMBO_WINDOW = 3.0;
 export const COMBO_MAX = 8;

@@ -1,33 +1,18 @@
-// The stage-clear menu: the ONLY menu, shown only between stages. Five cards
-// with coin prices, a reroll button, ONE primary CTA (NEXT, gold-filled).
-import { CREATURE_NAMES, ENEMIES, PAL, VIEW_H, VIEW_W, WEAPON_MAX, WEAPON_ORDER, bossForStage, nextTypes } from '../config.js';
+// The stage-clear menu: the ONLY menu, shown only between stages.
+import { CREATURE_NAMES, ENEMIES, PAL, VIEW_H, VIEW_W, WEAPON_MAX, WEAPON_ORDER, bossForStage, envForStage, nextTypes } from '../config.js';
 import { UPGRADE_DEFS } from '../upgrades.js';
 import { REROLL_COST } from '../cards.js';
-import { drawPips, drawWeaponIcon } from './icons.js';
+import { drawCoin, drawPips, drawWeaponIcon } from './icons.js';
 import { drawEnemy } from './creatures.js';
 import { stageMenuLayout } from './layout.js';
 
-// Card colour coding by kind: SKILL mint, WEAPON LEVEL-UP gold, NEW WEAPON
-// purple, REPAIR pink — the type reads from the colour, not just the label.
+// Card colour coding: SKILL mint, LEVEL-UP gold, NEW WEAPON purple, REPAIR pink.
 const KIND_COLOR = { skill: '#7fe0c3', wup: '#ffd166', weapon: '#c9a7ff', repair: '#ff8fb0' };
 
-// Wrap a description into at most two centred lines — text reflows, never clips.
-function wrapDesc(ctx, text, maxW) {
-  const words = text.split(' ');
-  const out = [];
-  let cur = '';
-  for (const w of words) {
-    const test = cur ? `${cur} ${w}` : w;
-    if (ctx.measureText(test).width > maxW && cur) { out.push(cur); cur = w; }
-    else cur = test;
-  }
-  if (cur) out.push(cur);
-  return out.slice(0, 2);
-}
-
-// One menu card: tag, picture, name, description, level pips, price. States differ
-// by more than colour: unaffordable = RED price + "NEED N MORE"; bought = green
-// border + "✓ BOUGHT" stamp, keeps its place; hovered = thick gold frame.
+// One menu card: tag, picture, name, level pips, price — no description line,
+// the names are self-explanatory. States differ by more than colour:
+// unaffordable = RED price + "NEED N MORE"; bought = green border + "✓ BOUGHT"
+// stamp, keeps its place; hovered = thick gold frame.
 function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   const poor = !card.bought && state.coins < card.price;
   const need = card.price - state.coins;
@@ -63,22 +48,21 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   ctx.font = 'bold 18px sans-serif';
   if (ctx.measureText(card.name).width > w - 20) ctx.font = 'bold 15px sans-serif';
   ctx.fillText(card.name, x + w / 2, y + 108);
-  // Description, wrapped to at most two lines.
-  ctx.fillStyle = PAL.dim; ctx.font = '14px sans-serif';
-  const dl = wrapDesc(ctx, card.desc, w - 24);
-  dl.forEach((ln, li) => ctx.fillText(ln, x + w / 2, y + 132 + li * 18));
   // Level pips: filled = owned, gold = the level this card adds.
-  if (card.kind !== 'repair') drawPips(ctx, x + w / 2, y + 168, card.lv, !card.bought);
-  // Price — or the bought stamp, or the shortfall in words (never colour alone).
+  if (card.kind !== 'repair') drawPips(ctx, x + w / 2, y + 148, card.lv, !card.bought);
+  // Price — a drawn coin + the number — or the bought stamp, or the shortfall in words (never colour alone).
   if (card.bought) {
     ctx.fillStyle = '#7fe0c3'; ctx.font = 'bold 18px sans-serif';
-    ctx.fillText('✓ BOUGHT', x + w / 2, y + 206);
+    ctx.fillText('✓ BOUGHT', x + w / 2, y + 198);
   } else {
     ctx.fillStyle = poor ? '#ff8fa0' : PAL.gold; ctx.font = 'bold 22px sans-serif';
-    ctx.fillText(`◉ ${card.price}`, x + w / 2, y + 206);
+    const pt = `${card.price}`;
+    const pw = ctx.measureText(pt).width;
+    drawCoin(ctx, x + w / 2 - pw / 2 - 14, y + 190, 10);
+    ctx.fillText(pt, x + w / 2 + 8, y + 198);
     if (poor) {
       ctx.fillStyle = '#ff8fa0'; ctx.font = 'bold 13px sans-serif';
-      ctx.fillText(`NEED ${need} MORE`, x + w / 2, y + 228);
+      ctx.fillText(`NEED ${need} MORE`, x + w / 2, y + 222);
     }
   }
   ctx.restore();
@@ -89,12 +73,15 @@ export function drawStageMenu(ctx, state, hover) {
   ctx.fillStyle = 'rgba(6,42,51,0.78)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   ctx.textAlign = 'center';
   ctx.fillStyle = PAL.gold; ctx.font = 'bold 36px sans-serif';
-  ctx.fillText(`★ STAGE ${state.stage} CLEAR! ★`, VIEW_W / 2, 68);
+  ctx.fillText(`★ STAGE ${state.stage} CLEAR — ${envForStage(state.stage).name} ★`, VIEW_W / 2, 68);
   const mins = Math.floor(state.time / 60), secs = Math.floor(state.time % 60);
   ctx.fillStyle = PAL.dim; ctx.font = '16px sans-serif';
   ctx.fillText(`${state.kills} slain  •  ${mins}:${String(secs).padStart(2, '0')}  •  +${state.clearBonus} CLEAR BONUS`, VIEW_W / 2, 96);
   ctx.fillStyle = PAL.gold; ctx.font = 'bold 28px sans-serif';
-  ctx.fillText(`◉ ${state.coins} COINS`, VIEW_W / 2, 124);
+  const ct = `${state.coins} COINS`;
+  const cw = ctx.measureText(ct).width;
+  drawCoin(ctx, VIEW_W / 2 - cw / 2 - 18, 116, 12);
+  ctx.fillText(ct, VIEW_W / 2 + 10, 124);
   const hand = state.hand || [];
   if (hand.length === 0) {
     // Empty state: everything is owned and maxed and the shell is whole.
@@ -117,7 +104,14 @@ export function drawStageMenu(ctx, state, hover) {
   ctx.lineWidth = 2; ctx.strokeRect(r.x, r.y, r.w, r.h);
   ctx.fillStyle = canReroll ? PAL.text : PAL.dim;
   ctx.font = 'bold 18px sans-serif';
-  ctx.fillText(`REROLL — ${REROLL_COST} ◉  [R]`, r.x + r.w / 2, r.y + 33);
+  const rt = `REROLL — ${REROLL_COST}`, rs = '  [R]';
+  const totW = ctx.measureText(rt).width + 24 + ctx.measureText(rs).width;
+  const tx0 = r.x + r.w / 2 - totW / 2;
+  ctx.textAlign = 'left';
+  ctx.fillText(rt, tx0, r.y + 33);
+  drawCoin(ctx, tx0 + ctx.measureText(rt).width + 12, r.y + 26, 9);
+  ctx.fillText(rs, tx0 + ctx.measureText(rt).width + 24, r.y + 33);
+  ctx.textAlign = 'center';
   ctx.globalAlpha = 1;
   const n = L.next;
   const nHover = hover && hover.x >= n.x && hover.x <= n.x + n.w && hover.y >= n.y && hover.y <= n.y + n.h;
@@ -125,13 +119,11 @@ export function drawStageMenu(ctx, state, hover) {
   ctx.fillRect(n.x, n.y, n.w, n.h);
   ctx.fillStyle = '#062a33'; ctx.font = 'bold 20px sans-serif';
   ctx.fillText(`NEXT STAGE ${state.stage + 1} →  [Enter]`, n.x + n.w / 2, n.y + 33);
-  // One line under the buttons: an error message replaces the hint while it shows.
+  // One line under the buttons: an error message shows while it lasts — the
+  // [1]–[5] numbers, [R] and [Enter] on the buttons already teach the keys.
   if (state.menuMsgT > 0 && state.menuMsg) {
     ctx.fillStyle = '#ff8fa0'; ctx.font = 'bold 16px sans-serif';
     ctx.fillText(state.menuMsg, VIEW_W / 2, 480);
-  } else {
-    ctx.fillStyle = PAL.dim; ctx.font = '15px sans-serif';
-    ctx.fillText('CLICK A CARD OR PRESS 1–5 TO BUY  •  R REROLLS  •  ENTER CONTINUES', VIEW_W / 2, 480);
   }
   // Build recap: the arsenal and the skills in one centred row.
   ctx.fillStyle = PAL.dim; ctx.font = 'bold 14px sans-serif';

@@ -1,7 +1,4 @@
-// Particles, floating damage numbers and screen shake — the juice (criterion 3).
-// Floating TEXT lives only in the clear playfield band (y 200–560, x 40–1240),
-// never over the HUD, boss bar, banner or hint pill. At most 5 numbers on
-// screen, same-target hits merge into one growing number, 14px, 0.7s fade.
+// Particles, floating damage numbers and screen shake — the juice.
 const TEXT_TOP = 200, TEXT_BOTTOM = 560, TEXT_LEFT = 40, TEXT_RIGHT = 1240;
 const TEXT_MAX = 5;
 export function createParticles() {
