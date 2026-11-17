@@ -87,11 +87,9 @@ export function drawTitle(ctx, state) {
     }
   }
   const bs = (state.meta || {}).bestScore || 0;
-  if (bs > 0) {
-    ctx.textAlign = 'center';
-    ctx.font = px(11);
-    txt(ctx, `★ TOP SCORE ${bs.toLocaleString('en-US')}`, POOL.cx, 560, PAL.gold);
-  }
+  ctx.textAlign = 'center';
+  ctx.font = px(11);
+  txt(ctx, `★ TOP SCORE ${bs.toLocaleString('en-US')}`, POOL.cx, 560, PAL.gold);
   ctx.textAlign = 'right';
   ctx.font = px(10);
   ctx.fillStyle = 'rgba(255,255,255,0.7)';
