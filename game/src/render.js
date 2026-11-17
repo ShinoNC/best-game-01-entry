@@ -52,7 +52,7 @@ export function createRenderer(canvas) {
       drawPool(ctx, state, rt);
       // Dive telegraph: dashed line, ring, "!".
       for (const e of state.enemies) {
-        if ((e.type === 'gull' || e.boss) && e.state === 'circle' && e.diveT < 0.6) {
+        if ((e.type === 'squid' || e.boss) && e.state === 'circle' && e.diveT < 0.6) {
           const ix = lerp(e.px ?? e.x, e.x), iy = lerp(e.py ?? e.y, e.y);
           const jx = lerp(state.player.px ?? state.player.x, state.player.x);
           const jy = lerp(state.player.py ?? state.player.y, state.player.y);

@@ -30,7 +30,7 @@ export function createState(rng, seed, difficulty = 'normal') {
     }
   }
   const mix = {};
-  for (const k of ['guppy', 'jelly', 'urchin', 'starfish', 'eel', 'gull', 'archer']) mix[k] = rng.range(0.85, 1.2);
+  for (const k of ['guppy', 'jelly', 'urchin', 'starfish', 'eel', 'squid', 'archer']) mix[k] = rng.range(0.85, 1.2);
   return {
     rng, seed, decor, theme, mix, time: 0, phase: 'title', menuSel: 0,
     difficulty, // 'easy' | 'normal' | 'hard' — set on the title

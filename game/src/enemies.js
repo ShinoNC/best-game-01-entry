@@ -40,7 +40,7 @@ function spawnBoss(state, fx, audio) {
   state.bossSpawned = true;
   const def = bossForStage(state.stage);
   const diff = DIFFICULTIES[state.difficulty || 'normal'];
-  const b = spawnEnemy(state, 'gull', true, fx);
+  const b = spawnEnemy(state, 'squid', true, fx);
   b.type = def.type;
   b.boss = true;
   b.name = def.name;
@@ -79,14 +79,14 @@ export function updateSpawner(state, dt, fx, audio) {
   if (plan.boss && !state.bossSpawned && state.stageSpawned >= plan.budget / 2) {
     spawnBoss(state, fx, audio);
   }
-  // A summoning boss calls gulls.
-  // Called gulls fly in from the edges — never pop by the boss.
+  // A summoning boss calls squids.
+  // Called squids fly in from the edges — never pop by the boss.
   if (state.boss && state.boss.summonN > 0) {
     state.boss.summonT -= dt;
     if (state.boss.summonT <= 0 && state.enemies.length < 55) {
       state.boss.summonT = state.boss.summonEvery;
       for (let i = 0; i < state.boss.summonN; i += 1) {
-        const g = spawnEnemy(state, 'gull', false, fx);
+        const g = spawnEnemy(state, 'squid', false, fx);
         g.state = 'approach';
       }
       fx.burst(state.boss.x, state.boss.y, state.boss.color, 10, 160);
@@ -124,7 +124,7 @@ export function updateEnemies(state, dt) {
         const strafe = want === 0 ? Math.sin(e.wob * 0.7) * 0.8 : 0;
         e.x += (nx * want - ny * strafe) * sp * dt; e.y += (ny * want + nx * strafe) * sp * dt;
       }
-    } else if (e.type === 'gull' || e.boss) { // swoopers circle, then dive
+    } else if (e.type === 'squid' || e.boss) { // swoopers circle, then dive
       e.diveT -= dt;
       const boss = !!e.boss;
       if (e.state === 'approach' && d < 200) { e.state = 'circle'; e.diveT = boss ? 0.8 : 1.1; }

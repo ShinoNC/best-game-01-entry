@@ -171,39 +171,24 @@ export function drawEnemy(ctx, e, t, ang) {
       ctx.fillStyle = 'rgba(191,232,224,0.95)';
       ctx.beginPath(); ctx.arc(e.r * 1.85, 0, 3 + (0.35 - e.windup) * 12, 0, Math.PI * 2); ctx.fill();
     }
-  } else if (e.type === 'gull') { // small seabird
-    ctx.fillStyle = 'rgba(4,26,32,0.22)';
-    ctx.beginPath(); ctx.ellipse(0, e.r * 2.4, e.r * 1.1, e.r * 0.45, 0, 0, Math.PI * 2); ctx.fill();
+  } else if (e.type === 'squid') { // small squid: mantle + trailing tentacles
     ctx.rotate(face);
-    const flap = Math.sin(t * 10 + e.wob) * 0.7;
-    ctx.fillStyle = flash ? '#fff' : e.color;
-    for (const sgn of [-1, 1]) { // feathered wings
-      ctx.save(); ctx.translate(-2, sgn * 4); ctx.rotate(sgn * (0.5 + flap * 0.5));
-      ctx.beginPath();
-      ctx.moveTo(e.r * 0.3, -8);
-      ctx.lineTo(-e.r * 1.0, -12); ctx.lineTo(-e.r * 0.75, -4);
-      ctx.lineTo(-e.r * 1.45, 0); ctx.lineTo(-e.r * 0.75, 4);
-      ctx.lineTo(-e.r * 1.0, 12); ctx.lineTo(e.r * 0.3, 8);
-      ctx.closePath(); ctx.fill();
-      ol(ctx, flash ? '#fff' : e.dark, 2);
-      ctx.restore();
+    const wig = Math.sin(t * 8 + e.wob) * 0.2;
+    ctx.strokeStyle = flash ? '#fff' : e.color; ctx.lineCap = 'round'; ctx.lineWidth = 2.5;
+    for (let i = -2; i <= 2; i += 1) { // 5 tentacles trail behind
+      ctx.beginPath(); ctx.moveTo(-e.r * 0.7, i * 3);
+      ctx.quadraticCurveTo(-e.r * 1.4, i * 5 + wig * 8, -e.r * 1.9, i * 4 + wig * 10);
+      ctx.stroke();
     }
-    ctx.beginPath(); ctx.ellipse(0, 0, e.r * 0.9, e.r * 0.55, 0, 0, Math.PI * 2); ctx.fill();
-    ol(ctx, flash ? '#fff' : e.dark, 2);
-    const neck = new Path2D();
-    neck.moveTo(e.r * 0.45, -e.r * 0.15);
-    neck.quadraticCurveTo(e.r * 0.9, -e.r * 0.85, e.r * 1.25, -e.r * 0.55);
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = flash ? '#fff' : e.dark; ctx.lineWidth = e.r * 0.2 + 4; ctx.stroke(neck);
-    ctx.strokeStyle = flash ? '#fff' : e.color; ctx.lineWidth = e.r * 0.2; ctx.stroke(neck);
     ctx.fillStyle = flash ? '#fff' : e.color;
-    ctx.beginPath(); ctx.arc(e.r * 1.3, -e.r * 0.55, e.r * 0.22, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(e.r * 0.25, 0, e.r * 0.95, e.r * 0.5, 0, 0, Math.PI * 2); ctx.fill();
     ol(ctx, flash ? '#fff' : e.dark, 2);
-    ctx.fillStyle = flash ? '#fff' : '#ffd166';
-    ctx.beginPath();
-    ctx.moveTo(e.r * 1.42, -e.r * 0.62); ctx.lineTo(e.r * 2.15, -e.r * 0.5); ctx.lineTo(e.r * 1.42, -e.r * 0.38);
-    ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(e.r * 1.28, -e.r * 0.62, 2.5, 0, Math.PI * 2); ctx.fill();
+    for (const sgn of [-1, 1]) { // side fins
+      ctx.beginPath();
+      ctx.moveTo(-e.r * 0.55, sgn * e.r * 0.4); ctx.lineTo(-e.r * 0.95, sgn * e.r * 0.75); ctx.lineTo(-e.r * 0.35, sgn * e.r * 0.55);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(e.r * 0.7, -e.r * 0.15, 2.5, 0, Math.PI * 2); ctx.fill();
   } else if (e.boss) { // sea-beast bosses
     const s = e.r / 26, R = e.r;
     const col = flash ? '#fff' : e.color, drk = flash ? '#fff' : e.dark;

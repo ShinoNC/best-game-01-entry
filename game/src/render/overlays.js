@@ -9,8 +9,8 @@ const BIG = { x: 140, y: 60, w: 1000, h: 580 }; // the help panel
 const BIG_CLOSE = { x: 560, y: 576, w: 160, h: 44 };
 const HIST_PANEL = { x: 140, y: 60, w: 1000, h: 360 }; // history: 3 short tables
 const HIST_CLOSE = { x: 560, y: 356, w: 160, h: 44 };
-const FEAT_PANEL = { x: 140, y: 60, w: 1000, h: 580 }; // awards only, centred
-const FEAT_CLOSE = { x: 560, y: 576, w: 160, h: 44 };
+const FEAT_PANEL = { x: 280, y: 60, w: 720, h: 570 }; // awards only, centred, snug frame
+const FEAT_CLOSE = { x: 560, y: 560, w: 160, h: 44 };
 const SET_PANEL = { x: 440, y: 240, w: 400, h: 240 };
 const SET_CLOSE = { x: 560, y: 420, w: 160, h: 44 };
 const SET_SOUND = { x: 640, y: 300, w: 120, h: 36 };
@@ -45,7 +45,7 @@ function dimHint(ctx, y) {
 // One line per creature: what it does, in ≤5 words.
 const BEHAVIOUR = {
   guppy: 'swims straight at you', jelly: 'drifts in, wobbling', urchin: 'slow and tough',
-  starfish: 'splits into two minis', eel: 'winds up, then lunges', gull: 'circles, then dives',
+  starfish: 'splits into two minis', eel: 'winds up, then lunges', squid: 'circles, then dives',
   archer: 'spits water jets at you',
 };
 
@@ -109,35 +109,35 @@ export function drawAchievements(ctx, state) {
   ctx.fillStyle = 'rgba(6,42,51,0.6)'; ctx.fillRect(0, 0, 1280, 720);
   panel(ctx, FEAT_PANEL);
   ctx.textAlign = 'center';
-  ctx.font = 'bold 28px sans-serif';
-  txt(ctx, 'ACHIEVEMENTS', VIEW_W / 2, 100, PAL.gold);
+  ctx.font = 'bold 30px sans-serif';
+  txt(ctx, 'ACHIEVEMENTS', VIEW_W / 2, 105, PAL.gold);
   const title = bestTitle(wins);
   if (title) {
-    ctx.font = 'bold 15px sans-serif';
-    txt(ctx, `YOUR TITLE: ${title}`, VIEW_W / 2, 140, PAL.gold);
+    ctx.font = 'bold 16px sans-serif';
+    txt(ctx, `YOUR TITLE: ${title}`, VIEW_W / 2, 142, PAL.gold);
   }
-  // 9 awards, centred.
+  // 9 awards, centred, big icons in a snug frame.
   for (let d = 0; d < DIFF_ORDER.length; d += 1) {
     const diff = DIFF_ORDER[d];
     const w = wins[diff] || 0;
-    const y = 196 + d * 128;
+    const y = 185 + d * 125;
     ctx.textAlign = 'left';
-    ctx.font = 'bold 14px sans-serif';
-    txt(ctx, `${DIFFICULTIES[diff].label} — ${w} WIN${w === 1 ? '' : 'S'}`, 440, y, PAL.text);
+    ctx.font = 'bold 18px sans-serif';
+    txt(ctx, `${DIFFICULTIES[diff].label} — ${w} WIN${w === 1 ? '' : 'S'}`, 330, y, PAL.text);
     for (let t = 0; t < AWARD_TIERS.length; t += 1) {
       const tier = AWARD_TIERS[t];
       const got = w >= tier.wins;
-      const cx = 480 + t * 160;
-      drawAwardIcon(ctx, AWARD_KIND[diff], cx, y + 40, 44, tier.color, !got);
-      ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
-      txt(ctx, `${tier.metal} ${AWARD_KIND[diff]}`, cx, y + 74, got ? tier.color : PAL.dim);
-      ctx.font = '11px sans-serif';
-      txt(ctx, got ? 'EARNED' : `WIN ${tier.wins}×`, cx, y + 90, got ? '#7fe0c3' : PAL.dim);
+      const cx = 460 + t * 180;
+      drawAwardIcon(ctx, AWARD_KIND[diff], cx, y + 42, 60, tier.color, !got);
+      ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center';
+      txt(ctx, `${tier.metal} ${AWARD_KIND[diff]}`, cx, y + 80, got ? tier.color : PAL.dim);
+      ctx.font = '13px sans-serif';
+      txt(ctx, got ? 'EARNED' : `WIN ${tier.wins}×`, cx, y + 99, got ? '#7fe0c3' : PAL.dim);
       ctx.textAlign = 'left';
     }
   }
   closeButton(ctx, FEAT_CLOSE);
-  dimHint(ctx, 664);
+  dimHint(ctx, 655);
 }
 
 export function drawHistory(ctx, state) {

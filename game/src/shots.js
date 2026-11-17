@@ -108,7 +108,7 @@ export function stageShot(shot, seed, fx, audio) {
 
         if (shot === 'storm') s.player.armor = Math.max(s.player.armor, 60);
         for (let i = 0; i < 3; i += 1) {
-          const g = spawnEnemy(s, 'gull', false);
+          const g = spawnEnemy(s, 'squid', false);
           const a = 0.6 + i * 2.0;
           g.x = Math.min(1160, Math.max(120, s.player.x + Math.cos(a) * 220));
           g.y = Math.min(600, Math.max(170, s.player.y + Math.sin(a) * 150));

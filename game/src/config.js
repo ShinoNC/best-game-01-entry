@@ -36,7 +36,7 @@ export const ENEMIES = {
   urchin:   { hp: 66, speed: 37,  dmg: 10, r: 20, score: 30, coins: 3, color: '#5d4a8a', dark: '#3a2d5e' },
   starfish: { hp: 32, speed: 72,  dmg: 6,  r: 15, score: 20, coins: 2, color: '#ff8fb0', dark: '#d65d7e' },
   eel:      { hp: 18, speed: 152, dmg: 8,  r: 12, score: 30, coins: 2, color: '#7fe0c3', dark: '#3fae8c' },
-  gull:     { hp: 28, speed: 176, dmg: 8,  r: 14, score: 40, coins: 2, color: '#f4f9ff', dark: '#9fb4c0' },
+  squid:     { hp: 28, speed: 176, dmg: 8,  r: 14, score: 40, coins: 2, color: '#ff8a5c', dark: '#c75a30' },
   archer:   { hp: 20, speed: 95,  dmg: 3,  r: 13, score: 35, coins: 2, color: '#7fd4e0', dark: '#3a8ea8' },
   mini:     { hp: 8,  speed: 118, dmg: 5,  r: 8,  score: 5,  coins: 1, color: '#ff8fb0', dark: '#d65d7e' },
 };
@@ -64,16 +64,16 @@ export const STAGES = Array.from({ length: STAGE_COUNT }, (_, i) => {
 });
 
 export function spawnWeights(stage) {
-  const w = { guppy: 10, jelly: 4, urchin: 2, starfish: 3, eel: 0, gull: 0, archer: 0 };
+  const w = { guppy: 10, jelly: 4, urchin: 2, starfish: 3, eel: 0, squid: 0, archer: 0 };
   if (stage >= 2) w.eel = 2;
   if (stage >= 3) { w.urchin = 4; w.jelly = 6; }
-  if (stage >= 5) w.gull = 4;
+  if (stage >= 5) w.squid = 4;
   if (stage >= 7) { w.urchin = 6; w.eel = 3; w.guppy = 7; }
   if (stage >= 12) { w.jelly = 8; w.starfish = 5; w.archer = 2; }
   if (stage >= 15) w.archer = 3;
-  if (stage >= 18) { w.urchin = 8; w.eel = 4; w.gull = 6; }
+  if (stage >= 18) { w.urchin = 8; w.eel = 4; w.squid = 6; }
   if (stage >= 20) w.archer = 2;
-  if (stage >= 24) { w.guppy = 5; w.jelly = 9; w.urchin = 10; w.eel = 5; w.gull = 7; w.starfish = 6; }
+  if (stage >= 24) { w.guppy = 5; w.jelly = 9; w.urchin = 10; w.eel = 5; w.squid = 7; w.starfish = 6; }
   if (stage >= 26) w.archer = 1;
   return w;
 }
@@ -134,9 +134,9 @@ export const AWARD_TITLES = ['Tide Guardian', 'Kraken Slayer', 'Tidekeeper Legen
 
 export const CREATURE_NAMES = {
   guppy: 'GUPPY', jelly: 'JELLY', urchin: 'URCHIN',
-  starfish: 'STARFISH', eel: 'EEL', gull: 'GULL', archer: 'ARCHER',
+  starfish: 'STARFISH', eel: 'EEL', squid: 'SQUID', archer: 'ARCHER',
 };
-export const CREATURE_ORDER = ['guppy', 'jelly', 'urchin', 'starfish', 'eel', 'gull', 'archer'];
+export const CREATURE_ORDER = ['guppy', 'jelly', 'urchin', 'starfish', 'eel', 'squid', 'archer'];
 
 export const COMBO_WINDOW = 3.0;
 export const COMBO_MAX = 8;
