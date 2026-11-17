@@ -68,16 +68,16 @@ export const PLAYER = {
   dashCd: 2.0, dashSpeed: 640, dashTime: 0.18, magnet: 75, iframes: 0.5,
 };
 export const ENEMIES = {
-  guppy:    { hp: 10, speed: 102, dmg: 4,  r: 10, score: 10, coins: 1, xp: 1, color: '#ffd166', dark: '#c9962e' },
-  jelly:    { hp: 24, speed: 56,  dmg: 7,  r: 16, score: 20, coins: 2, xp: 2, color: '#c9a7ff', dark: '#8a6fd6' },
-  urchin:   { hp: 66, speed: 37,  dmg: 10, r: 20, score: 30, coins: 3, xp: 5, color: '#5d4a8a', dark: '#3a2d5e' },
-  starfish: { hp: 32, speed: 72,  dmg: 6,  r: 15, score: 20, coins: 2, xp: 2, color: '#ff8fb0', dark: '#d65d7e' },
-  eel:      { hp: 18, speed: 152, dmg: 8,  r: 12, score: 30, coins: 2, xp: 3, color: '#7fe0c3', dark: '#3fae8c' },
-  squid:     { hp: 28, speed: 176, dmg: 8,  r: 14, score: 40, coins: 2, xp: 3, color: '#ff8a5c', dark: '#c75a30' },
-  archer:   { hp: 20, speed: 95,  dmg: 3,  r: 13, score: 35, coins: 2, xp: 4, color: '#7fd4e0', dark: '#3a8ea8' },
-  mini:     { hp: 8,  speed: 118, dmg: 5,  r: 8,  score: 5,  coins: 1, xp: 1, color: '#ff8fb0', dark: '#d65d7e' },
+  guppy:    { hp: 10, speed: 102, dmg: 4,  r: 10, score: 10, coins: 1, xp: 2, color: '#ffd166', dark: '#c9962e' },
+  jelly:    { hp: 24, speed: 56,  dmg: 7,  r: 16, score: 20, coins: 2, xp: 3, color: '#c9a7ff', dark: '#8a6fd6' },
+  urchin:   { hp: 66, speed: 37,  dmg: 10, r: 20, score: 30, coins: 3, xp: 8, color: '#5d4a8a', dark: '#3a2d5e' },
+  starfish: { hp: 32, speed: 72,  dmg: 6,  r: 15, score: 20, coins: 2, xp: 3, color: '#ff8fb0', dark: '#d65d7e' },
+  eel:      { hp: 18, speed: 152, dmg: 8,  r: 12, score: 30, coins: 2, xp: 5, color: '#7fe0c3', dark: '#3fae8c' },
+  squid:     { hp: 28, speed: 176, dmg: 8,  r: 14, score: 40, coins: 2, xp: 5, color: '#ff8a5c', dark: '#c75a30' },
+  archer:   { hp: 20, speed: 95,  dmg: 3,  r: 13, score: 35, coins: 2, xp: 6, color: '#7fd4e0', dark: '#3a8ea8' },
+  mini:     { hp: 8,  speed: 118, dmg: 5,  r: 8,  score: 5,  coins: 1, xp: 2, color: '#ff8fb0', dark: '#d65d7e' },
 };
-export const BOSS_XP = 25;
+export const BOSS_XP = 40;
 export const SPIT = { speed: 240, r: 6, cd: 3.0, range: 420, aim: 0.35, life: 2.5 };
 export const ELITE = { hpMul: 3.6, dmgMul: 1.5, sizeMul: 1.55, score: 150, coins: 5 };
 export const BOSS_STAGES = [
