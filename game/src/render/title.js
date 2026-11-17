@@ -39,13 +39,11 @@ export function drawTitle(ctx, state) {
   const tt = drawAmbient(ctx, state);
   drawPatrolCrab(ctx, state, tt);
   ctx.textAlign = 'center';
-  // Logo.
   ctx.letterSpacing = '3px';
   logoText(ctx, 'TIDEKEEPER', VIEW_W / 2, 112,
     '900 88px "Trebuchet MS", "Segoe UI", Verdana, sans-serif',
     '#ffb35c', '#e8590c', '#4a2408', 3);
   ctx.letterSpacing = '0px';
-  // Tagline: pill-backed.
   const tagParts = [
     { t: '★ CLEAR ', f: 'bold 24px sans-serif' },
     { t: '30 STAGES', f: '900 30px sans-serif' },
@@ -75,7 +73,6 @@ export function drawTitle(ctx, state) {
     ctx.font = 'bold 15px sans-serif';
     txt(ctx, `${state.modifier.n} — ${state.modifier.d}`, VIEW_W / 2, 226, PAL.xp);
   }
-  // Vertical menu.
   const TL = titleLayout();
   const items = [['start', 'START GAME'], ['help', 'HOW TO PLAY  ?'], ['feats', 'ACHIEVEMENTS'],
     ['history', 'HISTORY'], ['settings', 'SETTINGS']];

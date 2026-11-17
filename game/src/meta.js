@@ -1,4 +1,3 @@
-// Meta-progression.
 import { AWARD_TIERS, AWARD_TITLES, DIFF_ORDER, FEATS } from './config.js';
 
 const BESTS_KEY = 'tidekeeper-bests';
@@ -17,14 +16,14 @@ function readJson(key, fallback) {
   } catch { return fallback; }
 }
 function writeJson(key, value) {
-  try { window.localStorage.setItem(key, JSON.stringify(value)); } catch { /* private mode */ }
+  try { window.localStorage.setItem(key, JSON.stringify(value)); } catch {}
 }
 
 export function readMeta() {
   const bests = readJson(BESTS_KEY, {});
   for (const d of DIFF_ORDER) if (typeof bests[d] !== 'number') bests[d] = 0;
   if (bests.normal === 0) {
-    try { bests.normal = Number.parseInt(window.localStorage.getItem(LEGACY_BEST_KEY) ?? '0', 10) || 0; } catch { /* ignore */ }
+    try { bests.normal = Number.parseInt(window.localStorage.getItem(LEGACY_BEST_KEY) ?? '0', 10) || 0; } catch {}
   }
   const feats = readJson(FEATS_KEY, []);
   const runs = readJson(RUNS_KEY, []);
@@ -33,7 +32,7 @@ export function readMeta() {
   return {
     bests,
     feats: Array.isArray(feats) ? feats.filter((id) => FEATS.some((f) => f.id === id)) : [],
-    runs: Array.isArray(runs) ? runs.slice(0, 9) : [], // 3 per difficulty for HISTORY
+    runs: Array.isArray(runs) ? runs.slice(0, 9) : [],
     wins,
   };
 }
@@ -51,10 +50,9 @@ export function readLastDiff() {
   } catch { return 'normal'; }
 }
 export function writeLastDiff(d) {
-  try { window.localStorage.setItem(LAST_DIFF_KEY, d); } catch { /* private mode */ }
+  try { window.localStorage.setItem(LAST_DIFF_KEY, d); } catch {}
 }
 
-// Which feats did THIS run earn?
 export function featsEarnedThisRun(state, unlocked) {
   const have = new Set(unlocked);
   const won = state.result === 'won';
@@ -70,7 +68,6 @@ export function featsEarnedThisRun(state, unlocked) {
   return earned;
 }
 
-// Record a finished run.
 export function recordRun(state, meta) {
   const diff = state.difficulty || 'normal';
   const bests = { ...meta.bests };
@@ -94,6 +91,6 @@ export function recordRun(state, meta) {
   writeJson(FEATS_KEY, feats);
   writeJson(RUNS_KEY, runs);
   writeJson(WINS_KEY, wins);
-  try { window.localStorage.setItem(LEGACY_BEST_KEY, String(Math.max(...DIFF_ORDER.map((d) => bests[d] || 0)))); } catch { /* ignore */ }
+  try { window.localStorage.setItem(LEGACY_BEST_KEY, String(Math.max(...DIFF_ORDER.map((d) => bests[d] || 0)))); } catch {}
   return { meta: next, earned, award };
 }

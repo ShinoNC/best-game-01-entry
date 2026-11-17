@@ -1,4 +1,3 @@
-// One GameState.
 import { ENV_PALETTES, MODIFIERS, PAL, PLAYER, POOL } from './config.js';
 
 export function createState(rng, seed, difficulty = 'normal') {
@@ -31,7 +30,7 @@ export function createState(rng, seed, difficulty = 'normal') {
   for (const k of ['guppy', 'jelly', 'urchin', 'starfish', 'eel', 'squid', 'archer']) mix[k] = rng.range(0.85, 1.2);
   const envs = Array.from({ length: 30 }, () => rng.pick(ENV_PALETTES));
   const bossOrder = ['turtle', 'octopus', 'hammerhead', 'angler', 'stingray'];
-  for (let i = bossOrder.length - 1; i > 0; i -= 1) { // Fisher-Yates on the run seed
+  for (let i = bossOrder.length - 1; i > 0; i -= 1) {
     const j = Math.floor(rng.next() * (i + 1));
     [bossOrder[i], bossOrder[j]] = [bossOrder[j], bossOrder[i]];
   }
@@ -60,17 +59,15 @@ export function createState(rng, seed, difficulty = 'normal') {
       laser: 0, laserLen: 0, laserBeams: 1, moving: 0,
     },
     ups: { claws: 0, tempo: 0, reach: 0, shell: 0, legs: 0, bubbles: 0, magnet: 0 },
+    skillPts: 3,
     coins: 0, coinsEarned: 0,
-// Seven auto-weapons.
     weapons: { claw: 1, bow: 0, blaster: 0, shell: 0, spin: 0, laser: 0, trident: 0 },
     stage: 1, stageSpawned: 0, stageEliteDone: false, stageClearT: 0,
     enemies: [], bolts: [], spits: [], drops: [], pickups: [],
     kills: 0, score: 0, spawnT: 0.8, bossSpawned: false,
     boss: null, banner: '', bannerT: 0, bubbleT: 6, result: null, best: 0,
-// Stage-clear menu.
     hand: [], rerolls: 0, clearBonus: 0, menuMsg: '', menuMsgT: 0,
     stats: { damage: 0, taken: 0, dashes: 0, spent: 0, rerolls: 0,
-// Feat counters.
       bossesDown: 0, bestCombo: 0, maxCoins: 0, cleanStage: false },
     stageTaken: 0,
     hints: { idx: 0, cur: null, t: 0, wait: 0, done: [false, false, false, false] },

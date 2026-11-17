@@ -13,7 +13,7 @@ export function spawnEnemy(state, type, elite, fx) {
   const diff = DIFFICULTIES[state.difficulty || 'normal'];
   const sand = sandRect(state.sandCorner), M = 20;
   let x, y;
-  for (let tries = 0; tries < 6; tries += 1) { // fish don't swim out of sand
+  for (let tries = 0; tries < 6; tries += 1) {
     const s = Math.floor(state.rng.next() * 4), f = state.rng.next();
     x = s === 1 ? POOL.x1 + 14 : s === 3 ? POOL.x0 - 14 : POOL.x0 + f * (POOL.x1 - POOL.x0);
     y = s === 0 ? POOL.y0 - 14 : s === 2 ? POOL.y1 + 14 : POOL.y0 + f * (POOL.y1 - POOL.y0);
@@ -72,7 +72,6 @@ function spawnBoss(state, fx, audio) {
   audio.boss(); fx.shake(0.6);
 }
 
-// Spawn director.
 export function updateSpawner(state, dt, fx, audio) {
   const plan = STAGES[contentStage(state) - 1];
   state.spawnT -= dt;
@@ -91,7 +90,6 @@ export function updateSpawner(state, dt, fx, audio) {
   if (plan.boss && !state.bossSpawned && state.stageSpawned >= plan.budget / 2) {
     spawnBoss(state, fx, audio);
   }
-  // A summoning boss calls squids.
   if (state.boss && state.boss.summonN > 0) {
     state.boss.summonT -= dt;
     if (state.boss.summonT <= 0 && state.enemies.length < 55) {
@@ -199,7 +197,7 @@ export function updateEnemies(state, dt, fx) {
         const strafe = want === 0 ? Math.sin(e.wob * 0.7) * 0.8 : 0;
         e.x += (nx * want - ny * strafe) * sp * dt; e.y += (ny * want + nx * strafe) * sp * dt;
       }
-    } else if (e.type === 'squid' || e.boss) { // swoopers circle, then dive
+    } else if (e.type === 'squid' || e.boss) {
       e.diveT -= dt;
       const boss = !!e.boss;
       if (e.state === 'approach' && d < 200) { e.state = 'circle'; e.diveT = boss ? 0.8 : 1.1; }
@@ -213,7 +211,7 @@ export function updateEnemies(state, dt, fx) {
         e.x += nx * sp * mul * dt; e.y += ny * sp * mul * dt;
         if (e.diveT <= 0) e.state = 'approach';
       } else { e.x += nx * sp * dt; e.y += ny * sp * dt; }
-    } else { // chasers: straight at the crab
+    } else {
       e.x += nx * sp * dt; e.y += ny * sp * dt;
     }
   }

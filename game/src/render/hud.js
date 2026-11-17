@@ -1,4 +1,3 @@
-// The HUD.
 import { CREATURE_NAMES, DIFFICULTIES, PAL, STAGES, STAGE_COUNT, VIEW_H, VIEW_W, WEAPON_ORDER, bossForStage, contentStage, nextTypes } from '../config.js';
 import { UPGRADE_DEFS } from '../upgrades.js';
 import { comboMult } from '../world.js';
@@ -14,7 +13,6 @@ export function drawHud(ctx, state, t) {
   ctx.fillStyle = 'rgba(255,255,255,0.14)';
   ctx.fillRect(0, 70, VIEW_W, 2);
   ctx.fillRect(0, VIEW_H - 72, VIEW_W, 2);
-  // Top bar.
   const remaining = (STAGES[contentStage(state) - 1].budget - state.stageSpawned) + state.enemies.length;
   const diffLabel = (DIFFICULTIES[state.difficulty || 'normal'] || DIFFICULTIES.normal).label;
   const nx = state.stage + 1;
@@ -23,9 +21,13 @@ export function drawHud(ctx, state, t) {
     : nx > STAGE_COUNT ? 'FINAL STAGE'
     : nextTypes(contentStage(state, nx)).map((k) => CREATURE_NAMES[k]).join(' + ');
   ctx.font = 'bold 22px sans-serif';
-  txt(ctx, `STAGE ${state.stage} / ${STAGE_COUNT} · ${diffLabel}`, 28, 34, PAL.text);
+  txt(ctx, `STAGE ${state.stage} / ${STAGE_COUNT} · ${diffLabel}`, 28, 28, PAL.text);
   ctx.font = 'bold 13px sans-serif';
-  txt(ctx, `${remaining} LEFT · NEXT: ${nextBit}`, 28, 58, PAL.dim);
+  txt(ctx, `${remaining} LEFT · NEXT: ${nextBit}`, 28, 46, PAL.dim);
+  if (state.modifier) {
+    ctx.font = 'bold 13px sans-serif';
+    txt(ctx, state.modifier.n, 28, 64, PAL.gold);
+  }
   ctx.textAlign = 'right';
   ctx.font = 'bold 30px sans-serif';
   txt(ctx, `SCORE ${state.score}`, 1252, 38, PAL.gold);
@@ -117,7 +119,7 @@ export function drawHud(ctx, state, t) {
     const alpha = Math.min(1, remain / 0.5) * Math.min(1, (hint.show - remain) / 0.25);
     ctx.font = 'bold 19px sans-serif';
     const tw = ctx.measureText(hint.text).width;
-    const w = tw + 44 + 30; // text + padding + icon slot
+    const w = tw + 44 + 30;
     const y = VIEW_H - 132;
     ctx.globalAlpha = alpha;
     ctx.fillStyle = 'rgba(6,42,51,0.88)'; ctx.fillRect(VIEW_W / 2 - w / 2, y - 24, w, 44);

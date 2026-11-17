@@ -1,4 +1,3 @@
-// PLAY AGAIN + MENU buttons.
 import { PAL, STAGE_COUNT, VIEW_H, VIEW_W } from '../config.js';
 import { overLayout } from './layout.js';
 import { bevel, logoText, txt } from './polish.js';
@@ -21,10 +20,8 @@ export function drawOver(ctx, state) {
   txt(ctx, won ? 'You held the reef. The crab keeps its shell.' : 'The creatures feast tonight. Try again, little crab.', VIEW_W / 2, 180, PAL.text);
   ctx.font = 'bold 48px sans-serif';
   txt(ctx, `SCORE ${state.score}`, VIEW_W / 2, 300, PAL.gold, 3);
-  // Stage/time line: big and bright.
   ctx.font = 'bold 26px sans-serif';
   txt(ctx, `STAGE ${state.stage}/${STAGE_COUNT} · ${mins}:${String(secs).padStart(2, '0')}`, VIEW_W / 2, 348, PAL.text, 3);
-  // gold line, only on that win.
   if (won && state.awardEarned) {
     ctx.font = 'bold 20px sans-serif';
     txt(ctx, `NEW AWARD: ${state.awardEarned}!`, VIEW_W / 2, 382, PAL.gold, 3);

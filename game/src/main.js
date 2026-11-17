@@ -7,6 +7,7 @@ import { createParticles } from './particles.js';
 import { MENU_ITEMS, createRenderer, difficultyLayout, overLayout, stageMenuLayout, titleLayout } from './render.js';
 import { STEP, nextStage, stepWorld } from './world.js';
 import { REROLL_COST, autoBuy, buyCard, rerollHand } from './cards.js';
+import { UPGRADE_DEFS, spendSkillPoint } from './upgrades.js';
 import { stageShot } from './shots.js';
 import { overlayLayout } from './render/overlays.js';
 import { featsEarnedThisRun, readLastDiff, readMeta, recordRun, writeLastDiff } from './meta.js';
@@ -134,7 +135,6 @@ function startRun() {
   status.textContent = 'Clear 30 stages. A sea beast waits at every fifth stage!';
 }
 
-// Title menu.
 function activateMenu(item) {
   if (item === 'start') { state.phase = 'difficulty'; status.textContent = 'Choose your tide'; }
   else state.overlay = item;
@@ -217,6 +217,15 @@ function handleMenus() {
       const L = stageMenuLayout(state);
       for (let i = 0; i < L.cards.length; i += 1) {
         if (inBox(m, L.cards[i])) { buyMenuCard(i); return; }
+      }
+      for (const s of L.skills) {
+        if (inBox(m, s)) {
+          if (spendSkillPoint(state, s.id)) {
+            const d = UPGRADE_DEFS.find((u) => u.id === s.id);
+            audio.buy(); status.textContent = `${d.name} Lv${state.ups[s.id]}!`;
+          }
+          return;
+        }
       }
       if (inBox(m, L.reroll)) { doReroll(); return; }
       if (inBox(m, L.next)) { nextStage(state, audio); status.textContent = `Stage ${state.stage}`; }

@@ -18,6 +18,7 @@ function noteCoins(state) {
 function dropCoins(state, e) {
   const n = Math.round(e.coins * modOf(state, 'coin'));
   for (let i = 0; i < n; i += 1) {
+    if (!state.rng.chance(0.85)) continue;
     state.drops.push({
       kind: 'coin', x: e.x + state.rng.range(-30, 30), y: e.y + state.rng.range(-30, 30),
       v: 1, vx: state.rng.range(-40, 40), vy: state.rng.range(-40, 40),
@@ -34,9 +35,9 @@ function killEnemy(state, e, fx, audio) {
   if (state.combo > state.stats.bestCombo) state.stats.bestCombo = state.combo;
   const gained = e.score * comboMult(state);
   state.score += gained;
-  fx.burst(e.x, e.y, e.color, e.elite ? 24 : 14, e.elite ? 260 : 190); // bigger death burst
+  fx.burst(e.x, e.y, e.color, e.elite ? 24 : 14, e.elite ? 260 : 190);
   fx.bubbles(e.x, e.y, e.elite ? 12 : 6);
-  if (e.boss) fx.text(e.x, e.y - e.r - 4, `+${gained}`, '#f4f9ff'); // score pops only for bosses
+  if (e.boss) fx.text(e.x, e.y - e.r - 4, `+${gained}`, '#f4f9ff');
   audio.die();
   onEnemyKilled(state, e, fx);
   dropCoins(state, e);
@@ -49,10 +50,10 @@ export function stageRemaining(state) {
 export function nextStage(state, audio) {
   state.stage += 1;
   state.stageSpawned = 0; state.stageEliteDone = false;
-  state.spits.length = 0; // no stray spit survives the menu
+  state.spits.length = 0;
   state.spawnT = 0.8;
   state.hand = []; state.rerolls = 0; state.clearBonus = 0; state.menuMsg = ''; state.menuMsgT = 0;
-  state.stageTaken = 0; state.combo = 0; state.comboT = 0; // fresh stage, fresh chain
+  state.stageTaken = 0; state.combo = 0; state.comboT = 0;
   state.bossSpawned = false; state.boss = null;
   state.phase = 'play';
   const boss = bossForStage(state.stage, state.bossOrder);
@@ -71,7 +72,7 @@ export function stepWorld(state, input, dt, fx, audio) {
   p.px = p.x; p.py = p.y;
   for (const e of state.enemies) { e.px = e.x; e.py = e.y; }
 
-  updateHints(state, dt); // the first-30-seconds tutorial
+  updateHints(state, dt);
 
   if (state.stageClearT > 0) {
     updatePlayer(state, input, dt, fx, audio);
@@ -86,6 +87,7 @@ export function stepWorld(state, input, dt, fx, audio) {
         state.clearBonus = 40 + state.stage * 7;
         state.coins += state.clearBonus; state.coinsEarned += state.clearBonus;
         noteCoins(state);
+        state.skillPts += 1;
         state.score += state.clearBonus * 2;
         state.hand = drawHand(state);
         state.rerolls = 0; state.menuMsg = ''; state.menuMsgT = 0;
@@ -108,8 +110,8 @@ export function stepWorld(state, input, dt, fx, audio) {
 
   state.bubbleT -= dt;
   if (state.ups.bubbles > 0 && state.bubbleT <= 0) {
-    state.bubbleT = Math.max(3.2, 6 - state.ups.bubbles * 0.5);
-    const r = 110 + state.ups.bubbles * 22, dmg = 14 + state.ups.bubbles * 8;
+    state.bubbleT = Math.max(3.2, 6 - state.ups.bubbles * 0.25);
+    const r = 110 + state.ups.bubbles * 11, dmg = 14 + state.ups.bubbles * 4;
     fx.burst(p.x, p.y, '#bfe8e0', 22, 260, 'bubble');
     for (const e of state.enemies) {
       if (Math.hypot(e.x - p.x, e.y - p.y) < r + e.r && hurtEnemy(state, e, dmg)) {
@@ -205,7 +207,7 @@ export function stepWorld(state, input, dt, fx, audio) {
     state.stageClearT = 1.2;
     state.score += 100 + state.stage * 50;
     if (state.stageTaken === 0) state.stats.cleanStage = true;
-    state.combo = 0; state.comboT = 0; // the chain ends with the stage
+    state.combo = 0; state.comboT = 0;
     let vacuumedCoins = 0;
     for (const pe of state.drops) {
       state.coins += pe.v; state.coinsEarned += pe.v; state.score += pe.v * 2; vacuumedCoins += pe.v;
@@ -214,7 +216,7 @@ export function stepWorld(state, input, dt, fx, audio) {
     noteCoins(state);
     if (vacuumedCoins > 0) audio.coin();
     const clearedBoss = bossForStage(state.stage, state.bossOrder);
-    if (clearedBoss) state.player.armor += ARMOR_PER_BOSS; // boss-clear reward
+    if (clearedBoss) state.player.armor += ARMOR_PER_BOSS;
     if (state.stage >= STAGE_COUNT) {
       state.banner = 'THE KRAKEN FALLS — HIGH TIDE!'; state.bannerT = 1.2;
     } else if (clearedBoss) {

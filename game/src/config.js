@@ -1,14 +1,13 @@
-// Balance numbers.
-export const STAGE_COUNT = 30; // a full run is ~20–25 minutes
+export const STAGE_COUNT = 30;
 export const ARMOR_PER_BOSS = 30;
 
 export const MODIFIERS = [
-  { n: 'SWARM TIDE', d: 'foes swarm faster · +50% coins', spawn: 0.8, coin: 1.5 },
-  { n: 'HEAVY SHELLS', d: 'foes +15% HP · you +15% damage', ehp: 1.15, dmg: 1.15 },
-  { n: 'SWIFT CURRENT', d: 'you +15% speed · foes +5% speed', spd: 1.15, espd: 1.05 },
-  { n: 'RICH WATERS', d: 'shop 20% cheaper · -20 max HP', price: 0.8, hpMul: 0.8 },
+  { n: 'SWARM TIDE', d: 'foes swarm · +50% coins', spawn: 0.8, coin: 1.5 },
+  { n: 'HEAVY SHELLS', d: 'foes +15% HP · +15% damage', ehp: 1.15, dmg: 1.15 },
+  { n: 'SWIFT CURRENT', d: '+15% speed · foes +5% speed', spd: 1.15, espd: 1.05 },
+  { n: 'RICH WATERS', d: 'shop -20% · -20 max HP', price: 0.8, hpMul: 0.8 },
   { n: 'THICK HIDE', d: 'take 20% less damage · fire 5% slower', taken: 0.8, rate: 1.05 },
-  { n: 'GLASS CANNON', d: 'you +25% damage · take 15% more', dmg: 1.25, taken: 1.15 },
+  { n: 'GLASS CANNON', d: '+25% damage · take 15% more', dmg: 1.25, taken: 1.15 },
 ];
 export function modOf(state, key) { return (state.modifier && state.modifier[key]) || 1; }
 export function contentStage(state, pos) {
@@ -68,7 +67,7 @@ export const ENEMIES = {
   archer:   { hp: 20, speed: 95,  dmg: 3,  r: 13, score: 35, coins: 2, color: '#7fd4e0', dark: '#3a8ea8' },
   mini:     { hp: 8,  speed: 118, dmg: 5,  r: 8,  score: 5,  coins: 1, color: '#ff8fb0', dark: '#d65d7e' },
 };
-export const SPIT = { speed: 240, r: 6, cd: 3.0, range: 420, aim: 0.35, life: 2.5 }; // archerfish water jet
+export const SPIT = { speed: 240, r: 6, cd: 3.0, range: 420, aim: 0.35, life: 2.5 };
 export const ELITE = { hpMul: 3.6, dmgMul: 1.5, sizeMul: 1.55, score: 150, coins: 5 };
 export const BOSS_STAGES = [
   { stage: 5, hp: 1600, dmg: 18, score: 500, coins: 25, summon: 0, summonEvery: 7 },
@@ -91,8 +90,7 @@ export function bossForStage(stage, order) {
   const st = BOSS_STAGES.find((b) => b.stage === stage);
   if (!st) return null;
   const type = stage === 30 ? 'kraken' : (order || BOSS_ORDER_DEFAULT)[stage / 5 - 1];
-  const cr = BOSS_TYPES[type];
-  return { stage, type, name: cr.name, hp: st.hp, speed: cr.speed, dmg: st.dmg, r: cr.r, score: st.score, coins: st.coins, color: cr.color, dark: cr.dark, dive: cr.dive, summon: st.summon, summonEvery: st.summonEvery, atk: cr.atk, atkEvery: cr.atkEvery };
+  return { stage, type, ...st, ...BOSS_TYPES[type] };
 }
 
 export const STAGES = Array.from({ length: STAGE_COUNT }, (_, i) => {
@@ -127,16 +125,16 @@ export function nextTypes(stage) {
 }
 export function hpScale(stage) {
   if (stage <= 15) return 1 + (stage - 1) * 0.55;
-  return 1 + 14 * 0.55 + (stage - 15) * 1.10;
+  return 1 + 14 * 0.55 + (stage - 15) * 0.95;
 }
 export function dmgScale(stage) {
   if (stage <= 15) return 1 + (stage - 1) * 0.14;
   return 1 + 14 * 0.14 + (stage - 15) * 0.24;
 }
-export function speedScale(stage) { return 1 + (stage - 1) * 0.032; } // stage 30: 1.93x enemy speed
+export function speedScale(stage) { return 1 + (stage - 1) * 0.032; }
 
 export const WEAPON_ORDER = ['claw', 'bow', 'blaster', 'shell', 'spin', 'laser', 'trident'];
-export const WEAPON_MAX = 5; // levels per weapon
+export const WEAPON_MAX = 5;
 
 export const SHOP = [
   { id: 'bow', kind: 'weapon', price: 50, up: [100, 150, 210, 280], name: 'BUBBLE BOW', icon: '⌖' },
@@ -165,7 +163,6 @@ export const FEATS = [
   { id: 'combo', name: 'COMBO ×8', desc: 'Reach combo ×8' },
 ];
 
-// Awards: 3/10/20 clears.
 export const AWARD_TIERS = [
   { wins: 3, metal: 'BRONZE', color: '#cd7f32' },
   { wins: 10, metal: 'SILVER', color: '#c0c0c0' },

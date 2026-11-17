@@ -1,9 +1,7 @@
-// The creatures.
 import { PAL } from '../config.js';
 import { star } from './icons.js';
 import { txt } from './polish.js';
 
-// Outline the path dark.
 function ol(ctx, c, w = 2) { ctx.strokeStyle = c; ctx.lineWidth = w; ctx.lineJoin = 'round'; ctx.stroke(); }
 
 export function drawCrab(ctx, p, t, clawStats, spinStats) {
@@ -49,7 +47,7 @@ export function drawCrab(ctx, p, t, clawStats, spinStats) {
   }
   ctx.restore();
   if (p.swing > 0 && clawStats) {
-    const prog = 1 - p.swing / 0.18; // 0 -> 1 across the swing
+    const prog = 1 - p.swing / 0.18;
     const r = clawStats.range * 0.8, arc = clawStats.arc || 1.6;
     ctx.save(); ctx.translate(p.x, p.y);
     ctx.globalAlpha = (1 - prog) * 0.16;
@@ -63,7 +61,7 @@ export function drawCrab(ctx, p, t, clawStats, spinStats) {
     ctx.restore();
   }
   if (p.spin > 0 && spinStats) {
-    const prog = 1 - p.spin / 0.3; // 0 -> 1 across the blast
+    const prog = 1 - p.spin / 0.3;
     ctx.save(); ctx.translate(p.x, p.y);
     ctx.globalAlpha = (1 - prog) * 0.8;
     ctx.strokeStyle = '#7fe0c3'; ctx.lineWidth = 6;
@@ -87,7 +85,7 @@ export function drawCrab(ctx, p, t, clawStats, spinStats) {
     }
     ctx.restore();
   }
-  if (p.flash > 0) { // hurt flash: a red ring
+  if (p.flash > 0) {
     ctx.strokeStyle = `rgba(255,93,115,${p.flash * 3})`; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(p.x, p.y, p.radius + 6, 0, Math.PI * 2); ctx.stroke();
   }
@@ -105,7 +103,7 @@ export function drawEnemy(ctx, e, t, ang) {
     ctx.fillStyle = flash ? '#fff' : e.color;
     ctx.beginPath(); ctx.arc(0, 0, e.r, Math.PI, 0); ctx.fill();
     ol(ctx, flash ? '#fff' : e.dark, 2);
-    ctx.fillStyle = flash ? '#fff' : e.dark; // inner bell shading
+    ctx.fillStyle = flash ? '#fff' : e.dark;
     ctx.beginPath(); ctx.arc(0, -e.r * 0.25, e.r * 0.55, Math.PI, 0); ctx.fill();
     ctx.strokeStyle = flash ? '#fff' : e.dark; ctx.lineWidth = 2;
     for (let i = -2; i <= 2; i += 1) {
@@ -114,7 +112,7 @@ export function drawEnemy(ctx, e, t, ang) {
       ctx.stroke();
     }
   } else if (e.type === 'urchin') {
-    ctx.rotate(e.wob * 0.3); // slow spin
+    ctx.rotate(e.wob * 0.3);
     const pu = 1 + Math.sin(t * 2 + e.wob) * 0.04;
     ctx.scale(pu, pu);
     ctx.strokeStyle = flash ? '#fff' : e.dark; ctx.lineWidth = 3;
@@ -137,7 +135,7 @@ export function drawEnemy(ctx, e, t, ang) {
     ctx.fillStyle = flash ? '#fff' : e.dark;
     ctx.beginPath(); ctx.arc(0, 0, e.r * 0.25, 0, Math.PI * 2); ctx.fill();
   } else if (e.type === 'eel') {
-    if (e.windup > 0) ctx.translate(Math.sin(t * 60) * 2, Math.cos(t * 47) * 2); // tremble: the lunge is coming
+    if (e.windup > 0) ctx.translate(Math.sin(t * 60) * 2, Math.cos(t * 47) * 2);
     ctx.rotate(face);
     for (let i = 4; i >= 0; i -= 1) {
       const x = -e.r * 1.4 + i * e.r * 0.55;
@@ -175,7 +173,7 @@ export function drawEnemy(ctx, e, t, ang) {
     ctx.rotate(face);
     const wig = Math.sin(t * 8 + e.wob) * 0.2;
     ctx.strokeStyle = flash ? '#fff' : e.color; ctx.lineCap = 'round'; ctx.lineWidth = 2.5;
-    for (let i = -2; i <= 2; i += 1) { // 5 tentacles trail behind
+    for (let i = -2; i <= 2; i += 1) {
       ctx.beginPath(); ctx.moveTo(-e.r * 0.7, i * 3);
       ctx.quadraticCurveTo(-e.r * 1.4, i * 5 + wig * 8, -e.r * 1.9, i * 4 + wig * 10);
       ctx.stroke();
@@ -183,13 +181,13 @@ export function drawEnemy(ctx, e, t, ang) {
     ctx.fillStyle = flash ? '#fff' : e.color;
     ctx.beginPath(); ctx.ellipse(e.r * 0.25, 0, e.r * 0.95, e.r * 0.5, 0, 0, Math.PI * 2); ctx.fill();
     ol(ctx, flash ? '#fff' : e.dark, 2);
-    for (const sgn of [-1, 1]) { // side fins
+    for (const sgn of [-1, 1]) {
       ctx.beginPath();
       ctx.moveTo(-e.r * 0.55, sgn * e.r * 0.4); ctx.lineTo(-e.r * 0.95, sgn * e.r * 0.75); ctx.lineTo(-e.r * 0.35, sgn * e.r * 0.55);
       ctx.closePath(); ctx.fill();
     }
     ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(e.r * 0.7, -e.r * 0.15, 2.5, 0, Math.PI * 2); ctx.fill();
-  } else if (e.boss) { // sea-beast bosses
+  } else if (e.boss) {
     const s = e.r / 26, R = e.r;
     const col = flash ? '#fff' : e.color, drk = flash ? '#fff' : e.dark;
     const eye = (x, y, r) => { ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); };
@@ -217,7 +215,7 @@ export function drawEnemy(ctx, e, t, ang) {
       ctx.beginPath(); ctx.arc(R * 0.95, 0, R * 0.22, 0, Math.PI * 2); ctx.fill();
       ol(ctx, drk, 2);
       eye(R * 1.0, -R * 0.07, 3);
-    } else if (e.type === 'octopus' || e.type === 'kraken') { // tentacles trail
+    } else if (e.type === 'octopus' || e.type === 'kraken') {
       const n = e.type === 'kraken' ? 10 : 8, len = e.type === 'kraken' ? 1.8 : 1.3;
       ctx.strokeStyle = col; ctx.lineCap = 'round'; ctx.lineWidth = R * 0.11;
       for (let i = 0; i < n; i += 1) {
@@ -227,18 +225,18 @@ export function drawEnemy(ctx, e, t, ang) {
         ctx.quadraticCurveTo(-R * 0.9, sp + w, -R * len, sp * 1.4 + w); ctx.stroke();
       }
       ctx.fillStyle = col;
-      if (e.type === 'kraken') { // squid mantle + fins
+      if (e.type === 'kraken') {
         ctx.beginPath(); ctx.ellipse(R * 0.2, 0, R * 0.75, R * 0.45, 0, 0, Math.PI * 2); ctx.fill();
         ol(ctx, drk, 2);
         ctx.beginPath(); ctx.moveTo(R * 0.6, -R * 0.35); ctx.lineTo(R * 0.95, -R * 0.7); ctx.lineTo(R * 0.85, -R * 0.15); ctx.closePath(); ctx.fill();
         ctx.beginPath(); ctx.moveTo(R * 0.6, R * 0.35); ctx.lineTo(R * 0.95, R * 0.7); ctx.lineTo(R * 0.85, R * 0.15); ctx.closePath(); ctx.fill();
         eye(R * 0.55, -R * 0.2, R * 0.1); eye(R * 0.55, R * 0.2, R * 0.1);
-      } else { // round head
+      } else {
         ctx.beginPath(); ctx.arc(R * 0.15, 0, R * 0.65, 0, Math.PI * 2); ctx.fill();
         ol(ctx, drk, 2);
         eye(R * 0.5, -R * 0.25, R * 0.09); eye(R * 0.5, R * 0.25, R * 0.09);
       }
-    } else if (e.type === 'hammerhead') { // T-shaped head
+    } else if (e.type === 'hammerhead') {
       ctx.beginPath(); ctx.moveTo(-R * 0.8, 0); ctx.lineTo(-R * 1.3, -R * 0.35); ctx.lineTo(-R * 1.15, 0); ctx.lineTo(-R * 1.3, R * 0.35); ctx.closePath(); ctx.fill();
       ctx.beginPath(); ctx.ellipse(0, 0, R * 0.9, R * 0.35, 0, 0, Math.PI * 2); ctx.fill();
       ol(ctx, drk, 2);
@@ -246,7 +244,7 @@ export function drawEnemy(ctx, e, t, ang) {
       ctx.beginPath(); ctx.moveTo(R * 0.7, -R * 0.7); ctx.lineTo(R * 1.0, -R * 0.7); ctx.lineTo(R * 1.0, R * 0.7); ctx.lineTo(R * 0.7, R * 0.7); ctx.closePath(); ctx.fill();
       ol(ctx, drk, 2);
       eye(R * 0.85, -R * 0.55, 3.5); eye(R * 0.85, R * 0.55, 3.5);
-    } else if (e.type === 'angler') { // toothed mouth + glowing lure
+    } else if (e.type === 'angler') {
       ctx.beginPath(); ctx.arc(0, 0, R * 0.7, 0, Math.PI * 2); ctx.fill();
       ol(ctx, drk, 2);
       ctx.fillStyle = '#1a0a2e';
@@ -258,13 +256,13 @@ export function drawEnemy(ctx, e, t, ang) {
       }
       ctx.strokeStyle = drk; ctx.lineWidth = 3; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(-R * 0.1, -R * 0.6); ctx.quadraticCurveTo(R * 0.3, -R * 1.1, R * 0.7, -R * 0.9); ctx.stroke();
-      const lure = tele && e.atk === 'lure' ? 1.9 : 1; // the lure flares before the dash
+      const lure = tele && e.atk === 'lure' ? 1.9 : 1;
       ctx.fillStyle = 'rgba(255,220,100,0.35)';
       ctx.beginPath(); ctx.arc(R * 0.7, -R * 0.9, R * 0.22 * lure, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#ffe66d';
       ctx.beginPath(); ctx.arc(R * 0.7, -R * 0.9, R * 0.1 * lure, 0, Math.PI * 2); ctx.fill();
       eye(R * 0.45, -R * 0.3, 4);
-    } else if (e.type === 'stingray') { // wide wings + whip tail
+    } else if (e.type === 'stingray') {
       const lift = tele && e.atk === 'barbs' ? -R * 0.55 : 0;
       ctx.strokeStyle = drk; ctx.lineWidth = 3; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(-R * 0.8, 0);
@@ -301,7 +299,6 @@ export function drawEnemy(ctx, e, t, ang) {
     ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
     txt(ctx, '★', e.x, e.y - e.r - 26, '#ffd166');
   }
-// HP bars on damaged enemies.
   if (e.hp < e.maxHp) {
     const big = e.elite || e.boss;
     const w = big ? e.r * 2 : 22, h = big ? 5 : 3;

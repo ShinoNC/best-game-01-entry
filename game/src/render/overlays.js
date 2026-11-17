@@ -1,14 +1,14 @@
-import { ARMOR_PER_BOSS, AWARD_KIND, AWARD_TIERS, BOSS_STAGES, CREATURE_NAMES, CREATURE_ORDER, DIFFICULTIES, DIFF_ORDER, ENEMIES, PAL, VIEW_W, bossForStage } from '../config.js';
+import { ARMOR_PER_BOSS, AWARD_KIND, AWARD_TIERS, BOSS_STAGES, CREATURE_NAMES, CREATURE_ORDER, DIFFICULTIES, DIFF_ORDER, ENEMIES, MODIFIERS, PAL, VIEW_W, bossForStage } from '../config.js';
 import { bestTitle } from '../meta.js';
 import { drawEnemy } from './creatures.js';
 import { drawAwardIcon } from './icons.js';
 import { bevel, lift, txt } from './polish.js';
 
-const BIG = { x: 140, y: 60, w: 1000, h: 580 }; // the help panel
+const BIG = { x: 140, y: 60, w: 1000, h: 580 };
 const BIG_CLOSE = { x: 560, y: 576, w: 160, h: 44 };
-const HIST_PANEL = { x: 140, y: 60, w: 1000, h: 360 }; // history: 3 short tables
+const HIST_PANEL = { x: 140, y: 60, w: 1000, h: 360 };
 const HIST_CLOSE = { x: 560, y: 356, w: 160, h: 44 };
-const FEAT_PANEL = { x: 280, y: 60, w: 720, h: 570 }; // awards only, centred, snug frame
+const FEAT_PANEL = { x: 280, y: 60, w: 720, h: 570 };
 const FEAT_CLOSE = { x: 560, y: 560, w: 160, h: 44 };
 const SET_PANEL = { x: 440, y: 240, w: 400, h: 240 };
 const SET_CLOSE = { x: 560, y: 420, w: 160, h: 44 };
@@ -42,9 +42,9 @@ function dimHint(ctx, y) {
 }
 
 const BEHAVIOUR = {
-  guppy: 'swims straight at you', jelly: 'drifts in, wobbling', urchin: 'slow and tough',
-  starfish: 'splits into two minis', eel: 'winds up, then lunges', squid: 'circles, then dives',
-  archer: 'spits water jets at you',
+  guppy: 'charges at you', jelly: 'drifts in, wobbling', urchin: 'slow and tough',
+  starfish: 'splits in two', eel: 'winds up, then lunges', squid: 'circles, dives',
+  archer: 'spits water jets',
 };
 
 export function drawHelp(ctx, state) {
@@ -53,49 +53,53 @@ export function drawHelp(ctx, state) {
   ctx.textAlign = 'center';
   ctx.font = 'bold 28px sans-serif';
   txt(ctx, 'HOW TO PLAY', VIEW_W / 2, 100, PAL.gold);
-  // Controls, two columns.
   ctx.textAlign = 'left'; ctx.font = 'bold 15px sans-serif';
-  txt(ctx, 'CONTROLS', 180, 132, PAL.gold);
+  txt(ctx, 'CONTROLS', 180, 128, PAL.gold);
   ctx.font = '14px sans-serif';
   const left = ['WASD / ARROWS — move', 'SPACE — dash', '↑ ↓ — menu · ENTER — choose', 'P / ESC — pause'];
   const right = ['1–5 — buy a card', 'R — reroll the hand', 'ENTER — continue', 'M — mute · H — help'];
-  left.forEach((s, i) => txt(ctx, s, 180, 156 + i * 22, PAL.text));
-  right.forEach((s, i) => txt(ctx, s, 700, 156 + i * 22, PAL.text));
+  left.forEach((s, i) => txt(ctx, s, 180, 150 + i * 20, PAL.text));
+  right.forEach((s, i) => txt(ctx, s, 700, 150 + i * 20, PAL.text));
   ctx.font = 'bold 15px sans-serif';
-  txt(ctx, 'THE REEF — 7 CREATURES', 180, 252, PAL.gold);
+  txt(ctx, 'THE REEF — 7 CREATURES', 180, 232, PAL.gold);
   for (let i = 0; i < CREATURE_ORDER.length; i += 1) {
     const type = CREATURE_ORDER[i];
     const def = ENEMIES[type];
     const cx = 210 + i * 135;
-    drawEnemy(ctx, { type, x: cx, y: 282, r: 13, color: def.color, dark: def.dark,
+    drawEnemy(ctx, { type, x: cx, y: 260, r: 13, color: def.color, dark: def.dark,
       hp: 1, maxHp: 1, flash: 0, wob: 0.5, elite: false }, 0, Math.PI / 2);
     ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
-    txt(ctx, CREATURE_NAMES[type], cx, 310, PAL.text);
+    txt(ctx, CREATURE_NAMES[type], cx, 288, PAL.text);
     ctx.font = '11px sans-serif';
-    txt(ctx, BEHAVIOUR[type], cx, 328, PAL.dim);
+    txt(ctx, BEHAVIOUR[type], cx, 304, PAL.dim);
     ctx.textAlign = 'left';
   }
-  // Sea beasts.
   ctx.font = 'bold 15px sans-serif';
-  txt(ctx, 'SEA BEASTS — ONE EVERY 5 STAGES', 180, 356, PAL.gold);
+  txt(ctx, 'SEA BEASTS — ONE EVERY 5 STAGES', 180, 326, PAL.gold);
   for (let i = 0; i < BOSS_STAGES.length; i += 1) {
     const b = bossForStage(BOSS_STAGES[i].stage, state.bossOrder);
     const hx = 180 + i * 158;
     ctx.fillStyle = b.color;
-    ctx.beginPath(); ctx.arc(hx + 5, 380, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(hx + 5, 344, 5, 0, Math.PI * 2); ctx.fill();
     ctx.font = 'bold 12px sans-serif';
-    txt(ctx, b.name, hx + 16, 384, PAL.text);
+    txt(ctx, b.name, hx + 16, 348, PAL.text);
     ctx.font = '12px sans-serif';
-    txt(ctx, `STAGE ${b.stage} · ${b.hp} HP`, hx + 16, 402, PAL.dim);
+    txt(ctx, `STAGE ${b.stage} · ${b.hp} HP`, hx + 16, 364, PAL.dim);
   }
-  // Tips: four lines, no more.
   ctx.font = 'bold 15px sans-serif';
-  txt(ctx, 'TIPS', 180, 430, PAL.gold);
+  txt(ctx, 'TIPS', 180, 384, PAL.gold);
   ctx.font = '14px sans-serif';
-  txt(ctx, 'Weapons fire on their own — dodge and position.', 180, 454, PAL.text);
-  txt(ctx, 'Coins buy cards after every stage. A new weapon beats a small upgrade.', 180, 478, PAL.text);
-  txt(ctx, 'Archers shoot from stage 12 — never stand still.', 180, 502, PAL.text);
-  txt(ctx, `ARMOR absorbs damage before HP. Clear a boss to gain +${ARMOR_PER_BOSS} ARMOR. Armor does not heal.`, 180, 526, PAL.text);
+  txt(ctx, 'Weapons fire on their own — dodge and position.', 180, 406, PAL.text);
+  txt(ctx, 'Coins buy cards after every stage. A new weapon beats a small upgrade.', 180, 426, PAL.text);
+  txt(ctx, 'Each stage clear grants 1 SKILL POINT — click a skill to raise it (6 skills, 10 levels, 30 points total).', 180, 446, PAL.text);
+  txt(ctx, 'Archers shoot from stage 12 — never stand still.', 180, 466, PAL.text);
+  txt(ctx, `ARMOR absorbs damage before HP. Clear a boss to gain +${ARMOR_PER_BOSS} ARMOR. Armor does not heal.`, 180, 486, PAL.text);
+  ctx.font = 'bold 15px sans-serif';
+  txt(ctx, 'RUN MODIFIERS — ONE PER RUN', 180, 508, PAL.gold);
+  ctx.font = '11px sans-serif';
+  MODIFIERS.forEach((m, i) => {
+    txt(ctx, `${m.n} — ${m.d}`, i < 3 ? 180 : 700, 528 + (i % 3) * 18, PAL.text);
+  });
   closeButton(ctx, BIG_CLOSE);
   dimHint(ctx, 664);
 }
@@ -144,7 +148,6 @@ export function drawHistory(ctx, state) {
   ctx.textAlign = 'center';
   ctx.font = 'bold 28px sans-serif';
   txt(ctx, 'HISTORY', VIEW_W / 2, 100, PAL.gold);
-  // One table per difficulty.
   for (let i = 0; i < DIFF_ORDER.length; i += 1) {
     const d = DIFF_ORDER[i];
     const x = 180 + i * 320;

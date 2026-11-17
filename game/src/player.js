@@ -30,7 +30,7 @@ function fireWeapon(state, id, aim, target, fx, audio) {
   const p = state.player, w = weaponStatsFor(state, id);
   p.weapCd[id] = w.rate;
   if (id === 'claw') {
-    p.angle = aim; // the crab faces its claw target
+    p.angle = aim;
     p.swing = 0.18;
     const inArc = state.enemies
       .map((e) => ({ e, d: Math.hypot(e.x - p.x, e.y - p.y) }))
@@ -51,7 +51,7 @@ function fireWeapon(state, id, aim, target, fx, audio) {
       const kb = e.elite ? 8 : 26;
       e.x += Math.cos(ka) * kb; e.y += Math.sin(ka) * kb;
       if (hits < 4 && e.boss) fx.text(e.x, e.y - e.r - 6, `${dmg}`, '#ffd166', false, e.id);
-      fx.burst(e.x, e.y, '#ffd166', 5, 150); // a visible puff on every claw hit
+      fx.burst(e.x, e.y, '#ffd166', 5, 150);
       hits += 1;
     }
     audio.snap();
@@ -141,7 +141,7 @@ export function updatePlayer(state, input, dt, fx, audio) {
   for (const id of WEAPON_ORDER) p.weapCd[id] -= dt;
   p.dashCd -= dt; p.iframes -= dt; p.flash -= dt; p.swing -= dt; p.spin -= dt; p.laser -= dt;
   const mv = input.move();
-  p.moving = (mv.x || mv.y || p.dashT > 0) ? 1 : Math.max(0, p.moving - dt * 5); // drives the walk cycle
+  p.moving = (mv.x || mv.y || p.dashT > 0) ? 1 : Math.max(0, p.moving - dt * 5);
   if (p.dashT > 0) {
     p.dashT -= dt;
     const s = slideAtEdge(p, p.dashVx, p.dashVy);

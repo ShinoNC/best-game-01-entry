@@ -24,7 +24,3 @@ export function updateHints(state, dt) {
   h.wait += dt;
   if (h.idx < HINTS.length - 1 && h.wait > 8) { h.done[h.idx] = true; h.idx += 1; h.wait = 0; }
 }
-
-export function hintsShown(state) {
-  return state.hints ? state.hints.done.filter(Boolean).length : 0;
-}

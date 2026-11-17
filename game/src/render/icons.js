@@ -10,7 +10,6 @@ export function star(ctx, x, y, r, rot, color) {
   ctx.closePath(); ctx.fill();
 }
 
-// Health is a HEART.
 
 export function heart(ctx, x, y, r, c) {
   ctx.fillStyle = c; ctx.beginPath();
@@ -20,7 +19,6 @@ export function heart(ctx, x, y, r, c) {
   ctx.closePath(); ctx.fill();
 }
 
-// Weapon icons.
 export function drawWeaponIcon(ctx, id, x, y, s, owned) {
   ctx.save(); ctx.translate(x, y); ctx.scale(s / 40, s / 40);
   if (!owned) ctx.globalAlpha = 0.35;
@@ -66,7 +64,7 @@ export function drawWeaponIcon(ctx, id, x, y, s, owned) {
     ctx.beginPath(); ctx.moveTo(10, -12); ctx.lineTo(10, 12); ctx.stroke();
     ctx.fillStyle = '#e8f4ff';
     ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(14, -4); ctx.lineTo(14, 4); ctx.closePath(); ctx.fill();
-  } else { // spin: a whirlpool arrow
+  } else {
     ctx.strokeStyle = '#7fe0c3'; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.arc(0, 0, 13, 0.4, 4.8); ctx.stroke();
     ctx.fillStyle = '#7fe0c3';
@@ -77,7 +75,6 @@ export function drawWeaponIcon(ctx, id, x, y, s, owned) {
   ctx.restore();
 }
 
-// Crown.
 export function drawAwardIcon(ctx, kind, x, y, s, color, locked) {
   ctx.save(); ctx.translate(x, y); ctx.scale(s / 40, s / 40);
   const c = locked ? '#5a6a6a' : color;
@@ -95,7 +92,7 @@ export function drawAwardIcon(ctx, kind, x, y, s, color, locked) {
     ctx.beginPath(); ctx.arc(-12, -9, 5, Math.PI * 0.5, Math.PI * 1.5); ctx.stroke();
     ctx.beginPath(); ctx.arc(12, -9, 5, Math.PI * 1.5, Math.PI * 0.5); ctx.stroke();
     ctx.fillRect(-2, 1, 4, 9); ctx.fillRect(-8, 10, 16, 4);
-  } else { // CROWN
+  } else {
     ctx.beginPath();
     ctx.moveTo(-14, 8); ctx.lineTo(-14, -3); ctx.lineTo(-7, 3); ctx.lineTo(0, -11);
     ctx.lineTo(7, 3); ctx.lineTo(14, -3); ctx.lineTo(14, 8); ctx.closePath(); ctx.fill();
@@ -116,7 +113,6 @@ export function drawCoin(ctx, x, y, r) {
   ctx.restore();
 }
 
-// Level pips.
 export function drawPips(ctx, cx, y, lv, next) {
   for (let i = 0; i < WEAPON_MAX; i += 1) {
     ctx.fillStyle = i < lv ? '#7fe0c3' : (next && i === lv ? '#ffd166' : 'rgba(255,255,255,0.25)');

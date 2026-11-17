@@ -1,4 +1,3 @@
-// Keyboard + mouse.
 export const ACTION_CONFIRM = 'confirm';
 export const ACTION_PAUSE = 'pause';
 export const ACTION_MUTE = 'mute';
@@ -17,7 +16,6 @@ export function createInput(canvas) {
   const clearAll = () => { keys.clear(); pressed.clear(); };
   addEventListener('keydown', down);
   addEventListener('keyup', up);
-  // Losing focus clears keys.
   addEventListener('blur', clearAll);
   document.addEventListener('visibilitychange', () => { if (document.hidden) clearAll(); });
   canvas.addEventListener('pointermove', (e) => {

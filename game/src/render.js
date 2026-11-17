@@ -14,7 +14,6 @@ export { MENU_ITEMS, SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE, difficultyLayout, o
 
 export function createRenderer(canvas) {
   const ctx = canvas.getContext('2d');
-  // DPR-aware sizing (capped 2x).
   let cssW = 0, cssH = 0, dpr = 1;
   function resize() {
     cssW = window.innerWidth; cssH = window.innerHeight;
@@ -39,7 +38,6 @@ export function createRenderer(canvas) {
       const oxd = ox * dpr, oyd = oy * dpr;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = PAL.deep; ctx.fillRect(0, 0, canvas.width, canvas.height);
-      // L0–L20: the world.
       const a = Math.max(0, Math.min(1, alpha));
       const lerp = (prev, cur) => prev + (cur - prev) * a;
       ctx.setTransform(s, 0, 0, s, oxd + fx.shakeX * s, oyd + fx.shakeY * s);
@@ -165,7 +163,6 @@ export function createRenderer(canvas) {
         vg.addColorStop(1, `rgba(255,45,85,${state.player.flash * 1.6})`);
         ctx.fillStyle = vg; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
       }
-      // L30–L70: HUD and screens.
       ctx.setTransform(s, 0, 0, s, oxd, oyd);
       if (state.phase === 'play' || state.phase === 'paused') drawHud(ctx, state, t);
       if (state.phase === 'title') drawTitle(ctx, state);

@@ -11,13 +11,13 @@ function table(n, seed) {
 const ambBubbles = table(14, 1234567);
 const rainDrops = table(60, 7654321);
 const glowDots = table(24, 987654);
-const motes = table(36, 24680); // drifting plankton dots
+const motes = table(36, 24680);
 
 function drawWeed(ctx, d, env, t, swA, swS) {
   ctx.save(); ctx.translate(d.x, d.y); ctx.globalAlpha = 0.9;
   ctx.fillStyle = 'rgba(4,26,32,0.35)';
   ctx.beginPath(); ctx.ellipse(0, 3, 14 * d.s, 5 * d.s, 0, 0, Math.PI * 2); ctx.fill();
-  const n = 3 + Math.floor((d.rot * 10) % 3); // 3–5 strands, seeded by rot
+  const n = 3 + Math.floor((d.rot * 10) % 3);
   for (let i = 0; i < n; i += 1) {
     const off = (i - (n - 1) / 2) * 6 * d.s;
     const h = Math.min((44 + ((i * 17 + Math.floor(d.rot * 100)) % 36)) * d.s, d.y - POOL.y0 - 6);
@@ -38,7 +38,7 @@ function drawSandCorner(ctx, x0, y0, pw, ph, corner) {
   const c = corner || 'bl';
   const sx = c[1] === 'r' ? x0 + pw : x0, sy = c[0] === 'b' ? y0 + ph : y0;
   const dx = c[1] === 'r' ? -1 : 1, dy = c[0] === 'b' ? -1 : 1;
-  const w = Math.min(SAND_W, pw), h = Math.min(SAND_H, ph); // ~11% of the pool
+  const w = Math.min(SAND_W, pw), h = Math.min(SAND_H, ph);
   ctx.fillStyle = 'rgba(224,196,143,0.9)';
   ctx.beginPath();
   ctx.moveTo(sx, sy + dy * h);
