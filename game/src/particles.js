@@ -57,7 +57,7 @@ export function createParticles() {
       }
       for (let i = texts.length - 1; i >= 0; i -= 1) {
         const t = texts[i]; t.life -= dt; t.y -= 60 * dt;
-        t.y = Math.max(t.floor, t.y); // rising numbers stop at their own floor
+        t.y = Math.max(t.floor, t.y);
         if (t.life <= 0) texts.splice(i, 1);
       }
     },
@@ -80,7 +80,7 @@ export function createParticles() {
       for (const t of texts) {
         ctx.globalAlpha = Math.min(1, t.life / 0.3);
         ctx.font = `bold ${t.big ? 22 : 14}px sans-serif`;
-        ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(4,26,32,0.9)'; // dark outline: readable over any background
+        ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(4,26,32,0.9)';
         ctx.strokeText(t.str, t.x, t.y);
         ctx.fillStyle = t.color;
         ctx.fillText(t.str, t.x, t.y);

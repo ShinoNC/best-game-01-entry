@@ -4,7 +4,6 @@ import { drawCrab, drawEnemy } from './creatures.js';
 import { difficultyLayout, titleLayout } from './layout.js';
 import { bevel, logoText, rr, txt } from './polish.js';
 
-// Ambient life: 24 drifting creatures.
 const AMBIENT = [];
 for (let i = 0; i < 24; i += 1) {
   AMBIENT.push({ type: CREATURE_ORDER[i % CREATURE_ORDER.length],
@@ -38,7 +37,7 @@ function drawPatrolCrab(ctx, state, tt) {
 
 export function drawTitle(ctx, state) {
   const tt = drawAmbient(ctx, state);
-  drawPatrolCrab(ctx, state, tt); // behind the menu, along the bottom
+  drawPatrolCrab(ctx, state, tt);
   ctx.textAlign = 'center';
   // Logo.
   ctx.letterSpacing = '3px';
@@ -72,6 +71,10 @@ export function drawTitle(ctx, state) {
     ctx.font = 'bold 17px sans-serif';
     txt(ctx, `✦ ${title.toUpperCase()} ✦`, VIEW_W / 2, 202, PAL.gold);
   }
+  if (state.modifier) {
+    ctx.font = 'bold 15px sans-serif';
+    txt(ctx, `${state.modifier.n} — ${state.modifier.d}`, VIEW_W / 2, 226, PAL.xp);
+  }
   // Vertical menu.
   const TL = titleLayout();
   const items = [['start', 'START GAME'], ['help', 'HOW TO PLAY  ?'], ['feats', 'ACHIEVEMENTS'],
@@ -102,7 +105,7 @@ export function drawTitle(ctx, state) {
 
 export function drawDifficulty(ctx, state) {
   const tt = drawAmbient(ctx, state);
-  drawPatrolCrab(ctx, state, tt); // the crab keeps strolling here too
+  drawPatrolCrab(ctx, state, tt);
   ctx.textAlign = 'center';
   logoText(ctx, 'CHOOSE YOUR TIDE', VIEW_W / 2, 180,
     '900 40px "Trebuchet MS", "Segoe UI", Verdana, sans-serif',

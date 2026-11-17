@@ -30,7 +30,6 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
     ctx.strokeRect(x - 3, y - 3, w + 6, h + 6);
   }
   ctx.textAlign = 'center';
-  // Tag + key badge own separate corners.
   ctx.font = 'bold 12px sans-serif';
   txt(ctx, card.tag, x + w / 2, y + 22, kc);
   ctx.font = 'bold 14px sans-serif';
@@ -49,7 +48,6 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   if (ctx.measureText(st).width > w - 16) ctx.font = 'bold 12px sans-serif';
   txt(ctx, st, x + w / 2, y + 134, PAL.foam);
   if (card.kind !== 'repair') drawPips(ctx, x + w / 2, y + 158, card.lv, !card.bought);
-  // Price (coin + number) or the bought stamp.
   if (card.bought) {
     ctx.font = 'bold 18px sans-serif';
     txt(ctx, '✓ BOUGHT', x + w / 2, y + 198, '#7fe0c3');
@@ -82,7 +80,6 @@ export function drawStageMenu(ctx, state, hover) {
   }
   const hand = state.hand || [];
   if (hand.length === 0) {
-    // Empty state: everything owned/maxed.
     ctx.font = 'bold 22px sans-serif';
     txt(ctx, 'BUILD COMPLETE — NOTHING LEFT TO BUY', VIEW_W / 2, 360, PAL.foam);
   }
@@ -91,7 +88,6 @@ export function drawStageMenu(ctx, state, hover) {
     const hovered = hover && hover.x >= b.x && hover.x <= b.x + b.w && hover.y >= b.y && hover.y <= b.y + b.h;
     drawMenuCard(ctx, c, b.x, b.y, b.w, b.h, i, state, hovered);
   });
-  // REROLL (secondary) and NEXT (primary CTA).
   const r = L.reroll;
   const canReroll = state.coins >= REROLL_COST;
   const rHover = hover && hover.x >= r.x && hover.x <= r.x + r.w && hover.y >= r.y && hover.y <= r.y + r.h;
@@ -113,6 +109,10 @@ export function drawStageMenu(ctx, state, hover) {
   bevel(ctx, n.x, n.y, n.w, n.h, 8, nHover ? '#ffe08a' : '#ffd97a', '#f0b23e', PAL.gold, 2);
   ctx.font = 'bold 20px sans-serif';
   txt(ctx, `NEXT STAGE ${state.stage + 1} →  [Enter]`, n.x + n.w / 2, n.y + 33, '#062a33');
+  if (state.modifier) {
+    ctx.font = 'bold 13px sans-serif';
+    txt(ctx, `THIS RUN: ${state.modifier.n}`, VIEW_W / 2, 620, PAL.dim);
+  }
   if (state.menuMsgT > 0 && state.menuMsg) {
     ctx.font = 'bold 16px sans-serif';
     txt(ctx, state.menuMsg, VIEW_W / 2, 600, '#ff8fa0');

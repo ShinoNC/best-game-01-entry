@@ -1,4 +1,4 @@
-import { PAL, PLAYER, POOL, WEAPON_ORDER } from './config.js';
+import { PAL, PLAYER, POOL, WEAPON_ORDER, modOf } from './config.js';
 import { weaponStatsFor } from './weapons.js';
 import { hurtEnemy } from './enemies.js';
 
@@ -50,12 +50,12 @@ function fireWeapon(state, id, aim, target, fx, audio) {
       const ka = Math.atan2(e.y - p.y, e.x - p.x);
       const kb = e.elite ? 8 : 26;
       e.x += Math.cos(ka) * kb; e.y += Math.sin(ka) * kb;
-      if (hits < 4) fx.text(e.x, e.y - e.r - 6, `${dmg}`, '#ffd166', false, e.id);
+      if (hits < 4 && e.boss) fx.text(e.x, e.y - e.r - 6, `${dmg}`, '#ffd166', false, e.id);
       fx.burst(e.x, e.y, '#ffd166', 5, 150); // a visible puff on every claw hit
       hits += 1;
     }
     audio.snap();
-  } else if (id === 'bow') { // a volley of parallel piercing arrows
+  } else if (id === 'bow') {
     for (let i = 0; i < w.arrows; i += 1) {
       const off = (i - (w.arrows - 1) / 2) * 14;
       state.bolts.push({ x: p.x + Math.cos(aim) * 28 - Math.sin(aim) * off,
@@ -65,7 +65,7 @@ function fireWeapon(state, id, aim, target, fx, audio) {
     }
     fx.bubbles(p.x + Math.cos(aim) * 28, p.y + Math.sin(aim) * 28, 2);
     audio.bolt();
-  } else if (id === 'laser') { // hitscan beams, fixed horizontal directions
+  } else if (id === 'laser') {
     p.laser = 0.15; p.laserLen = w.range; p.laserBeams = w.beams;
     const dirs = w.beams >= 2 ? [1, -1] : [1];
     let hits = 0;
@@ -75,7 +75,7 @@ function fireWeapon(state, id, aim, target, fx, audio) {
         if (dx < 0 || dx > w.range + e.r || dy > 16 + e.r) continue;
         const dmg = Math.round(w.dmg * (0.9 + state.rng.next() * 0.2));
         if (!hurtEnemy(state, e, dmg)) continue;
-        if (hits < 4) fx.text(e.x, e.y - e.r - 6, `${dmg}`, '#ff2e88', false, e.id);
+        if (hits < 4 && e.boss) fx.text(e.x, e.y - e.r - 6, `${dmg}`, '#ff2e88', false, e.id);
         hits += 1;
       }
     }
@@ -99,11 +99,11 @@ function fireWeapon(state, id, aim, target, fx, audio) {
       const ka = Math.atan2(e.y - p.y, e.x - p.x);
       const kb = e.elite ? 8 : 30;
       e.x += Math.cos(ka) * kb; e.y += Math.sin(ka) * kb;
-      if (hits < 4) fx.text(e.x, e.y - e.r - 6, `${dmg}`, '#7fe0c3', false, e.id);
+      if (hits < 4 && e.boss) fx.text(e.x, e.y - e.r - 6, `${dmg}`, '#7fe0c3', false, e.id);
       hits += 1;
     }
     audio.pop();
-  } else if (id === 'trident') { // a fan of 3 harpoons — the crowd weapon
+  } else if (id === 'trident') {
     for (let i = 0; i < w.harpoons; i += 1) {
       const off = (i - (w.harpoons - 1) / 2) * w.spread;
       state.bolts.push({ x: p.x + Math.cos(aim) * 28, y: p.y + Math.sin(aim) * 28,
@@ -112,7 +112,7 @@ function fireWeapon(state, id, aim, target, fx, audio) {
     }
     fx.bubbles(p.x + Math.cos(aim) * 28, p.y + Math.sin(aim) * 28, 2);
     audio.bolt();
-  } else { // blaster: a tight spread of ink pellets
+  } else {
     for (let i = 0; i < w.pellets; i += 1) {
       const off = (i - (w.pellets - 1) / 2) * 0.14;
       state.bolts.push({ x: p.x + Math.cos(aim) * 26, y: p.y + Math.sin(aim) * 26,
@@ -146,7 +146,7 @@ export function updatePlayer(state, input, dt, fx, audio) {
     p.dashT -= dt;
     const s = slideAtEdge(p, p.dashVx, p.dashVy);
     p.x += s.vx * dt; p.y += s.vy * dt;
-    fx.bubbles(p.x, p.y, 1); // a bubble trail marks the dash path
+    fx.bubbles(p.x, p.y, 1);
   } else if (mv.x || mv.y) {
     const s = slideAtEdge(p, mv.x * p.speed, mv.y * p.speed);
     p.x += s.vx * dt; p.y += s.vy * dt;
@@ -178,7 +178,7 @@ export function hurtPlayer(state, dmg, fx, audio) {
   const p = state.player;
   if (p.iframes > 0 || state.phase !== 'play') return;
   const soaked = Math.min(4, state.ups.shell * 1);
-  const real = Math.max(1, dmg - soaked);
+  const real = Math.max(1, Math.round((dmg - soaked) * modOf(state, 'taken')));
   const absorbed = Math.min(p.armor, real);
   p.armor -= absorbed;
   const toHp = real - absorbed;

@@ -1,6 +1,20 @@
 // Balance numbers.
 export const STAGE_COUNT = 30; // a full run is ~20–25 minutes
 export const ARMOR_PER_BOSS = 30;
+
+export const MODIFIERS = [
+  { n: 'SWARM TIDE', d: 'foes swarm faster · +50% coins', spawn: 0.8, coin: 1.5 },
+  { n: 'HEAVY SHELLS', d: 'foes +15% HP · you +15% damage', ehp: 1.15, dmg: 1.15 },
+  { n: 'SWIFT CURRENT', d: 'you +15% speed · foes +5% speed', spd: 1.15, espd: 1.05 },
+  { n: 'RICH WATERS', d: 'shop 20% cheaper · -20 max HP', price: 0.8, hpMul: 0.8 },
+  { n: 'THICK HIDE', d: 'take 20% less damage · fire 5% slower', taken: 0.8, rate: 1.05 },
+  { n: 'GLASS CANNON', d: 'you +25% damage · take 15% more', dmg: 1.25, taken: 1.15 },
+];
+export function modOf(state, key) { return (state.modifier && state.modifier[key]) || 1; }
+export function contentStage(state, pos) {
+  const m = state.stageMap;
+  return m ? m[(pos || state.stage) - 1] : (pos || state.stage);
+}
 export const VIEW_W = 1280;
 export const VIEW_H = 720;
 export const POOL = { x0: 0, y0: 72, x1: 1280, y1: 648, cx: 640, cy: 360, rx: 640, ry: 288 };
@@ -19,7 +33,7 @@ export const ENV_PALETTES = [
 ];
 export function envForStage(stage, envs) {
   const band = Math.min(5, Math.floor((stage - 1) / 5));
-  const p = (envs && envs[stage - 1]) || ENV_PALETTES[0]; // color is per stage, effects per band
+  const p = (envs && envs[stage - 1]) || ENV_PALETTES[0];
   const fx = ENV_BANDS[band];
   return { name: p[0], water: p[1], water2: p[2], sand: p[3], weed: p[4], weed2: p[5], rays: fx.rays, rain: fx.rain, glow: fx.glow };
 }
@@ -152,7 +166,6 @@ export const FEATS = [
 ];
 
 // Awards: 3/10/20 clears.
-// NORMAL, crowns + a title on HARD.
 export const AWARD_TIERS = [
   { wins: 3, metal: 'BRONZE', color: '#cd7f32' },
   { wins: 10, metal: 'SILVER', color: '#c0c0c0' },

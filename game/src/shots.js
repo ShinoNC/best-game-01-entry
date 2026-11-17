@@ -1,4 +1,3 @@
-// Screenshot scenes (?shot=<scene>&seed=N).
 import { POOL, STAGE_COUNT } from './config.js';
 import { createRandom } from './random.js';
 import { createState } from './state.js';

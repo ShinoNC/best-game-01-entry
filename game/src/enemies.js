@@ -1,4 +1,4 @@
-import { DIFFICULTIES, ELITE, ENEMIES, POOL, SPIT, STAGES, bossForStage, dmgScale, hpScale, sandRect, spawnWeights, speedScale } from './config.js';
+import { DIFFICULTIES, ELITE, ENEMIES, POOL, SPIT, STAGES, bossForStage, contentStage, dmgScale, hpScale, modOf, sandRect, spawnWeights, speedScale } from './config.js';
 
 let nextId = 1;
 
@@ -11,21 +11,22 @@ export function hurtEnemy(state, e, dmg) {
 export function spawnEnemy(state, type, elite, fx) {
   const def = ENEMIES[type];
   const diff = DIFFICULTIES[state.difficulty || 'normal'];
-  const sand = sandRect(state.sandCorner), M = 20; // no spawn whose entry point lands on sand
+  const sand = sandRect(state.sandCorner), M = 20;
   let x, y;
   for (let tries = 0; tries < 6; tries += 1) { // fish don't swim out of sand
-    const s = Math.floor(state.rng.next() * 4), f = state.rng.next(); // one of the four edges, just outside it
+    const s = Math.floor(state.rng.next() * 4), f = state.rng.next();
     x = s === 1 ? POOL.x1 + 14 : s === 3 ? POOL.x0 - 14 : POOL.x0 + f * (POOL.x1 - POOL.x0);
     y = s === 0 ? POOL.y0 - 14 : s === 2 ? POOL.y1 + 14 : POOL.y0 + f * (POOL.y1 - POOL.y0);
     const cx = Math.max(POOL.x0 + 8, Math.min(POOL.x1 - 8, x)), cy = Math.max(POOL.y0 + 8, Math.min(POOL.y1 - 8, y));
     if (cx < sand.x0 - M || cx > sand.x1 + M || cy < sand.y0 - M || cy > sand.y1 + M) break;
-    if (tries === 5) { x = POOL.cx; y = POOL.y1 + 14; } // last resort: bottom centre, always water
+    if (tries === 5) { x = POOL.cx; y = POOL.y1 + 14; }
   }
   if (fx && fx.ring) fx.ring(Math.max(POOL.x0 + 8, Math.min(POOL.x1 - 8, x)), Math.max(POOL.y0 + 8, Math.min(POOL.y1 - 8, y)));
-  const hp = Math.round(def.hp * hpScale(state.stage) * diff.hp * (elite ? ELITE.hpMul : 1));
+  const cs = contentStage(state);
+  const hp = Math.round(def.hp * hpScale(cs) * diff.hp * (elite ? ELITE.hpMul : 1) * modOf(state, 'ehp'));
   const e = {
     id: nextId += 1, type, x, y, hp, maxHp: hp, r: def.r * (elite ? ELITE.sizeMul : 1),
-    speed: def.speed * speedScale(state.stage) * diff.speed * state.rng.range(0.9, 1.1), dmg: Math.round(def.dmg * dmgScale(state.stage) * diff.dmg * (elite ? ELITE.dmgMul : 1)),
+    speed: def.speed * speedScale(cs) * diff.speed * modOf(state, 'espd') * state.rng.range(0.9, 1.1), dmg: Math.round(def.dmg * dmgScale(cs) * diff.dmg * (elite ? ELITE.dmgMul : 1)),
     score: elite ? ELITE.score : def.score,
     coins: elite ? ELITE.coins : def.coins,
     color: def.color, dark: def.dark, elite: !!elite,
@@ -37,7 +38,7 @@ export function spawnEnemy(state, type, elite, fx) {
 }
 
 function pickType(state) {
-  const w = spawnWeights(state.stage);
+  const w = spawnWeights(contentStage(state));
   const mix = state.mix || {};
   let total = 0;
   for (const k in w) { w[k] *= mix[k] || 1; total += w[k]; }
@@ -54,8 +55,8 @@ function spawnBoss(state, fx, audio) {
   b.type = def.type;
   b.boss = true;
   b.name = def.name;
-  b.hp = Math.round(def.hp * diff.bossHp); b.maxHp = b.hp; b.r = def.r;
-  b.speed = def.speed; b.dmg = Math.round(def.dmg * diff.bossDmg); b.score = def.score;
+  b.hp = Math.round(def.hp * diff.bossHp * modOf(state, 'ehp')); b.maxHp = b.hp; b.r = def.r;
+  b.speed = def.speed * modOf(state, 'espd'); b.dmg = Math.round(def.dmg * diff.bossDmg); b.score = def.score;
   b.coins = def.coins;
   b.color = def.color;
   b.dark = def.dark;
@@ -73,14 +74,13 @@ function spawnBoss(state, fx, audio) {
 
 // Spawn director.
 export function updateSpawner(state, dt, fx, audio) {
-  const plan = STAGES[state.stage - 1];
+  const plan = STAGES[contentStage(state) - 1];
   state.spawnT -= dt;
   if (state.spawnT <= 0 && state.stageSpawned < plan.budget && state.enemies.length < 60) {
-    state.spawnT = plan.interval;
+    state.spawnT = plan.interval * modOf(state, 'spawn');
     const n = Math.min(plan.batch, plan.budget - state.stageSpawned);
     for (let i = 0; i < n; i += 1) { spawnEnemy(state, pickType(state), false, fx); state.stageSpawned += 1; }
   }
-  // Elites and bosses at half budget.
   if (plan.elite && !state.stageEliteDone && state.stageSpawned >= plan.budget / 2) {
     state.stageEliteDone = true;
     const type = state.rng.pick(['urchin', 'jelly', 'eel', 'starfish']);
@@ -176,7 +176,7 @@ export function updateEnemies(state, dt, fx) {
     const nx = dx / d, ny = dy / d;
     let sp = e.speed;
     if (e.boss && bossAttack(state, e, dt, nx, ny, fx)) continue;
-    if (e.type === 'jelly') { // drifters wobble sideways as they close in
+    if (e.type === 'jelly') {
       const w = Math.sin(e.wob * 2.2) * 0.6;
       e.x += (nx - ny * w) * sp * dt; e.y += (ny + nx * w) * sp * dt;
     } else if (e.type === 'eel') {

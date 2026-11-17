@@ -1,4 +1,4 @@
-import { SHOP, WEAPON_MAX, WEAPON_ORDER } from './config.js';
+import { SHOP, WEAPON_MAX, WEAPON_ORDER, modOf } from './config.js';
 import { WEAPONS } from './weapons.js';
 import { SKILL_PRICES, UPGRADE_DEFS, applyUpgrade } from './upgrades.js';
 
@@ -36,12 +36,13 @@ export function cardStats(card, state) {
 }
 
 export function cardPool(state) {
+  const pr = (p) => Math.round(p * modOf(state, 'price')); // RICH WATERS: 20% cheaper
   const pool = [];
   for (const wid of WEAPON_ORDER) {
     if (wid === 'claw') continue; // the claw is owned from the start
     if (state.weapons[wid] === 0) {
       pool.push({ id: `weapon:${wid}`, kind: 'weapon', wid, lv: 0, toLevel: 1,
-        price: shopEntry(wid).price, name: WEAPONS[wid].name, icon: WEAPONS[wid].icon,
+        price: pr(shopEntry(wid).price), name: WEAPONS[wid].name, icon: WEAPONS[wid].icon,
         tag: 'NEW WEAPON', weight: 3, bought: false });
     }
   }
@@ -49,7 +50,7 @@ export function cardPool(state) {
     const lv = state.weapons[wid];
     if (lv > 0 && lv < WEAPON_MAX) {
       pool.push({ id: `wup:${wid}:${lv + 1}`, kind: 'wup', wid, lv, toLevel: lv + 1,
-        price: shopEntry(wid).up[lv - 1], name: `${WEAPONS[wid].name} Lv${lv + 1}`,
+        price: pr(shopEntry(wid).up[lv - 1]), name: `${WEAPONS[wid].name} Lv${lv + 1}`,
         icon: WEAPONS[wid].icon, tag: 'LEVEL UP', weight: 2, bought: false });
     }
   }
@@ -57,15 +58,15 @@ export function cardPool(state) {
     const lv = state.ups[d.id];
     if (lv < d.max) {
       pool.push({ id: `skill:${d.id}:${lv + 1}`, kind: 'skill', track: d.id, lv, toLevel: lv + 1,
-        price: SKILL_PRICES[lv], name: d.name, icon: d.icon,
+        price: pr(SKILL_PRICES[lv]), name: d.name, icon: d.icon,
         tag: 'SKILL', weight: 1, bought: false });
     }
   }
   return pool;
 }
 
-function repairCard(n) {
-  return { id: `repair:${n}`, kind: 'repair', lv: 0, toLevel: 0, price: REPAIR_PRICE,
+function repairCard(n, state) {
+  return { id: `repair:${n}`, kind: 'repair', lv: 0, toLevel: 0, price: Math.round(REPAIR_PRICE * modOf(state, 'price')),
     name: 'SHELL REPAIR', icon: '♥', tag: 'REPAIR',
     weight: 0, bought: false };
 }
@@ -86,7 +87,7 @@ export function drawHand(state) {
   }
   let n = 0;
   while (hand.length < HAND_SIZE && state.player.hp < state.player.maxHp) {
-    hand.push(repairCard(n += 1));
+    hand.push(repairCard(n += 1, state));
   }
   return hand;
 }

@@ -1,5 +1,5 @@
 // Seven weapons.
-import { WEAPON_MAX } from './config.js';
+import { WEAPON_MAX, modOf } from './config.js';
 
 // Weapon table.
 // more damage per level.
@@ -67,8 +67,8 @@ export function weaponStatsFor(state, id) {
   const lv = state.weapons[id];
   const def = WEAPONS[id].levels[Math.max(0, Math.min(WEAPON_MAX, lv) - 1)];
   return {
-    dmg: def.dmg * 1.14 * (1.10 ** state.ups.claws), // 1.14x base: the crab should feel powerful
-    rate: def.rate * (0.90 ** state.ups.tempo),
+    dmg: def.dmg * 1.14 * (1.10 ** state.ups.claws) * modOf(state, 'dmg'),
+    rate: def.rate * (0.90 ** state.ups.tempo) * modOf(state, 'rate'),
     range: def.range * (1.2 ** state.ups.reach),
     arc: def.arc ?? 0, pierce: def.pierce ?? 0, pellets: def.pellets ?? 1,
     hits: def.hits ?? 1, turn: def.turn ?? 0, speed: def.speed ?? 0,

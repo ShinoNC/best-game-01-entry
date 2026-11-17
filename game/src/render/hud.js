@@ -1,5 +1,5 @@
 // The HUD.
-import { CREATURE_NAMES, DIFFICULTIES, PAL, STAGES, STAGE_COUNT, VIEW_H, VIEW_W, WEAPON_ORDER, bossForStage, nextTypes } from '../config.js';
+import { CREATURE_NAMES, DIFFICULTIES, PAL, STAGES, STAGE_COUNT, VIEW_H, VIEW_W, WEAPON_ORDER, bossForStage, contentStage, nextTypes } from '../config.js';
 import { UPGRADE_DEFS } from '../upgrades.js';
 import { comboMult } from '../world.js';
 import { drawCoin, drawWeaponIcon } from './icons.js';
@@ -11,18 +11,17 @@ export function drawHud(ctx, state, t) {
   ctx.fillStyle = 'rgba(6,42,51,0.92)';
   ctx.fillRect(0, 0, VIEW_W, 72);
   ctx.fillRect(0, VIEW_H - 72, VIEW_W, 72);
-  // A light edge lifts each bar off the water.
   ctx.fillStyle = 'rgba(255,255,255,0.14)';
   ctx.fillRect(0, 70, VIEW_W, 2);
   ctx.fillRect(0, VIEW_H - 72, VIEW_W, 2);
   // Top bar.
-  const remaining = (STAGES[state.stage - 1].budget - state.stageSpawned) + state.enemies.length;
+  const remaining = (STAGES[contentStage(state) - 1].budget - state.stageSpawned) + state.enemies.length;
   const diffLabel = (DIFFICULTIES[state.difficulty || 'normal'] || DIFFICULTIES.normal).label;
   const nx = state.stage + 1;
   const nextBoss = nx <= STAGE_COUNT ? bossForStage(nx, state.bossOrder) : null;
   const nextBit = nextBoss ? `⚠ ${nextBoss.name}`
     : nx > STAGE_COUNT ? 'FINAL STAGE'
-    : nextTypes(nx).map((k) => CREATURE_NAMES[k]).join(' + ');
+    : nextTypes(contentStage(state, nx)).map((k) => CREATURE_NAMES[k]).join(' + ');
   ctx.font = 'bold 22px sans-serif';
   txt(ctx, `STAGE ${state.stage} / ${STAGE_COUNT} · ${diffLabel}`, 28, 34, PAL.text);
   ctx.font = 'bold 13px sans-serif';
@@ -50,7 +49,6 @@ export function drawHud(ctx, state, t) {
     ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(VIEW_W / 2 - 180, 100, 360, 6);
     ctx.fillStyle = '#ff5d73'; ctx.fillRect(VIEW_W / 2 - 180, 100, 360 * (state.boss.hp / state.boss.maxHp), 6);
   }
-  // Bottom bar: weapons | HP | skills.
   const WABBR = { claw: 'CL', bow: 'BW', blaster: 'BL', shell: 'SH', spin: 'SP', laser: 'LZ', trident: 'TR' };
   const SABBR = { claws: 'DM', tempo: 'FR', reach: 'RG', shell: 'EN', legs: 'SW', bubbles: 'BB', magnet: 'MG' };
   for (let i = 0; i < WEAPON_ORDER.length; i += 1) {
@@ -66,7 +64,6 @@ export function drawHud(ctx, state, t) {
     ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
     txt(ctx, lv > 0 ? WABBR[id] + lv : WABBR[id], bx + 26, by + 47, lv > 0 ? PAL.text : PAL.dim, 1);
   }
-  // Shell COLOUR still follows shellTier.
   ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'left';
   txt(ctx, '♥', 490, 670, PAL.hp, 3);
   txt(ctx, ` ${Math.ceil(p.hp)}/${p.maxHp}`, 490 + ctx.measureText('♥ ').width, 670, PAL.text, 3);
@@ -76,7 +73,6 @@ export function drawHud(ctx, state, t) {
   }
   ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(490, 677, 300, 14);
   ctx.fillStyle = PAL.hp; ctx.fillRect(490, 677, 300 * (p.hp / p.maxHp), 14);
-  // Armor: shield + pool above the HP bar.
   if (p.armor > 0) {
     ctx.font = 'bold 14px sans-serif';
     const num = `${p.armor}`;

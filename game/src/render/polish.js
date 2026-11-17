@@ -1,4 +1,3 @@
-// gradient logo text, lifted panels.
 export function rr(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -23,7 +22,6 @@ export function bevel(ctx, x, y, w, h, r, top, bottom, border, bw = 2) {
   rr(ctx, x + 2, y + 1, w - 4, Math.min(10, h / 3), r - 1); ctx.fill();
 }
 
-// Reads as a game logo, not flat text.
 export function logoText(ctx, text, x, y, font, top, bottom, outline, lw = 3) {
   ctx.save();
   ctx.font = font; ctx.textAlign = 'center';
@@ -38,7 +36,6 @@ export function logoText(ctx, text, x, y, font, top, bottom, outline, lw = 3) {
   ctx.restore();
 }
 
-// over bright shallows and dark storm alike.
 export function txt(ctx, text, x, y, fill, lw = 2) {
   ctx.save();
   ctx.strokeStyle = 'rgba(4,26,32,0.8)'; ctx.lineWidth = lw; ctx.lineJoin = 'round';

@@ -65,7 +65,6 @@ if (shot) {
     if (state.phase === 'stageclear' && state.menuMsgT > 0) state.menuMsgT -= dt;
     if (state.phase === 'play') {
       acc += dt;
-// The harness fast-forwards the world.
       if (!window.__ffActive) {
         let steps = 0;
         while (acc >= STEP && steps < 4) { stepWorld(state, input, STEP, fx, audio); acc -= STEP; steps += 1; if (state.phase !== 'play') break; }
@@ -114,7 +113,6 @@ function doReroll() {
   }
 }
 
-// An open overlay swallows its own input.
 function handleOverlay() {
   if (!state.overlay) return false;
   const L = overlayLayout(state);
@@ -216,7 +214,7 @@ function handleMenus() {
     if (input.confirmPressed()) { nextStage(state, audio); status.textContent = `Stage ${state.stage}`; return; }
     if (input.click()) {
       const m = toLogical(input.mouse().x, input.mouse().y);
-      const L = stageMenuLayout(state); // hit-boxes follow the drawn screen
+      const L = stageMenuLayout(state);
       for (let i = 0; i < L.cards.length; i += 1) {
         if (inBox(m, L.cards[i])) { buyMenuCard(i); return; }
       }

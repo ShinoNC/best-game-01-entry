@@ -35,7 +35,7 @@ export function createRenderer(canvas) {
     render(state, fx, t, alpha = 1, hover = null) {
       if (window.innerWidth !== cssW || window.innerHeight !== cssH) resize();
       const { scale, ox, oy } = viewTransform();
-      const s = scale * dpr; // device-pixel scale for the transform
+      const s = scale * dpr;
       const oxd = ox * dpr, oyd = oy * dpr;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = PAL.deep; ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -43,7 +43,6 @@ export function createRenderer(canvas) {
       const a = Math.max(0, Math.min(1, alpha));
       const lerp = (prev, cur) => prev + (cur - prev) * a;
       ctx.setTransform(s, 0, 0, s, oxd + fx.shakeX * s, oyd + fx.shakeY * s);
-      // Background life runs on the render clock.
 
       const rt = state.shotMode ? t : performance.now() / 1000;
       drawPool(ctx, state, rt);
@@ -71,7 +70,6 @@ export function createRenderer(canvas) {
           ctx.restore();
         }
       }
-      // Dive telegraph: dashed line, ring, "!".
       for (const e of state.enemies) {
         if ((e.type === 'squid' || e.boss) && e.state === 'circle' && e.diveT < 0.6) {
           const ix = lerp(e.px ?? e.x, e.x), iy = lerp(e.py ?? e.y, e.y);
@@ -91,7 +89,7 @@ export function createRenderer(canvas) {
           ctx.restore();
         }
       }
-      for (const pe of state.drops) { // coins bob and glint — the menu money
+      for (const pe of state.drops) {
         const bobY = Math.sin(pe.bob) * 3;
         ctx.fillStyle = PAL.gold;
         ctx.beginPath(); ctx.arc(pe.x, pe.y + bobY, 7, 0, Math.PI * 2); ctx.fill();
@@ -120,7 +118,7 @@ export function createRenderer(canvas) {
           ctx.beginPath(); ctx.moveTo(b.x - Math.cos(ba) * 16, b.y - Math.sin(ba) * 16);
           ctx.lineTo(b.x + Math.cos(ba) * 8, b.y + Math.sin(ba) * 8); ctx.stroke();
           ctx.fillStyle = '#e8fffa'; ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI * 2); ctx.fill();
-        } else if (b.kind === 'pellet') { // blaster pellet: a violet ink blob
+        } else if (b.kind === 'pellet') {
           ctx.fillStyle = '#7b5cff'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
           ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.arc(b.x - 1.5, b.y - 1.5, 2, 0, Math.PI * 2); ctx.fill();
         } else if (b.kind === 'homing') {
@@ -132,7 +130,7 @@ export function createRenderer(canvas) {
           ctx.strokeStyle = '#a894c4'; ctx.lineWidth = 2;
           ctx.beginPath(); ctx.arc(b.x, b.y, b.r * 0.55, t * 6, t * 6 + Math.PI * 1.5); ctx.stroke();
           ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.x - 2, b.y - 2, 2, 0, Math.PI * 2); ctx.fill();
-        } else if (b.kind === 'harpoon') { // trident harpoon: a steel shaft, barbed tip
+        } else if (b.kind === 'harpoon') {
           const ba = Math.atan2(b.vy, b.vx);
           const cx = Math.cos(ba), sx = Math.sin(ba);
           ctx.strokeStyle = '#c8d8e0'; ctx.lineWidth = 3; ctx.lineCap = 'round';
@@ -168,12 +166,11 @@ export function createRenderer(canvas) {
         ctx.fillStyle = vg; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
       }
       // L30–L70: HUD and screens.
-      // so nothing the player reads ever jumps.
       ctx.setTransform(s, 0, 0, s, oxd, oyd);
       if (state.phase === 'play' || state.phase === 'paused') drawHud(ctx, state, t);
       if (state.phase === 'title') drawTitle(ctx, state);
       if (state.phase === 'difficulty') drawDifficulty(ctx, state);
-      if (state.phase === 'stageclear') drawStageMenu(ctx, state, hover); // no HUD here — its own title owns the top
+      if (state.phase === 'stageclear') drawStageMenu(ctx, state, hover);
       if (state.phase === 'paused') drawPaused(ctx);
       if (state.phase === 'over') drawOver(ctx, state);
       if (state.overlay === 'help') drawHelp(ctx, state);

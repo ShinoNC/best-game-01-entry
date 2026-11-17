@@ -1,4 +1,4 @@
-import { ARMOR_PER_BOSS, COMBO_MAX, COMBO_WINDOW, ENEMIES, POOL, STAGES, STAGE_COUNT, bossForStage, envForStage } from './config.js';
+import { ARMOR_PER_BOSS, COMBO_MAX, COMBO_WINDOW, ENEMIES, POOL, STAGES, STAGE_COUNT, bossForStage, contentStage, envForStage, modOf } from './config.js';
 import { hurtEnemy, onEnemyKilled, updateEnemies, updateSpawner } from './enemies.js';
 import { hurtPlayer, nearestEnemy, updatePlayer } from './player.js';
 import { drawHand } from './cards.js';
@@ -16,7 +16,8 @@ function noteCoins(state) {
 }
 
 function dropCoins(state, e) {
-  for (let i = 0; i < e.coins; i += 1) {
+  const n = Math.round(e.coins * modOf(state, 'coin'));
+  for (let i = 0; i < n; i += 1) {
     state.drops.push({
       kind: 'coin', x: e.x + state.rng.range(-30, 30), y: e.y + state.rng.range(-30, 30),
       v: 1, vx: state.rng.range(-40, 40), vy: state.rng.range(-40, 40),
@@ -35,14 +36,14 @@ function killEnemy(state, e, fx, audio) {
   state.score += gained;
   fx.burst(e.x, e.y, e.color, e.elite ? 24 : 14, e.elite ? 260 : 190); // bigger death burst
   fx.bubbles(e.x, e.y, e.elite ? 12 : 6);
-  fx.text(e.x, e.y - e.r - 4, `+${gained}`, '#f4f9ff');
+  if (e.boss) fx.text(e.x, e.y - e.r - 4, `+${gained}`, '#f4f9ff'); // score pops only for bosses
   audio.die();
   onEnemyKilled(state, e, fx);
   dropCoins(state, e);
 }
 
 export function stageRemaining(state) {
-  return (STAGES[state.stage - 1].budget - state.stageSpawned) + state.enemies.length;
+  return (STAGES[contentStage(state) - 1].budget - state.stageSpawned) + state.enemies.length;
 }
 
 export function nextStage(state, audio) {
@@ -142,7 +143,7 @@ export function stepWorld(state, input, dt, fx, audio) {
       if (Math.hypot(e.x - b.x, e.y - b.y) < e.r + b.r && hurtEnemy(state, e, b.dmg)) {
         const ka = Math.atan2(e.y - b.y, e.x - b.x);
         e.x += Math.cos(ka) * 14; e.y += Math.sin(ka) * 14;
-        fx.text(e.x, e.y - e.r - 6, `${b.dmg}`, b.kind === 'pellet' ? '#c9a7ff' : '#bfe8e0', false, e.id);
+        if (e.boss) fx.text(e.x, e.y - e.r - 6, `${b.dmg}`, b.kind === 'pellet' ? '#c9a7ff' : '#bfe8e0', false, e.id);
         b.pierce -= 1; fx.burst(b.x, b.y, b.kind === 'pellet' ? '#7b5cff' : '#bfe8e0', 4, 100, 'bubble');
         if (b.pierce < 0) dead = true;
       }
@@ -199,7 +200,7 @@ export function stepWorld(state, input, dt, fx, audio) {
     } else if (pk.life <= 0) state.pickups.splice(i, 1);
   }
 
-  if (state.stageSpawned >= STAGES[state.stage - 1].budget && state.enemies.length === 0
+  if (state.stageSpawned >= STAGES[contentStage(state) - 1].budget && state.enemies.length === 0
       && state.stageClearT <= 0) {
     state.stageClearT = 1.2;
     state.score += 100 + state.stage * 50;

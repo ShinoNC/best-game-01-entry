@@ -32,7 +32,6 @@ function drawWeed(ctx, d, env, t, swA, swS) {
   ctx.restore();
 }
 
-// Water gradient cached per environment.
 let poolGrad = null, gradEnv = '';
 
 function drawSandCorner(ctx, x0, y0, pw, ph, corner) {
@@ -51,7 +50,6 @@ function drawSandCorner(ctx, x0, y0, pw, ph, corner) {
 
 export function drawPool(ctx, state, t) {
   const env = envForStage(state.stage, state.envs);
-  // Menu screens: open water, no frame.
   const menu = state.phase === 'title' || state.phase === 'difficulty';
   const x0 = menu ? 0 : POOL.x0, y0 = menu ? 0 : POOL.y0;
   const pw = menu ? 1280 : POOL.x1 - POOL.x0, ph = menu ? 720 : POOL.y1 - POOL.y0;
@@ -87,7 +85,6 @@ export function drawPool(ctx, state, t) {
       ctx.beginPath(); ctx.arc(gx, gy, 2, 0, Math.PI * 2); ctx.fill();
     }
   }
-  // Rain (STORM TIDE): diagonal streaks.
   if (env.rain) {
     ctx.strokeStyle = 'rgba(180,210,230,0.35)'; ctx.lineWidth = 1.5;
     for (const b of rainDrops) {
@@ -103,14 +100,12 @@ export function drawPool(ctx, state, t) {
       ctx.beginPath(); ctx.arc(x, y, b.r * 0.7, 0, Math.PI * 2); ctx.fill();
     }
   }
-  // Ambient bubbles rising, wobbling.
   ctx.strokeStyle = 'rgba(191,232,224,0.5)'; ctx.lineWidth = 1.5;
   for (const b of ambBubbles) {
     const x = POOL.cx + (b.fx - 0.5) * POOL.rx * 1.7 + Math.sin(t * 2 + b.fy * 10) * 4;
     const y = POOL.cy + POOL.ry - ((t * b.sp + b.fy * 500) % (POOL.ry * 2));
     ctx.beginPath(); ctx.arc(x, y, b.r, 0, Math.PI * 2); ctx.stroke();
   }
-  // Drifting motes: tiny plankton dots.
   ctx.fillStyle = 'rgba(255,255,255,0.25)';
   for (const m of motes) {
     const mx = x0 + ((m.fx * pw + t * m.sp * 0.4) % pw);
@@ -140,7 +135,6 @@ export function drawPool(ctx, state, t) {
         ctx.beginPath(); ctx.arc(0, 0, 4 * d.s, Math.PI, 0); ctx.stroke();
       }
     } else if (d.kind === 'coral') {
-      // Branching coral: pink stems, orange tips.
       ctx.strokeStyle = '#ff8a7a'; ctx.lineWidth = 4 * d.s; ctx.lineCap = 'round';
       for (const [dx, dy] of [[0, -10], [-8, -6], [8, -6]]) {
         ctx.beginPath(); ctx.moveTo(0, 6 * d.s); ctx.lineTo(dx * d.s, dy * d.s); ctx.stroke();

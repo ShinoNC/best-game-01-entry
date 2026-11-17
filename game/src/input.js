@@ -6,7 +6,7 @@ export const ACTION_RESTART = 'restart';
 
 export function createInput(canvas) {
   const keys = new Set();
-  const pressed = new Set(); // edge-triggered keys, consumed each frame
+  const pressed = new Set();
   let mouseX = 640, mouseY = 360, mouseClicked = false;
   const down = (e) => {
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
@@ -32,7 +32,6 @@ export function createInput(canvas) {
     mouseClicked = true;
   });
   return {
-    // Held movement vector, normalised.
     move() {
       let x = 0, y = 0;
       if (keys.has('a') || keys.has('arrowleft')) x -= 1;

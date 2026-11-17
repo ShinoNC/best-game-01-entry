@@ -1,5 +1,5 @@
 // One GameState.
-import { ENV_PALETTES, PAL, PLAYER, POOL } from './config.js';
+import { ENV_PALETTES, MODIFIERS, PAL, PLAYER, POOL } from './config.js';
 
 export function createState(rng, seed, difficulty = 'normal') {
   const theme = rng.pick(['rocky', 'weedy', 'shelly', 'coral']);
@@ -29,21 +29,32 @@ export function createState(rng, seed, difficulty = 'normal') {
   }
   const mix = {};
   for (const k of ['guppy', 'jelly', 'urchin', 'starfish', 'eel', 'squid', 'archer']) mix[k] = rng.range(0.85, 1.2);
-  const envs = Array.from({ length: 30 }, () => rng.pick(ENV_PALETTES)); // one of 5 bold colors per stage, per run
+  const envs = Array.from({ length: 30 }, () => rng.pick(ENV_PALETTES));
   const bossOrder = ['turtle', 'octopus', 'hammerhead', 'angler', 'stingray'];
   for (let i = bossOrder.length - 1; i > 0; i -= 1) { // Fisher-Yates on the run seed
     const j = Math.floor(rng.next() * (i + 1));
     [bossOrder[i], bossOrder[j]] = [bossOrder[j], bossOrder[i]];
   }
+  const stageMap = [];
+  for (let b = 0; b < 6; b += 1) {
+    const four = [b * 5 + 1, b * 5 + 2, b * 5 + 3, b * 5 + 4];
+    if (b > 0) for (let i = 3; i > 0; i -= 1) {
+      const j = Math.floor(rng.next() * (i + 1));
+      [four[i], four[j]] = [four[j], four[i]];
+    }
+    stageMap.push(...four, b * 5 + 5);
+  }
+  const modifier = rng.pick(MODIFIERS);
+  const hp0 = Math.round(PLAYER.hp * (modifier.hpMul || 1));
   return {
-    rng, seed, decor, theme, mix, envs, bossOrder, sandCorner: ['tl', 'tr', 'bl', 'br'][((seed % 4) + 4) % 4], time: 0, phase: 'title', menuSel: 0,
+    rng, seed, decor, theme, mix, envs, bossOrder, stageMap, modifier, sandCorner: ['tl', 'tr', 'bl', 'br'][((seed % 4) + 4) % 4], time: 0, phase: 'title', menuSel: 0,
     difficulty,
     combo: 0, comboT: 0,
     player: {
       x: POOL.cx, y: POOL.cy + 40, px: POOL.cx, py: POOL.cy + 40,
       vx: 0, vy: 0, angle: -Math.PI / 2,
-      hp: PLAYER.hp, maxHp: PLAYER.hp, armor: 0, radius: PLAYER.radius,
-      speed: PLAYER.speed, weapCd: { claw: 0, bow: 0, blaster: 0, shell: 0, spin: 0, laser: 0, trident: 0 },
+      hp: hp0, maxHp: hp0, armor: 0, radius: PLAYER.radius,
+      speed: PLAYER.speed * (modifier.spd || 1), weapCd: { claw: 0, bow: 0, blaster: 0, shell: 0, spin: 0, laser: 0, trident: 0 },
       dashCd: 0, dashT: 0,
       iframes: 0, magnet: PLAYER.magnet, shellTier: 0, flash: 0, swing: 0, spin: 0,
       laser: 0, laserLen: 0, laserBeams: 1, moving: 0,

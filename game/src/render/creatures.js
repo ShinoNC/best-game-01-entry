@@ -7,7 +7,7 @@ import { txt } from './polish.js';
 function ol(ctx, c, w = 2) { ctx.strokeStyle = c; ctx.lineWidth = w; ctx.lineJoin = 'round'; ctx.stroke(); }
 
 export function drawCrab(ctx, p, t, clawStats, spinStats) {
-  const s = p.radius / 20; // every part scales with the radius
+  const s = p.radius / 20;
   ctx.fillStyle = 'rgba(4,26,32,0.35)';
   ctx.beginPath(); ctx.ellipse(p.x, p.y + p.radius * 0.8, p.radius * 1.05, p.radius * 0.42, 0, 0, Math.PI * 2); ctx.fill();
   ctx.save(); ctx.translate(p.x, p.y);
@@ -149,11 +149,11 @@ export function drawEnemy(ctx, e, t, ang) {
     ctx.beginPath(); ctx.arc(e.r * 1.15, 0, e.r * 0.52, 0, Math.PI * 2); ctx.fill();
     ol(ctx, flash ? '#fff' : e.dark, 2);
     ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(e.r * 1.3, -e.r * 0.18, 2.4, 0, Math.PI * 2); ctx.fill();
-    if (e.lungeT > 0) { // mid-lunge: a white streak sells the burst
+    if (e.lungeT > 0) {
       ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.moveTo(-e.r * 2.2, 0); ctx.lineTo(-e.r * 1.2, 0); ctx.stroke();
     }
-    if (e.windup > 0) { // winding up: a bright ring warns the player
+    if (e.windup > 0) {
       ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(0, 0, e.r * 1.9, 0, Math.PI * 2); ctx.stroke();
     }
@@ -171,7 +171,7 @@ export function drawEnemy(ctx, e, t, ang) {
       ctx.fillStyle = 'rgba(191,232,224,0.95)';
       ctx.beginPath(); ctx.arc(e.r * 1.85, 0, 3 + (0.35 - e.windup) * 12, 0, Math.PI * 2); ctx.fill();
     }
-  } else if (e.type === 'squid') { // small squid: mantle + trailing tentacles
+  } else if (e.type === 'squid') {
     ctx.rotate(face);
     const wig = Math.sin(t * 8 + e.wob) * 0.2;
     ctx.strokeStyle = flash ? '#fff' : e.color; ctx.lineCap = 'round'; ctx.lineWidth = 2.5;
@@ -194,7 +194,7 @@ export function drawEnemy(ctx, e, t, ang) {
     const col = flash ? '#fff' : e.color, drk = flash ? '#fff' : e.dark;
     const eye = (x, y, r) => { ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); };
     const tele = e.atkState === 'tele';
-    const puff = tele && e.atk === 'ink' ? 1.2 : 1; // the octopus swells before spraying ink
+    const puff = tele && e.atk === 'ink' ? 1.2 : 1;
     ctx.rotate(face);
     ctx.scale(s * puff, s * puff);
     ctx.fillStyle = col;
@@ -204,7 +204,7 @@ export function drawEnemy(ctx, e, t, ang) {
       ctx.strokeStyle = drk; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(0, 0, R * 0.5, 0, Math.PI * 2); ctx.stroke();
       ctx.beginPath(); ctx.arc(0, 0, R * 0.25, 0, Math.PI * 2); ctx.stroke();
-    } else if (e.type === 'turtle') { // domed shell, flippers, head out front
+    } else if (e.type === 'turtle') {
       const pad = Math.sin(t * 4 + e.wob) * 0.25;
       for (const [fx, fy, fa] of [[0.5, -0.7, -0.6], [0.5, 0.7, 0.6], [-0.6, -0.6, 0.6], [-0.6, 0.6, -0.6]]) {
         ctx.save(); ctx.translate(R * fx, R * fy); ctx.rotate(fa + pad);
@@ -265,7 +265,7 @@ export function drawEnemy(ctx, e, t, ang) {
       ctx.beginPath(); ctx.arc(R * 0.7, -R * 0.9, R * 0.1 * lure, 0, Math.PI * 2); ctx.fill();
       eye(R * 0.45, -R * 0.3, 4);
     } else if (e.type === 'stingray') { // wide wings + whip tail
-      const lift = tele && e.atk === 'barbs' ? -R * 0.55 : 0; // the tail rises before firing barbs
+      const lift = tele && e.atk === 'barbs' ? -R * 0.55 : 0;
       ctx.strokeStyle = drk; ctx.lineWidth = 3; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(-R * 0.8, 0);
       ctx.quadraticCurveTo(-R * 1.6, Math.sin(t * 2 + e.wob) * R * 0.2 + lift, -R * 2.2, Math.sin(t * 2 + e.wob + 1) * R * 0.3 + lift * 1.4);
@@ -281,7 +281,7 @@ export function drawEnemy(ctx, e, t, ang) {
       ol(ctx, drk, 2);
       eye(R * 0.45, -R * 0.15, 3.5); eye(R * 0.45, R * 0.15, 3.5);
     }
-  } else { // guppy: a little fish with a wagging tail
+  } else {
     ctx.rotate(face);
     const wag = Math.sin(t * 11 + e.wob) * 0.4;
     ctx.fillStyle = flash ? '#fff' : e.color;
@@ -295,7 +295,7 @@ export function drawEnemy(ctx, e, t, ang) {
     ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(e.r * 0.5, -2, 2, 0, Math.PI * 2); ctx.fill();
   }
   ctx.restore();
-  if (e.elite) { // gold ring + star: elites are worth hunting
+  if (e.elite) {
     ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(e.x, e.y, e.r + 7, 0, Math.PI * 2); ctx.stroke();
     ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';

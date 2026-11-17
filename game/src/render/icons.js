@@ -56,7 +56,7 @@ export function drawWeaponIcon(ctx, id, x, y, s, owned) {
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(18, 0); ctx.stroke();
     ctx.fillStyle = '#ff2e88'; ctx.beginPath(); ctx.arc(19, 0, 3, 0, Math.PI * 2); ctx.fill();
-  } else if (id === 'trident') { // a steel trident: shaft + 3 prongs
+  } else if (id === 'trident') {
     ctx.strokeStyle = '#c8d8e0'; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(-14, 0); ctx.lineTo(10, 0); ctx.stroke();
     ctx.strokeStyle = '#e8f4ff'; ctx.lineWidth = 3;
@@ -117,7 +117,6 @@ export function drawCoin(ctx, x, y, r) {
 }
 
 // Level pips.
-// empty = the rest. Centred on (cx, y).
 export function drawPips(ctx, cx, y, lv, next) {
   for (let i = 0; i < WEAPON_MAX; i += 1) {
     ctx.fillStyle = i < lv ? '#7fe0c3' : (next && i === lv ? '#ffd166' : 'rgba(255,255,255,0.25)');

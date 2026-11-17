@@ -88,13 +88,12 @@ export function recordRun(state, meta) {
     won: state.result === 'won', stage: state.stage, score: state.score,
     diff, time: Math.round(state.time),
   };
-  const runs = [run, ...meta.runs].slice(0, 9); // keep 3 per difficulty for HISTORY
+  const runs = [run, ...meta.runs].slice(0, 9);
   const next = { bests, feats, runs, wins };
   writeJson(BESTS_KEY, bests);
   writeJson(FEATS_KEY, feats);
   writeJson(RUNS_KEY, runs);
   writeJson(WINS_KEY, wins);
-  // Keep the legacy single best in step.
   try { window.localStorage.setItem(LEGACY_BEST_KEY, String(Math.max(...DIFF_ORDER.map((d) => bests[d] || 0)))); } catch { /* ignore */ }
   return { meta: next, earned, award };
 }
