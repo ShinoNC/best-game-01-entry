@@ -28,6 +28,7 @@ export function readMeta() {
   return {
     best,
     bestStage: readJson('tidekeeper-best-stage', 0) || 0,
+    bestLevel: readJson('tidekeeper-best-level', 0) || 0,
     feats: Array.isArray(feats) ? feats.filter((id) => FEAT_IDS.includes(id)) : [],
     runs: Array.isArray(runs) ? runs.slice(0, 9) : [],
   };
@@ -49,13 +50,15 @@ export function featsEarnedThisRun(state, unlocked) {
 export function recordRun(state, meta) {
   const best = Math.max(meta.best || 0, state.score);
   const bestStage = Math.max(meta.bestStage || 0, state.stage);
+  const bestLevel = Math.max(meta.bestLevel || 0, state.level);
   const earned = featsEarnedThisRun(state, meta.feats);
   const feats = [...new Set([...meta.feats, ...earned])];
   const run = { stage: state.stage, score: state.score, level: state.level, time: Math.round(state.time) };
   const runs = [run, ...meta.runs].slice(0, 9);
-  const next = { best, bestStage, feats, runs };
+  const next = { best, bestStage, bestLevel, feats, runs };
   writeJson(BESTS_KEY, best);
   writeJson('tidekeeper-best-stage', bestStage);
+  writeJson('tidekeeper-best-level', bestLevel);
   writeJson(FEATS_KEY, feats);
   writeJson(RUNS_KEY, runs);
   try { window.localStorage.setItem(LEGACY_BEST_KEY, String(best)); } catch {}

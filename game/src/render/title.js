@@ -1,7 +1,7 @@
 import { CREATURE_ORDER, ENEMIES, PAL, VIEW_W } from '../config.js';
 import { drawCrab, drawEnemy } from './creatures.js';
-import { titleLayout } from './layout.js';
-import { bevel, logoText, rr, txt } from './polish.js';
+import { MENU_ITEMS, titleLayout } from './layout.js';
+import { bevel, logoText, pxPanel, txt } from './polish.js';
 
 const AMBIENT = [];
 for (let i = 0; i < 24; i += 1) {
@@ -49,12 +49,8 @@ export function drawTitle(ctx, state) {
   ];
   let tagW = 0;
   for (const p of tagParts) { ctx.font = p.f; tagW += ctx.measureText(p.t).width; }
-  ctx.save();
-  ctx.fillStyle = 'rgba(0,0,0,0.5)';
-  ctx.fillRect(VIEW_W / 2 - tagW / 2 - 18 + 4, 142 + 4, tagW + 36, 44);
-  ctx.fillStyle = 'rgba(6,42,51,0.72)';
-  rr(ctx, VIEW_W / 2 - tagW / 2 - 18, 142, tagW + 36, 44, 22); ctx.fill();
-  ctx.restore();
+  pxPanel(ctx, VIEW_W / 2 - tagW / 2 - 18, 142, tagW + 36, 44,
+    'rgba(6,42,51,0.72)', 'rgba(4,26,32,0.72)', PAL.gold);
   ctx.textAlign = 'left';
   let tx = VIEW_W / 2 - tagW / 2;
   for (const p of tagParts) {
@@ -63,29 +59,31 @@ export function drawTitle(ctx, state) {
     tx += ctx.measureText(p.t).width;
   }
   ctx.textAlign = 'center';
-  const best = (state.meta || {}).best || 0;
   const bestStage = (state.meta || {}).bestStage || 0;
-  if (best > 0) {
+  const bestLevel = (state.meta || {}).bestLevel || 0;
+  if (bestStage > 0 || bestLevel > 0) {
     ctx.font = 'bold 17px sans-serif';
-    txt(ctx, `✦ BEST ${best} · STAGE ${bestStage} ✦`, VIEW_W / 2, 202, PAL.gold);
+    txt(ctx, `✦ BEST STAGE ${bestStage} · BEST LEVEL ${bestLevel} ✦`, VIEW_W / 2, 202, PAL.gold);
   }
   const TL = titleLayout();
-  const items = [['start', 'START GAME'], ['help', 'HOW TO PLAY  ?'], ['feats', 'ACHIEVEMENTS'],
-    ['history', 'HISTORY'], ['settings', 'SETTINGS']];
+  const labels = { play: 'PLAY',
+    help: 'HOW TO PLAY  ?', feats: 'ACHIEVEMENTS', history: 'HISTORY', settings: 'SETTINGS' };
+  const items = MENU_ITEMS;
   for (let i = 0; i < items.length; i += 1) {
-    const [key, label] = items[i];
+    const key = items[i];
+    const label = labels[key];
     const b = TL[key];
     const sel = state.menuSel === i;
-    const isStart = key === 'start';
-    if (isStart) bevel(ctx, b.x, b.y, b.w, b.h, 10, '#ffe08a', '#f0b23e', PAL.gold, 2);
+    const isPlay = key === 'play';
+    if (isPlay) bevel(ctx, b.x, b.y, b.w, b.h, 10, '#ffe08a', '#f0b23e', PAL.gold, 2);
     else bevel(ctx, b.x, b.y, b.w, b.h, 10, '#11566b', '#062a33', sel ? PAL.gold : PAL.foam, sel ? 3 : 2);
-    if (sel && !isStart) {
+    if (sel && !isPlay) {
       ctx.strokeStyle = 'rgba(255,209,102,0.45)'; ctx.lineWidth = 2;
       ctx.strokeRect(b.x - 4, b.y - 4, b.w + 8, b.h + 8);
     }
-    const ty = b.y + (isStart ? 41 : 30);
-    ctx.font = isStart ? 'bold 24px sans-serif' : 'bold 18px sans-serif';
-    if (isStart) {
+    const ty = b.y + (isPlay ? 41 : 30);
+    ctx.font = isPlay ? 'bold 24px sans-serif' : 'bold 18px sans-serif';
+    if (isPlay) {
       ctx.fillStyle = 'rgba(255,255,255,0.55)';
       ctx.fillText(label, b.x + b.w / 2, ty - 1);
       ctx.fillStyle = '#062a33';

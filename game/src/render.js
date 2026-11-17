@@ -4,7 +4,7 @@ import { drawCrab, drawEnemy } from './render/creatures.js';
 import { drawPool } from './render/pool.js';
 import { drawHud, drawPaused } from './render/hud.js';
 import { drawTitle } from './render/title.js';
-import { drawAchievements, drawHelp, drawHistory, drawSettings } from './render/overlays.js';
+import { drawAchievements, drawHelp, drawHistory, drawSettings, drawSlots } from './render/overlays.js';
 import { drawStageMenu } from './render/menu.js';
 import { drawLevelUp } from './render/levelup.js';
 import { drawOver } from './render/over.js';
@@ -117,45 +117,58 @@ export function createRenderer(canvas) {
         if (b.kind === 'arrow') {
           const ba = Math.atan2(b.vy, b.vx);
           ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(ba);
-          ctx.fillStyle = 'rgba(191,232,224,0.8)';
-          ctx.fillRect(-16, -2, 24, 4);
+          ctx.fillStyle = '#1a2230';
+          ctx.fillRect(-18, -4, 28, 8);
+          ctx.fillStyle = 'rgba(191,232,224,0.9)';
+          ctx.fillRect(-16, -3, 24, 6);
           ctx.fillStyle = '#e8fffa';
-          ctx.fillRect(4, -4, 8, 8);
+          ctx.fillRect(4, -5, 10, 10);
           ctx.restore();
         } else if (b.kind === 'pellet') {
+          const s = Math.max(6, b.r * 2);
+          ctx.fillStyle = '#1a2230';
+          ctx.fillRect(b.x - s / 2 - 2, b.y - s / 2 - 2, s + 4, s + 4);
           ctx.fillStyle = '#7b5cff';
-          ctx.fillRect(b.x - b.r, b.y - b.r, b.r * 2, b.r * 2);
-          ctx.fillStyle = 'rgba(255,255,255,0.5)';
-          ctx.fillRect(b.x - b.r, b.y - b.r, 3, 3);
+          ctx.fillRect(b.x - s / 2, b.y - s / 2, s, s);
+          ctx.fillStyle = '#c4b5fd';
+          ctx.fillRect(b.x - s / 2, b.y - s / 2, 3, 3);
         } else if (b.kind === 'homing') {
           const ba = Math.atan2(b.vy, b.vx);
           ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(ba);
           ctx.fillStyle = 'rgba(216,207,232,0.6)';
           ctx.fillRect(-18, -1, 10, 2);
           ctx.restore();
+          const s = Math.max(6, b.r * 2);
+          ctx.fillStyle = '#1a2230';
+          ctx.fillRect(b.x - s / 2 - 2, b.y - s / 2 - 2, s + 4, s + 4);
           ctx.fillStyle = '#d8cfe8';
-          ctx.fillRect(b.x - b.r, b.y - b.r, b.r * 2, b.r * 2);
+          ctx.fillRect(b.x - s / 2, b.y - s / 2, s, s);
           const oa = t * 6;
           ctx.fillStyle = '#a894c4';
           ctx.fillRect(b.x + Math.cos(oa) * b.r * 0.55 - 2, b.y + Math.sin(oa) * b.r * 0.55 - 2, 4, 4);
           ctx.fillStyle = '#fff';
-          ctx.fillRect(b.x - b.r, b.y - b.r, 3, 3);
+          ctx.fillRect(b.x - s / 2, b.y - s / 2, 3, 3);
         } else if (b.kind === 'harpoon') {
           const ba = Math.atan2(b.vy, b.vx);
           ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(ba);
+          ctx.fillStyle = '#1a2230';
+          ctx.fillRect(-16, -4, 34, 8);
           ctx.fillStyle = '#c8d8e0';
-          ctx.fillRect(-14, -2, 20, 4);
+          ctx.fillRect(-14, -3, 20, 6);
           ctx.fillStyle = '#e8f4ff';
-          ctx.fillRect(6, -5, 8, 10);
-          ctx.fillRect(14, -2, 4, 4);
+          ctx.fillRect(6, -6, 10, 12);
+          ctx.fillRect(16, -3, 4, 6);
           ctx.restore();
         }
       }
       for (const s of state.spits) {
+        const sz = Math.max(6, s.r * 2);
+        ctx.fillStyle = '#1a2230';
+        ctx.fillRect(s.x - sz / 2 - 2, s.y - sz / 2 - 2, sz + 4, sz + 4);
         ctx.fillStyle = s.color || '#a8e6ff';
-        ctx.fillRect(s.x - s.r, s.y - s.r, s.r * 2, s.r * 2);
+        ctx.fillRect(s.x - sz / 2, s.y - sz / 2, sz, sz);
         ctx.fillStyle = '#fff';
-        ctx.fillRect(s.x - s.r, s.y - s.r, 3, 3);
+        ctx.fillRect(s.x - sz / 2, s.y - sz / 2, 3, 3);
       }
       for (const e of state.enemies) {
         const ix = lerp(e.px ?? e.x, e.x), iy = lerp(e.py ?? e.y, e.y);
@@ -187,6 +200,7 @@ export function createRenderer(canvas) {
       else if (state.overlay === 'feats') drawAchievements(ctx, state);
       else if (state.overlay === 'history') drawHistory(ctx, state);
       else if (state.overlay === 'settings') drawSettings(ctx, state);
+      else if (state.overlay === 'slots') drawSlots(ctx, state);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
     },
   };

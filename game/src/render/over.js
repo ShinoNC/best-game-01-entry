@@ -1,6 +1,7 @@
 import { PAL, VIEW_H, VIEW_W } from '../config.js';
 import { overLayout } from './layout.js';
 import { bevel, logoText, txt } from './polish.js';
+import { loadSlot } from '../save.js';
 
 export function drawOver(ctx, state) {
   const mins = Math.floor(state.time / 60), secs = Math.floor(state.time % 60);
@@ -15,14 +16,21 @@ export function drawOver(ctx, state) {
   txt(ctx, `SCORE ${state.score}`, VIEW_W / 2, 300, PAL.gold, 3);
   ctx.font = 'bold 26px sans-serif';
   txt(ctx, `STAGE ${state.stage} · LEVEL ${state.level} · ${mins}:${String(secs).padStart(2, '0')}`, VIEW_W / 2, 348, PAL.text, 3);
-  const best = Math.max(state.best || 0, state.score);
   const bestStage = Math.max((state.meta || {}).bestStage || 0, state.stage);
+  const bestLevel = Math.max((state.meta || {}).bestLevel || 0, state.level);
   ctx.font = 'bold 18px sans-serif';
-  txt(ctx, `BEST ${best} · BEST STAGE ${bestStage}`, VIEW_W / 2, 382, PAL.gold, 3);
+  txt(ctx, `BEST STAGE ${bestStage} · BEST LEVEL ${bestLevel}`, VIEW_W / 2, 382, PAL.gold, 3);
+  const save = state.slot != null ? loadSlot(state.slot) : null;
   const L = overLayout();
-  bevel(ctx, L.playAgain.x, L.playAgain.y, L.playAgain.w, L.playAgain.h, 10, '#ffe08a', '#f0b23e', PAL.gold, 2);
-  ctx.font = 'bold 22px sans-serif';
-  txt(ctx, 'PLAY AGAIN', VIEW_W / 2, L.playAgain.y + 37, '#062a33');
+  if (save) {
+    bevel(ctx, L.cont.x, L.cont.y, L.cont.w, L.cont.h, 10, '#7fe0c3', '#2f8f6b', PAL.gold, 2);
+    ctx.font = 'bold 22px sans-serif';
+    txt(ctx, `CONTINUE · STAGE ${save.stage}`, VIEW_W / 2, L.cont.y + 37, '#062a33');
+  } else {
+    bevel(ctx, L.cont.x, L.cont.y, L.cont.w, L.cont.h, 10, '#2a4a52', '#16282e', 'rgba(255,255,255,0.25)', 2);
+    ctx.font = 'bold 22px sans-serif';
+    txt(ctx, 'CONTINUE', VIEW_W / 2, L.cont.y + 37, PAL.dim);
+  }
   bevel(ctx, L.menu.x, L.menu.y, L.menu.w, L.menu.h, 8, '#11566b', '#062a33', PAL.foam, 2);
   ctx.font = 'bold 17px sans-serif';
   txt(ctx, 'MENU', VIEW_W / 2, L.menu.y + 29, PAL.text);

@@ -4,6 +4,7 @@ import { hurtPlayer, nearestEnemy, updatePlayer } from './player.js';
 import { drawHand } from './cards.js';
 import { updateHints } from './tutorial.js';
 import { gainXp, rollLevelChoices } from './level.js';
+import { saveRun } from './save.js';
 
 export const STEP = 1 / 60;
 
@@ -70,6 +71,7 @@ export function nextStage(state, audio) {
   } else {
     state.banner = `THE TIDE TURNS — ${envForStage(state.stage, state.envs).name}`; state.bannerT = 3;
   }
+  saveRun(state);
 }
 
 export function stepWorld(state, input, dt, fx, audio) {
@@ -94,6 +96,7 @@ export function stepWorld(state, input, dt, fx, audio) {
       state.rerolls = 0; state.menuMsg = ''; state.menuMsgT = 0;
       state.phase = 'stageclear';
       audio.clear();
+      saveRun(state);
     }
     return;
   }

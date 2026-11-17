@@ -1,7 +1,7 @@
 import { PAL, VIEW_W } from '../config.js';
 import { drawSkillIcon } from './icons.js';
 import { levelupLayout } from './layout.js';
-import { txt } from './polish.js';
+import { pxPanel, txt } from './polish.js';
 
 export function drawLevelUp(ctx, state, hover) {
   const L = levelupLayout();
@@ -16,12 +16,7 @@ export function drawLevelUp(ctx, state, hover) {
     const b = L.cards[i];
     const c = choices[i];
     const hov = hover && hover.x >= b.x && hover.x <= b.x + b.w && hover.y >= b.y && hover.y <= b.y + b.h;
-    ctx.fillStyle = '#0b4256';
-    ctx.fillRect(b.x, b.y, b.w, b.h);
-    ctx.strokeStyle = hov ? PAL.gold : PAL.foam;
-    ctx.lineWidth = hov ? 4 : 2;
-    ctx.strokeRect(b.x, b.y, b.w, b.h);
-    ctx.fillStyle = 'rgba(255,255,255,0.10)'; ctx.fillRect(b.x + 2, b.y + 1, b.w - 4, 2);
+    pxPanel(ctx, b.x, b.y, b.w, b.h, '#0b4256', '#082f3d', hov ? PAL.gold : PAL.foam);
     if (!c) continue;
     ctx.font = 'bold 13px sans-serif';
     txt(ctx, `[${i + 1}]`, b.x + b.w / 2, b.y + 24, PAL.dim);

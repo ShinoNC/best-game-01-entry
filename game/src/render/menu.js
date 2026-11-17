@@ -2,7 +2,7 @@ import { ARMOR_PER_BOSS, PAL, VIEW_H, VIEW_W, bossForStage, clusterMod, clusterO
 import { REROLL_COST, cardStats } from '../cards.js';
 import { drawCoin, drawPips, drawSkillIcon, drawWeaponIcon, heart } from './icons.js';
 import { stageMenuLayout } from './layout.js';
-import { bevel, rr, txt } from './polish.js';
+import { bevel, pxFrame, pxPanel, txt } from './polish.js';
 
 const KIND_COLOR = { skill: '#7fe0c3', wup: '#ffd166', weapon: '#c9a7ff', repair: '#ff8fb0' };
 
@@ -12,18 +12,12 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   ctx.save();
   if (card.bought) ctx.globalAlpha = 0.6;
   else if (poor) ctx.globalAlpha = 0.85;
-  ctx.fillStyle = 'rgba(0,0,0,0.45)';
-  ctx.fillRect(x + 4, y + 5, w, h);
-  ctx.fillStyle = '#0e5162';
-  rr(ctx, x, y, w, h, 8); ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,0.10)'; ctx.fillRect(x + 2, y + 1, w - 4, 2);
-  ctx.fillStyle = kc; ctx.fillRect(x, y, w, 6);
-  ctx.strokeStyle = card.bought ? '#7fe0c3' : hovered ? PAL.gold : poor ? 'rgba(159,196,189,0.4)' : kc;
-  ctx.lineWidth = hovered && !card.bought ? 4 : 2;
-  rr(ctx, x, y, w, h, 8); ctx.stroke();
+  const border = card.bought ? '#7fe0c3' : hovered ? PAL.gold : poor ? 'rgba(159,196,189,0.4)' : kc;
+  pxPanel(ctx, x, y, w, h, '#0e5162', '#0a3d4a', border);
+  ctx.fillStyle = kc; ctx.fillRect(x + 3, y + 3, w - 6, 6);
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x + 3, y + 9, w - 6, 2);
   if (hovered && !card.bought) {
-    ctx.strokeStyle = 'rgba(255,209,102,0.45)'; ctx.lineWidth = 2;
-    ctx.strokeRect(x - 3, y - 3, w + 6, h + 6);
+    pxFrame(ctx, x - 4, y - 4, w + 8, h + 8, 'rgba(255,209,102,0.6)', 2);
   }
   ctx.textAlign = 'center';
   ctx.font = 'bold 12px sans-serif';

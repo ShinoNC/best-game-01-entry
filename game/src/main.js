@@ -8,6 +8,7 @@ import { MENU_ITEMS, createRenderer, levelupLayout, overLayout, stageMenuLayout,
 import { STEP, nextStage, stepWorld } from './world.js';
 import { REROLL_COST, autoBuy, buyCard, rerollHand } from './cards.js';
 import { applyLevelChoice, rollLevelChoices } from './level.js';
+import { SLOT_COUNT, clearSlot, hasSlotSave, loadSlot } from './save.js';
 import { stageShot } from './shots.js';
 import { overlayLayout } from './render/overlays.js';
 import { featsEarnedThisRun, readMeta, recordRun } from './meta.js';
@@ -136,8 +137,22 @@ function handleOverlay() {
   if (!state.overlay) return false;
   const L = overlayLayout(state);
   if (input.helpPressed() || input.pausePressed()) { state.overlay = null; return true; }
+  if (state.overlay === 'slots') {
+    const n = input.numberPressed();
+    if (n >= 1 && n <= SLOT_COUNT) { pickSlot(n - 1); return true; }
+  }
   if (input.click()) {
     const m = toLogical(input.mouse().x, input.mouse().y);
+    if (state.overlay === 'slots') {
+      if (inBox(m, L.close) || !inBox(m, L.panel)) { state.overlay = null; return true; }
+      for (let i = 0; i < SLOT_COUNT; i += 1) {
+        if (L.dels[i] && inBox(m, L.dels[i]) && hasSlotSave(i)) { clearSlot(i); return true; }
+      }
+      for (let i = 0; i < SLOT_COUNT; i += 1) {
+        if (inBox(m, L.cards[i])) { pickSlot(i); return true; }
+      }
+      return true;
+    }
     if (inBox(m, L.close) || !inBox(m, L.panel)) { state.overlay = null; return true; }
     if (L.sound && inBox(m, L.sound)) { audio.toggleMute(); return true; }
     if (L.music && inBox(m, L.music)) { audio.toggleMusic(); return true; }
@@ -145,15 +160,69 @@ function handleOverlay() {
   return true;
 }
 
-function startRun() {
+function startRun(slot) {
   audio.unlock();
+  state.slot = slot;
   state.phase = 'play';
   state.banner = 'STAGE 1 — SLAY THEM ALL'; state.bannerT = 3;
   status.textContent = 'Endless stages. A sea beast waits at every fifth stage!';
 }
 
+function pickSlot(i) {
+  state.overlay = null;
+  const s = loadSlot(i);
+  if (s) continueRun(i, s);
+  else startRun(i);
+}
+
+function rebindTide() {
+  window.__tide = { state, fx, audio, step: (inp) => stepWorld(state, inp, STEP, fx, audio), STEP,
+    menuLayout: () => stageMenuLayout(state), toScreen, toLogical, viewTransform: () => renderer.viewTransform(),
+    autoBuy: () => autoBuy(state) };
+}
+
+// Resume the saved run in a slot: rebuild the run from its seed, restore
+// progression, and retry the stage the player lost on (or the shop they left).
+function continueRun(slot, s) {
+  s = s || loadSlot(slot);
+  if (!s) return;
+  audio.unlock();
+  const best = state.best;
+  const meta = state.meta;
+  state = createState(createRandom(s.seed), s.seed);
+  state.best = best;
+  state.meta = meta;
+  state.audio = audio;
+  state.slot = slot;
+  state.stage = s.stage;
+  state.level = s.level; state.xp = s.xp; state.xpNext = s.xpNext;
+  state.coins = s.coins; state.coinsEarned = s.coinsEarned;
+  state.score = s.score; state.kills = s.kills; state.time = s.time || 0;
+  Object.assign(state.player, { hp: s.hp, maxHp: s.maxHp, armor: s.armor || 0,
+    speed: s.speed, magnet: s.magnet, shellTier: s.shellTier || 0 });
+  state.weapons = { ...state.weapons, ...s.weapons };
+  state.ups = { ...state.ups, ...s.ups };
+  state.stats = { ...state.stats, ...(s.stats || {}) };
+  state.rerolls = s.rerolls || 0;
+  if (s.phase === 'stageclear') {
+    state.hand = s.hand || [];
+    state.clearBonus = s.clearBonus || 0;
+    state.phase = 'stageclear';
+    status.textContent = `Back to the shop — stage ${s.stage} clear!`;
+  } else {
+    state.stageSpawned = 0; state.stageEliteDone = false;
+    state.spits = []; state.spawnT = 0.8; state.hand = [];
+    state.stageTaken = 0; state.bossSpawned = false; state.boss = null;
+    state.phase = 'play';
+    state.banner = `STAGE ${s.stage} — SLAY THEM ALL`; state.bannerT = 3;
+    status.textContent = `Stage ${s.stage} — the tide waits for no crab.`;
+  }
+  fx.clear();
+  rebindTide();
+}
+
 function activateMenu(item) {
-  if (item === 'start') startRun();
+  if (item === 'play') state.overlay = 'slots';
   else state.overlay = item;
 }
 
@@ -229,12 +298,19 @@ function handleMenus() {
   }
   if (state.phase === 'over') {
     if (input.wasPressed('escape')) { toTitle(); menuPhase = 'title'; return; }
-    if (input.restartPressed()) { restart(); menuPhase = 'play'; return; }
+    if (input.restartPressed()) {
+      if (hasSlotSave(state.slot)) { continueRun(state.slot); menuPhase = 'play'; }
+      return;
+    }
     if (input.click()) {
       const m = toLogical(input.mouse().x, input.mouse().y);
-      if (inBox(m, overLayout().menu)) { toTitle(); menuPhase = 'title'; return; }
-      restart();
-      menuPhase = 'play';
+      const L = overLayout();
+      if (inBox(m, L.cont)) {
+        if (hasSlotSave(state.slot)) { continueRun(state.slot); menuPhase = 'play'; }
+        else menuPhase = 'over';
+        return;
+      }
+      if (inBox(m, L.menu)) { toTitle(); menuPhase = 'title'; return; }
     }
     menuPhase = 'over';
   }
@@ -250,13 +326,14 @@ function freshState(phase) {
   state.audio = audio;
   state.phase = phase;
   fx.clear();
-  window.__tide = { state, fx, audio, step: (inp) => stepWorld(state, inp, STEP, fx, audio), STEP,
-    menuLayout: () => stageMenuLayout(state), toScreen, toLogical, viewTransform: () => renderer.viewTransform(),
-    autoBuy: () => autoBuy(state) };
+  rebindTide();
 }
 
 function restart() {
+  const slot = state.slot;
+  if (slot != null) clearSlot(slot);
   freshState('play');
+  state.slot = slot;
   state.banner = 'STAGE 1 — SLAY THEM ALL'; state.bannerT = 3;
   status.textContent = 'A new tide. How far can you go?';
 }

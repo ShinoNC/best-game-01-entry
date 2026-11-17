@@ -1,6 +1,8 @@
 import { ARMOR_PER_BOSS, BOSS_STAGES, CREATURE_NAMES, CREATURE_ORDER, ENEMIES, FEAT_DESCS, FEAT_IDS, FEAT_NAMES, MODIFIERS, PAL, VIEW_W, bossForStage } from '../config.js';
 import { drawEnemy } from './creatures.js';
-import { bevel, lift, txt } from './polish.js';
+import { slotsLayout } from './layout.js';
+import { bevel, lift, pxFrame, pxPanel, txt } from './polish.js';
+import { SLOT_COUNT, loadSlot } from '../save.js';
 
 const BIG = { x: 140, y: 60, w: 1000, h: 580 };
 const BIG_CLOSE = { x: 560, y: 576, w: 160, h: 44 };
@@ -18,13 +20,12 @@ export function overlayLayout(state) {
   if (state.overlay === 'history') return { close: HIST_CLOSE, panel: HIST_PANEL };
   if (state.overlay === 'feats') return { close: FEAT_CLOSE, panel: FEAT_PANEL };
   if (state.overlay === 'settings') return { close: SET_CLOSE, sound: SET_SOUND, music: SET_MUSIC, panel: SET_PANEL };
+  if (state.overlay === 'slots') return slotsLayout();
   return null;
 }
 
 function panel(ctx, p) {
   lift(ctx, p.x, p.y, p.w, p.h, 8);
-  ctx.strokeStyle = PAL.gold; ctx.lineWidth = 2;
-  ctx.strokeRect(p.x, p.y, p.w, p.h);
 }
 
 function closeButton(ctx, b) {
@@ -139,7 +140,7 @@ export function drawHistory(ctx, state) {
   ctx.font = 'bold 28px sans-serif';
   txt(ctx, 'HISTORY', VIEW_W / 2, 100, PAL.gold);
   ctx.font = 'bold 18px sans-serif';
-  txt(ctx, `BEST ${meta.best || 0} · BEST STAGE ${meta.bestStage || 0}`, VIEW_W / 2, 136, PAL.gold);
+  txt(ctx, `BEST STAGE ${meta.bestStage || 0} · BEST LEVEL ${meta.bestLevel || 0}`, VIEW_W / 2, 136, PAL.gold);
   if (runs.length === 0) {
     ctx.font = '15px sans-serif';
     txt(ctx, 'No runs yet.', VIEW_W / 2, 200, PAL.dim);
@@ -158,6 +159,49 @@ export function drawHistory(ctx, state) {
   dimHint(ctx, 444);
 }
 
+export function drawSlots(ctx, state) {
+  const L = slotsLayout();
+  ctx.fillStyle = 'rgba(6,42,51,0.6)'; ctx.fillRect(0, 0, 1280, 720);
+  panel(ctx, L.panel);
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 30px sans-serif';
+  txt(ctx, 'CHOOSE A SAVE SLOT', VIEW_W / 2, 105, PAL.gold);
+  ctx.font = '15px sans-serif';
+  txt(ctx, 'Pick a slot to continue — or an empty slot to start fresh.', VIEW_W / 2, 132, PAL.dim);
+  for (let i = 0; i < SLOT_COUNT; i += 1) {
+    const c = L.cards[i];
+    const s = loadSlot(i);
+    pxPanel(ctx, c.x, c.y, c.w, c.h, '#0e5162', '#0a3d4a', s ? PAL.gold : PAL.foam);
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 22px sans-serif';
+    txt(ctx, `SLOT ${i + 1}`, c.x + 28, c.y + 40, PAL.gold);
+    if (s) {
+      ctx.font = 'bold 18px sans-serif';
+      txt(ctx, `STAGE ${s.stage} · LEVEL ${s.level}`, c.x + 28, c.y + 74, PAL.text);
+      ctx.font = '14px sans-serif';
+      const when = s.playedAt ? new Date(s.playedAt).toLocaleString(undefined,
+        { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+      txt(ctx, when ? `Last played ${when}` : '', c.x + 28, c.y + 100, PAL.dim);
+      ctx.textAlign = 'right';
+      ctx.font = 'bold 16px sans-serif';
+      txt(ctx, s.phase === 'stageclear' ? 'AT THE SHOP — TAP TO CONTINUE' : 'TAP TO CONTINUE',
+        c.x + c.w - 80, c.y + 74, '#7fe0c3');
+      const d = L.dels[i];
+      bevel(ctx, d.x, d.y, d.w, d.h, 6, '#e85d6a', '#a32c38', '#ff8fa0', 2);
+      ctx.textAlign = 'center'; ctx.font = 'bold 22px sans-serif';
+      txt(ctx, '×', d.x + d.w / 2, d.y + 29, '#fff');
+    } else {
+      ctx.font = 'bold 18px sans-serif';
+      txt(ctx, 'EMPTY — NEW GAME', c.x + 28, c.y + 74, PAL.dim);
+      ctx.textAlign = 'right';
+      ctx.font = 'bold 16px sans-serif';
+      txt(ctx, 'TAP TO START', c.x + c.w - 28, c.y + 74, '#7fe0c3');
+    }
+  }
+  closeButton(ctx, L.close);
+  dimHint(ctx, 664);
+}
+
 export function drawSettings(ctx, state) {
   const audio = state.audio || {};
   const soundOn = !audio.muted, musicOn = audio.music !== false;
@@ -172,7 +216,7 @@ export function drawSettings(ctx, state) {
     txt(ctx, label, 480, row.y + 25, PAL.text);
     ctx.fillStyle = on ? '#2f8f6b' : 'rgba(255,255,255,0.15)';
     ctx.fillRect(row.x, row.y, row.w, row.h);
-    ctx.strokeStyle = PAL.foam; ctx.lineWidth = 1; ctx.strokeRect(row.x, row.y, row.w, row.h);
+    pxFrame(ctx, row.x, row.y, row.w, row.h, PAL.foam, 2);
     ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
     txt(ctx, on ? 'ON' : 'OFF', row.x + row.w / 2, row.y + 25, on ? '#fff' : PAL.dim);
   }

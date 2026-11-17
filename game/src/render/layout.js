@@ -19,11 +19,11 @@ export function stageMenuLayout(state) {
 }
 
 export const MENU_BTN_W = 340, MENU_BTN_H = 48, MENU_BTN_GAP = 16;
-export const MENU_ITEMS = ['start', 'help', 'feats', 'history', 'settings'];
+export const MENU_ITEMS = ['play', 'help', 'feats', 'history', 'settings'];
 export function titleLayout() {
   const x = VIEW_W / 2 - MENU_BTN_W / 2;
   return {
-    start: { x, y: 248, w: MENU_BTN_W, h: 66 },
+    play: { x, y: 248, w: MENU_BTN_W, h: 66 },
     help: { x, y: 330, w: MENU_BTN_W, h: MENU_BTN_H },
     feats: { x, y: 394, w: MENU_BTN_W, h: MENU_BTN_H },
     history: { x, y: 458, w: MENU_BTN_W, h: MENU_BTN_H },
@@ -33,9 +33,18 @@ export function titleLayout() {
 
 export function overLayout() {
   return {
-    playAgain: { x: VIEW_W / 2 - 150, y: 440, w: 300, h: 56 },
+    cont: { x: VIEW_W / 2 - 150, y: 440, w: 300, h: 56 },
     menu: { x: VIEW_W / 2 - 100, y: 516, w: 200, h: 44 },
   };
+}
+
+// Slot-selection screen: 3 stacked cards inside the big overlay panel.
+export const SLOT_PANEL = { x: 140, y: 60, w: 1000, h: 580 };
+export const SLOT_CLOSE = { x: 560, y: 576, w: 160, h: 44 };
+export function slotsLayout() {
+  const cards = [0, 1, 2].map((i) => ({ x: 170, y: 150 + i * 140, w: 940, h: 120 }));
+  const dels = cards.map((c) => ({ x: c.x + c.w - 56, y: c.y + 12, w: 40, h: 40 }));
+  return { panel: SLOT_PANEL, close: SLOT_CLOSE, cards, dels };
 }
 
 export const LV_CARD_W = 260, LV_CARD_H = 200, LV_CARD_GAP = 24, LV_CARD_Y = 280;

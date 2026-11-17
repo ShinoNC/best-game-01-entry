@@ -2,17 +2,20 @@ import { CREATURE_NAMES, PAL, STAGES, VIEW_H, VIEW_W, WEAPON_ORDER, bossForStage
 import { UPGRADE_DEFS } from '../upgrades.js';
 import { comboMult } from '../world.js';
 import { drawCoin, drawSkillIcon, drawWeaponIcon, heart } from './icons.js';
-import { pxBar, txt } from './polish.js';
+import { dither, pxBar, pxFrame, pxPanel, txt } from './polish.js';
 
 export function drawHud(ctx, state, t) {
   const p = state.player;
   ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = 'rgba(6,42,51,0.92)';
+  ctx.fillStyle = dither(ctx, 'rgba(6,42,51,0.92)', 'rgba(4,26,32,0.92)');
   ctx.fillRect(0, 0, VIEW_W, 72);
   ctx.fillRect(0, VIEW_H - 72, VIEW_W, 72);
-  ctx.fillStyle = 'rgba(255,255,255,0.14)';
-  ctx.fillRect(0, 70, VIEW_W, 2);
-  ctx.fillRect(0, VIEW_H - 72, VIEW_W, 2);
+  // Chunky pixel divider: alternating gold / dark blocks.
+  for (let x = 0; x < VIEW_W; x += 16) {
+    ctx.fillStyle = (x / 16) % 2 === 0 ? 'rgba(255,209,102,0.55)' : 'rgba(4,26,32,0.9)';
+    ctx.fillRect(x, 70, 16, 3);
+    ctx.fillRect(x, VIEW_H - 75, 16, 3);
+  }
   const remaining = (STAGES[contentStage(state) - 1].budget - state.stageSpawned) + state.enemies.length;
   const nx = state.stage + 1;
   const nextBoss = bossForStage(nx, state.bossOrder);
@@ -30,7 +33,7 @@ export function drawHud(ctx, state, t) {
   ctx.font = 'bold 30px sans-serif';
   txt(ctx, `SCORE ${state.score}`, 1252, 38, PAL.gold);
   ctx.font = 'bold 15px sans-serif';
-  const coinTxt = `${state.coins} COINS · COMBO ×${comboMult(state)} · BEST ${state.best}`;
+  const coinTxt = `${state.coins} COINS · COMBO ×${comboMult(state)} · BEST STAGE ${(state.meta || {}).bestStage || 0}`;
   txt(ctx, coinTxt, 1252, 60, PAL.gold);
   drawCoin(ctx, 1252 - ctx.measureText(coinTxt).width - 13, 55, 8);
   if (STAGES[contentStage(state) - 1].boss && !state.bossSpawned && !state.boss) {
@@ -38,12 +41,12 @@ export function drawHud(ctx, state, t) {
     const warn = `⚠ ${boss ? boss.name : 'THE BEAST'} IS COMING ⚠`;
     ctx.font = 'bold 17px sans-serif';
     const ww = ctx.measureText(warn).width + 40;
-    ctx.fillStyle = 'rgba(6,42,51,0.85)'; ctx.fillRect(VIEW_W / 2 - ww / 2, 78, ww, 32);
+    pxPanel(ctx, VIEW_W / 2 - ww / 2, 78, ww, 32, 'rgba(6,42,51,0.85)', 'rgba(4,26,32,0.85)', '#ff5d73');
     ctx.textAlign = 'center';
     txt(ctx, warn, VIEW_W / 2, 100, `rgba(255,93,115,${0.6 + 0.4 * Math.sin(t * 6)})`);
   }
   if (state.boss) {
-    ctx.fillStyle = 'rgba(6,42,51,0.85)'; ctx.fillRect(VIEW_W / 2 - 190, 78, 380, 34);
+    pxPanel(ctx, VIEW_W / 2 - 190, 78, 380, 34, 'rgba(6,42,51,0.85)', 'rgba(4,26,32,0.85)', '#ff5d73');
     ctx.textAlign = 'center'; ctx.font = 'bold 14px sans-serif';
     txt(ctx, state.boss.name, VIEW_W / 2, 94, '#e8e4d8');
     pxBar(ctx, VIEW_W / 2 - 180, 100, 360, 6, state.boss.hp / state.boss.maxHp, '#ff5d73', 12);
@@ -54,11 +57,10 @@ export function drawHud(ctx, state, t) {
     const id = WEAPON_ORDER[i];
     const lv = state.weapons[id];
     const bx = 28 + i * 56, by = 658;
-    ctx.fillStyle = lv > 0 ? 'rgba(127,224,195,0.22)' : 'rgba(255,255,255,0.08)';
+    pxFrame(ctx, bx - 2, by - 2, 56, 56, lv > 0 ? '#7fe0c3' : 'rgba(255,255,255,0.25)', 2);
+    ctx.fillStyle = dither(ctx, lv > 0 ? 'rgba(127,224,195,0.22)' : 'rgba(255,255,255,0.08)',
+      'rgba(0,0,0,0.25)');
     ctx.fillRect(bx, by, 52, 52);
-    ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(bx, by, 52, 2);
-    ctx.strokeStyle = lv > 0 ? 'rgba(127,224,195,0.6)' : 'rgba(255,255,255,0.15)';
-    ctx.lineWidth = 1; ctx.strokeRect(bx, by, 52, 52);
     drawWeaponIcon(ctx, id, bx + 26, by + 16, 34, lv > 0);
     ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
     txt(ctx, lv > 0 ? WABBR[id] + lv : WABBR[id], bx + 26, by + 47, lv > 0 ? PAL.text : PAL.dim, 1);
@@ -89,11 +91,10 @@ export function drawHud(ctx, state, t) {
     const d = UPGRADE_DEFS[i];
     const lv = state.ups[d.id];
     const bx = 864 + i * 56, by = 658;
-    ctx.fillStyle = lv > 0 ? 'rgba(127,224,195,0.22)' : 'rgba(255,255,255,0.08)';
+    pxFrame(ctx, bx - 2, by - 2, 56, 56, lv > 0 ? '#7fe0c3' : 'rgba(255,255,255,0.25)', 2);
+    ctx.fillStyle = dither(ctx, lv > 0 ? 'rgba(127,224,195,0.22)' : 'rgba(255,255,255,0.08)',
+      'rgba(0,0,0,0.25)');
     ctx.fillRect(bx, by, 52, 52);
-    ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(bx, by, 52, 2);
-    ctx.strokeStyle = lv > 0 ? 'rgba(127,224,195,0.6)' : 'rgba(255,255,255,0.15)';
-    ctx.lineWidth = 1; ctx.strokeRect(bx, by, 52, 52);
     drawSkillIcon(ctx, d.id, bx + 26, by + 20, 30, lv > 0);
     ctx.font = 'bold 11px sans-serif';
     txt(ctx, lv > 0 ? SABBR[d.id] + lv : SABBR[d.id], bx + 26, by + 47, lv > 0 ? PAL.text : PAL.dim, 1);
@@ -105,8 +106,7 @@ export function drawHud(ctx, state, t) {
     ctx.textAlign = 'center'; ctx.globalAlpha = Math.min(1, state.bannerT);
     ctx.font = 'bold 30px sans-serif';
     const bw = ctx.measureText(state.banner).width + 56;
-    ctx.fillStyle = 'rgba(6,42,51,0.88)'; ctx.fillRect(VIEW_W / 2 - bw / 2, 146, bw, 40);
-    ctx.strokeStyle = PAL.gold; ctx.lineWidth = 2; ctx.strokeRect(VIEW_W / 2 - bw / 2, 146, bw, 40);
+    pxPanel(ctx, VIEW_W / 2 - bw / 2, 146, bw, 40, 'rgba(6,42,51,0.88)', 'rgba(4,26,32,0.88)', PAL.gold);
     txt(ctx, state.banner, VIEW_W / 2, 175, PAL.gold);
     ctx.globalAlpha = 1;
   }
@@ -119,8 +119,7 @@ export function drawHud(ctx, state, t) {
     const w = tw + 44 + 30;
     const y = 105;
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = 'rgba(6,42,51,0.88)'; ctx.fillRect(VIEW_W / 2 - w / 2, y - 24, w, 44);
-    ctx.strokeStyle = PAL.gold; ctx.lineWidth = 2; ctx.strokeRect(VIEW_W / 2 - w / 2, y - 24, w, 44);
+    pxPanel(ctx, VIEW_W / 2 - w / 2, y - 24, w, 44, 'rgba(6,42,51,0.88)', 'rgba(4,26,32,0.88)', PAL.gold);
     ctx.textAlign = 'center';
     txt(ctx, hint.icon, VIEW_W / 2 - w / 2 + 24, y + 5, PAL.gold);
     txt(ctx, hint.text, VIEW_W / 2 + 15, y + 5, PAL.text);

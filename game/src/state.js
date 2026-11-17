@@ -46,7 +46,7 @@ export function createState(rng, seed) {
   return {
     rng, seed, decor, theme, stageMix, envs, bossOrder, stageMap, sandCorner: ['tl', 'tr', 'bl', 'br'][((seed % 4) + 4) % 4], time: 0, phase: 'title', menuSel: 0,
     combo: 0, comboT: 0,
-    level: 1, xp: 0, xpNext: 21, levelChoices: null,
+    level: 1, xp: 0, xpNext: 84, levelChoices: null,
     player: {
       x: POOL.cx, y: POOL.cy + 40, px: POOL.cx, py: POOL.cy + 40,
       vx: 0, vy: 0, angle: -Math.PI / 2,
@@ -62,7 +62,7 @@ export function createState(rng, seed) {
     stage: 1, stageSpawned: 0, stageEliteDone: false, stageClearT: 0,
     enemies: [], bolts: [], spits: [], drops: [], pickups: [],
     kills: 0, score: 0, spawnT: 0.8, bossSpawned: false,
-    boss: null, banner: '', bannerT: 0, bubbleT: 6, result: null, best: 0,
+    boss: null, banner: '', bannerT: 0, bubbleT: 6, result: null, best: 0, slot: null,
     hand: [], rerolls: 0, clearBonus: 0, menuMsg: '', menuMsgT: 0,
     stats: { damage: 0, taken: 0, dashes: 0, spent: 0, rerolls: 0,
       bossesDown: 0, bestCombo: 0, maxCoins: 0, cleanStage: false },
