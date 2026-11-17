@@ -1,16 +1,5 @@
 import { WEAPON_MAX } from '../config.js';
 
-export function star(ctx, x, y, r, rot, color) {
-  ctx.fillStyle = color; ctx.beginPath();
-  for (let i = 0; i < 10; i += 1) {
-    const a = rot + (i * Math.PI) / 5, rr = i % 2 ? r * 0.45 : r;
-    const px = x + Math.cos(a) * rr, py = y + Math.sin(a) * rr;
-    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-  }
-  ctx.closePath(); ctx.fill();
-}
-
-
 export function heart(ctx, x, y, r, c) {
   ctx.fillStyle = c; ctx.beginPath();
   ctx.moveTo(x, y + r * 0.85);
@@ -75,38 +64,12 @@ export function drawWeaponIcon(ctx, id, x, y, s, owned) {
   ctx.restore();
 }
 
-export function drawAwardIcon(ctx, kind, x, y, s, color, locked) {
-  ctx.save(); ctx.translate(x, y); ctx.scale(s / 40, s / 40);
-  const c = locked ? '#5a6a6a' : color;
-  ctx.fillStyle = c; ctx.strokeStyle = c; ctx.lineWidth = 3; ctx.lineCap = 'round';
-  if (kind === 'MEDAL') {
-    for (const sgn of [-1, 1]) {
-      ctx.beginPath(); ctx.moveTo(sgn * 6, -16); ctx.lineTo(sgn * 1, -5); ctx.lineTo(sgn * 11, -5);
-      ctx.closePath(); ctx.fill();
-    }
-    ctx.beginPath(); ctx.arc(0, 4, 12, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
-    ctx.beginPath(); ctx.arc(-4, 0, 4, 0, Math.PI * 2); ctx.fill();
-  } else if (kind === 'CUP') {
-    ctx.beginPath(); ctx.moveTo(-11, -15); ctx.lineTo(11, -15); ctx.lineTo(8, 1); ctx.lineTo(-8, 1); ctx.closePath(); ctx.fill();
-    ctx.beginPath(); ctx.arc(-12, -9, 5, Math.PI * 0.5, Math.PI * 1.5); ctx.stroke();
-    ctx.beginPath(); ctx.arc(12, -9, 5, Math.PI * 1.5, Math.PI * 0.5); ctx.stroke();
-    ctx.fillRect(-2, 1, 4, 9); ctx.fillRect(-8, 10, 16, 4);
-  } else {
-    ctx.beginPath();
-    ctx.moveTo(-14, 8); ctx.lineTo(-14, -3); ctx.lineTo(-7, 3); ctx.lineTo(0, -11);
-    ctx.lineTo(7, 3); ctx.lineTo(14, -3); ctx.lineTo(14, 8); ctx.closePath(); ctx.fill();
-    ctx.fillRect(-14, 8, 28, 5);
-  }
-  ctx.restore();
-}
-
 export function drawCoin(ctx, x, y, r) {
   ctx.save();
   ctx.fillStyle = '#c9962e';
-  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(x - r, y - r, r * 2, r * 2);
   ctx.fillStyle = '#ffd166';
-  ctx.beginPath(); ctx.arc(x, y, r * 0.78, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(x - r * 0.7, y - r * 0.7, r * 1.4, r * 1.4);
   ctx.fillStyle = '#c9962e'; ctx.font = `bold ${Math.round(r * 1.15)}px sans-serif`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText('$', x, y + r * 0.08);

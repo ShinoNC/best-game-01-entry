@@ -1,25 +1,19 @@
-export function rr(ctx, x, y, w, h, r) {
+export function rr(ctx, x, y, w, h) {
   ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
-  ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
-  ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
-  ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r);
+  ctx.rect(x, y, w, h);
   ctx.closePath();
 }
 
 export function bevel(ctx, x, y, w, h, r, top, bottom, border, bw = 2) {
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 5;
-  const g = ctx.createLinearGradient(0, y, 0, y + h);
-  g.addColorStop(0, top); g.addColorStop(1, bottom);
-  ctx.fillStyle = g;
-  rr(ctx, x, y, w, h, r); ctx.fill();
+  ctx.fillStyle = top;
+  ctx.fillRect(x, y, w, h);
   ctx.restore();
   ctx.strokeStyle = border; ctx.lineWidth = bw;
-  rr(ctx, x, y, w, h, r); ctx.stroke();
+  ctx.strokeRect(x, y, w, h);
   ctx.fillStyle = 'rgba(255,255,255,0.22)';
-  rr(ctx, x + 2, y + 1, w - 4, Math.min(10, h / 3), r - 1); ctx.fill();
+  ctx.fillRect(x + 2, y + 1, w - 4, Math.min(8, h / 4));
 }
 
 export function logoText(ctx, text, x, y, font, top, bottom, outline, lw = 3) {
@@ -44,11 +38,11 @@ export function txt(ctx, text, x, y, fill, lw = 2) {
   ctx.restore();
 }
 
-export function lift(ctx, x, y, w, h, r = 4) {
+export function lift(ctx, x, y, w, h) {
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 6;
   ctx.fillStyle = 'rgba(6,42,51,0.94)';
-  rr(ctx, x, y, w, h, r); ctx.fill();
+  ctx.fillRect(x, y, w, h);
   ctx.restore();
   ctx.fillStyle = 'rgba(255,255,255,0.08)';
   ctx.fillRect(x + 2, y + 1, w - 4, 2);

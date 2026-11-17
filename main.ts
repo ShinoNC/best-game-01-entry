@@ -5,8 +5,8 @@
 // from a CDN, no network request at all. This program is only the handoff: it
 // copies game/ and screenshots/ into the grader's output directory and writes
 // dossier.json, the summary the judge reads, using the vendored make.fun
-// library. The game itself is a hermit crab holding a rockpool against 30
-// stages of creatures and six sea-beast bosses until high tide.
+// library. The game itself is a hermit crab holding a rockpool against endless
+// stages of creatures and six sea-beast bosses, levelling up as it goes.
 //
 // Run it locally with MAKEFUN_OUTPUT_DIR standing in for /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts

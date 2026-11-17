@@ -1,4 +1,5 @@
 import { envForStage, POOL } from '../config.js';
+import { imgFor } from '../sprites.js';
 
 function table(n, seed) {
   const a = []; let s = seed;
@@ -13,53 +14,54 @@ const rainDrops = table(60, 7654321);
 const glowDots = table(24, 987654);
 const motes = table(36, 24680);
 
-function drawWeed(ctx, d, env, t, swA, swS) {
-  ctx.save(); ctx.translate(d.x, d.y); ctx.globalAlpha = 0.9;
-  ctx.fillStyle = 'rgba(4,26,32,0.35)';
-  ctx.beginPath(); ctx.ellipse(0, 3, 14 * d.s, 5 * d.s, 0, 0, Math.PI * 2); ctx.fill();
-  const n = 3 + Math.floor((d.rot * 10) % 3);
-  for (let i = 0; i < n; i += 1) {
-    const off = (i - (n - 1) / 2) * 6 * d.s;
-    const h = Math.min((44 + ((i * 17 + Math.floor(d.rot * 100)) % 36)) * d.s, d.y - POOL.y0 - 6);
-    const sw = Math.sin(t * swS + i * 1.3 + d.rot) * swA;
-    ctx.fillStyle = i % 2 ? env.weed2 : env.weed;
-    ctx.beginPath();
-    ctx.moveTo(off - 3 * d.s, 0);
-    ctx.quadraticCurveTo(off + sw * 0.3 - 2 * d.s, -h * 0.6, off + sw, -h);
-    ctx.quadraticCurveTo(off + sw * 0.3 + 2 * d.s, -h * 0.6, off + 3 * d.s, 0);
-    ctx.closePath(); ctx.fill();
-  }
-  ctx.restore();
+function patternFor(ctx, name, cache) {
+  const img = imgFor(name);
+  if (!img) return null;
+  if (cache.img === img && cache.pat) return cache.pat;
+  const pat = ctx.createPattern(img, 'repeat');
+  cache.img = img; cache.pat = pat;
+  return pat;
 }
-
-let poolGrad = null, gradEnv = '';
+const waterCache = {}, sandCache = {};
 
 function drawSandCorner(ctx, x0, y0, pw, ph, corner) {
   const c = corner || 'bl';
   const sx = c[1] === 'r' ? x0 + pw : x0, sy = c[0] === 'b' ? y0 + ph : y0;
   const dx = c[1] === 'r' ? -1 : 1, dy = c[0] === 'b' ? -1 : 1;
   const w = Math.min(400, pw), h = Math.min(250, ph);
-  ctx.fillStyle = 'rgba(224,196,143,0.9)';
+  ctx.save();
   ctx.beginPath();
   ctx.moveTo(sx, sy + dy * h);
   ctx.quadraticCurveTo(sx + dx * w * 0.25, sy + dy * h * 0.94, sx + dx * w * 0.52, sy + dy * h * 0.58);
   ctx.quadraticCurveTo(sx + dx * w * 0.74, sy + dy * h * 0.36, sx + dx * w, sy);
   ctx.lineTo(sx, sy);
-  ctx.closePath(); ctx.fill();
+  ctx.closePath();
+  ctx.clip();
+  const pat = patternFor(ctx, 'sand-tile', sandCache);
+  ctx.fillStyle = pat || '#e0c48f';
+  ctx.fillRect(sx + Math.min(0, dx * w), sy + Math.min(0, dy * h), w, h);
+  ctx.restore();
 }
+
+function pxRect(ctx, x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
 
 export function drawPool(ctx, state, t) {
   const env = envForStage(state.stage, state.envs);
-  const menu = state.phase === 'title' || state.phase === 'difficulty';
+  const menu = state.phase === 'title';
   const x0 = menu ? 0 : POOL.x0, y0 = menu ? 0 : POOL.y0;
   const pw = menu ? 1280 : POOL.x1 - POOL.x0, ph = menu ? 720 : POOL.y1 - POOL.y0;
-  const key = `${env.name}|${menu ? 'menu' : 'play'}`;
-  if (!poolGrad || gradEnv !== key) {
-    poolGrad = ctx.createLinearGradient(0, y0, 0, y0 + ph);
-    poolGrad.addColorStop(0, env.water2); poolGrad.addColorStop(1, env.water);
-    gradEnv = key;
+  const wpat = patternFor(ctx, 'water-tile', waterCache);
+  if (wpat) {
+    ctx.fillStyle = wpat;
+    ctx.fillRect(x0, y0, pw, ph);
+  } else {
+    ctx.fillStyle = env.water;
+    ctx.fillRect(x0, y0, pw, ph);
   }
-  ctx.fillStyle = poolGrad; ctx.fillRect(x0, y0, pw, ph);
+  ctx.globalAlpha = 0.45;
+  ctx.fillStyle = env.water;
+  ctx.fillRect(x0, y0, pw, ph);
+  ctx.globalAlpha = 1;
   ctx.save();
   ctx.beginPath(); ctx.rect(x0, y0, pw, ph); ctx.clip();
   drawSandCorner(ctx, x0, y0, pw, ph, state.sandCorner);
@@ -72,17 +74,11 @@ export function drawPool(ctx, state, t) {
       ctx.lineTo(rx + 170, y0 + ph + 10); ctx.lineTo(rx + 60, y0 + ph + 10);
       ctx.closePath(); ctx.fill();
     }
-    for (let i = 0; i < 2; i += 1) {
-      const cx = POOL.cx + Math.sin(t * 0.11 + i * 2.4) * 260;
-      const cy = POOL.cy + Math.cos(t * 0.09 + i * 1.3) * 130;
-      ctx.fillStyle = `rgba(210,255,245,${0.12 * Math.max(0.15, env.rays)})`;
-      ctx.beginPath(); ctx.ellipse(cx, cy, 150, 70, 0.3 * i, 0, Math.PI * 2); ctx.fill();
-    }
     for (let i = 0; i < 10; i += 1) {
       const gx = POOL.cx + Math.sin(i * 13) * POOL.rx * 0.8;
       const gy = POOL.cy + Math.cos(i * 8) * POOL.ry * 0.8;
       ctx.fillStyle = `rgba(255,255,255,${(0.12 + 0.1 * Math.sin(t * 2 + i * 2)) * env.rays})`;
-      ctx.beginPath(); ctx.arc(gx, gy, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillRect(gx - 2, gy - 2, 4, 4);
     }
   }
   if (env.rain) {
@@ -97,55 +93,60 @@ export function drawPool(ctx, state, t) {
     for (const b of glowDots) {
       const x = x0 + b.fx * pw, y = y0 + b.fy * ph;
       ctx.fillStyle = `rgba(120,255,220,${0.25 + 0.35 * (0.5 + 0.5 * Math.sin(t * 1.5 + b.fx * 6.28))})`;
-      ctx.beginPath(); ctx.arc(x, y, b.r * 0.7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillRect(x - b.r * 0.5, y - b.r * 0.5, b.r, b.r);
     }
   }
   ctx.strokeStyle = 'rgba(191,232,224,0.5)'; ctx.lineWidth = 1.5;
   for (const b of ambBubbles) {
     const x = POOL.cx + (b.fx - 0.5) * POOL.rx * 1.7 + Math.sin(t * 2 + b.fy * 10) * 4;
     const y = POOL.cy + POOL.ry - ((t * b.sp + b.fy * 500) % (POOL.ry * 2));
-    ctx.beginPath(); ctx.arc(x, y, b.r, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeRect(x - b.r, y - b.r, b.r * 2, b.r * 2);
   }
   ctx.fillStyle = 'rgba(255,255,255,0.25)';
   for (const m of motes) {
     const mx = x0 + ((m.fx * pw + t * m.sp * 0.4) % pw);
     const my = y0 + ((m.fy * ph + t * m.sp * 0.15) % ph);
-    ctx.beginPath(); ctx.arc(mx, my, m.r * 0.45, 0, Math.PI * 2); ctx.fill();
+    ctx.fillRect(mx - 1, my - 1, 2, 2);
   }
   ctx.restore();
   const swA = env.rain ? 17 : 13, swS = env.rain ? 3 : 1.8;
+  const coralImg = imgFor('coral');
   for (const d of state.decor) {
-    if (d.kind === 'weed') { drawWeed(ctx, d, env, t, swA, swS); continue; }
-    ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.rot); ctx.globalAlpha = 0.85;
-    ctx.fillStyle = 'rgba(4,26,32,0.28)';
-    ctx.beginPath(); ctx.ellipse(3, 6, 15 * d.s, 7 * d.s, 0, 0, Math.PI * 2); ctx.fill();
-    if (d.kind === 'rock') {
-      ctx.fillStyle = '#5a6b66'; ctx.beginPath(); ctx.ellipse(0, 0, 16 * d.s, 11 * d.s, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,0.14)';
-      ctx.beginPath(); ctx.ellipse(-4 * d.s, -3 * d.s, 7 * d.s, 4 * d.s, 0, 0, Math.PI * 2); ctx.fill();
-    } else if (d.kind === 'shell') {
-      if (d.rot > Math.PI) {
-        ctx.strokeStyle = '#f0f0e8'; ctx.lineWidth = 2 * d.s;
-        for (let r = 2; r <= 6; r += 2) {
-          ctx.beginPath(); ctx.arc(0, 0, r * d.s, 0, Math.PI * 1.5); ctx.stroke();
-        }
-      } else {
-        ctx.fillStyle = '#d8cfe8'; ctx.beginPath(); ctx.arc(0, 0, 7 * d.s, Math.PI, 0); ctx.fill();
-        ctx.strokeStyle = '#a894c4'; ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.arc(0, 0, 4 * d.s, Math.PI, 0); ctx.stroke();
+    if (d.kind === 'weed') {
+      ctx.save(); ctx.translate(d.x, d.y); ctx.globalAlpha = 0.9;
+      const n = 3 + Math.floor((d.rot * 10) % 3);
+      for (let i = 0; i < n; i += 1) {
+        const off = (i - (n - 1) / 2) * 6 * d.s;
+        const h = Math.min((44 + ((i * 17 + Math.floor(d.rot * 100)) % 36)) * d.s, d.y - POOL.y0 - 6);
+        const sw = Math.sin(t * swS + i * 1.3 + d.rot) * swA;
+        pxRect(ctx, off - 2 * d.s, -h, 4 * d.s, h, i % 2 ? env.weed2 : env.weed);
+        pxRect(ctx, off - 2 * d.s + sw * 0.3, -h, 4 * d.s, h * 0.3, i % 2 ? env.weed : env.weed2);
       }
+      ctx.restore();
+      continue;
+    }
+    ctx.save(); ctx.translate(d.x, d.y); ctx.globalAlpha = 0.9;
+    if (d.kind === 'rock') {
+      pxRect(ctx, -14 * d.s, -8 * d.s, 28 * d.s, 14 * d.s, '#5a6b66');
+      pxRect(ctx, -10 * d.s, -12 * d.s, 16 * d.s, 6 * d.s, '#6a7b76');
+      pxRect(ctx, -14 * d.s, -8 * d.s, 28 * d.s, 3 * d.s, 'rgba(255,255,255,0.14)');
+    } else if (d.kind === 'shell') {
+      pxRect(ctx, -6 * d.s, -6 * d.s, 12 * d.s, 12 * d.s, '#d8cfe8');
+      pxRect(ctx, -3 * d.s, -3 * d.s, 6 * d.s, 6 * d.s, '#a894c4');
+      pxRect(ctx, -6 * d.s, -6 * d.s, 12 * d.s, 3 * d.s, '#f0f0e8');
     } else if (d.kind === 'coral') {
-      ctx.strokeStyle = '#ff8a7a'; ctx.lineWidth = 4 * d.s; ctx.lineCap = 'round';
-      for (const [dx, dy] of [[0, -10], [-8, -6], [8, -6]]) {
-        ctx.beginPath(); ctx.moveTo(0, 6 * d.s); ctx.lineTo(dx * d.s, dy * d.s); ctx.stroke();
-        ctx.fillStyle = '#ff9a5c';
-        ctx.beginPath(); ctx.arc(dx * d.s, dy * d.s, 3 * d.s, 0, Math.PI * 2); ctx.fill();
+      if (coralImg) {
+        const s = 46 * d.s;
+        ctx.drawImage(coralImg, -s / 2, -s, s, s);
+      } else {
+        pxRect(ctx, -2 * d.s, -16 * d.s, 4 * d.s, 16 * d.s, '#ff8a7a');
+        pxRect(ctx, -10 * d.s, -10 * d.s, 4 * d.s, 10 * d.s, '#ff8a7a');
+        pxRect(ctx, 6 * d.s, -10 * d.s, 4 * d.s, 10 * d.s, '#ff8a7a');
+        pxRect(ctx, -4 * d.s, -20 * d.s, 8 * d.s, 5 * d.s, '#ff9a5c');
       }
     } else {
-      ctx.fillStyle = 'rgba(224,196,143,0.8)';
-      ctx.beginPath(); ctx.arc(0, 0, 8 * d.s, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = 'rgba(138,111,77,0.8)';
-      ctx.beginPath(); ctx.arc(0, 0, 2.5 * d.s, 0, Math.PI * 2); ctx.fill();
+      pxRect(ctx, -7 * d.s, -7 * d.s, 14 * d.s, 14 * d.s, 'rgba(224,196,143,0.8)');
+      pxRect(ctx, -2 * d.s, -2 * d.s, 4 * d.s, 4 * d.s, 'rgba(138,111,77,0.8)');
     }
     ctx.restore();
   }

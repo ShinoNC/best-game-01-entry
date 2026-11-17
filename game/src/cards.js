@@ -1,18 +1,16 @@
 import { SHOP, WEAPON_MAX, WEAPON_ORDER, modOf } from './config.js';
 import { WEAPONS } from './weapons.js';
-import { SKILL_PRICES, UPGRADE_DEFS, applyUpgrade, spendSkillPoint } from './upgrades.js';
+import { SKILL_PRICES, UPGRADE_DEFS, applyUpgrade } from './upgrades.js';
 
 export const REROLL_COST = 10;
 export const HAND_SIZE = 5;
 export const REPAIR_PRICE = 25;
 export const REPAIR_HEAL = 40;
-export const SPOINT_PRICE = 300;
 
 function shopEntry(wid) { return SHOP.find((s) => s.id === wid); }
 
 export function cardStats(card, state) {
   if (card.kind === 'repair') return `+${REPAIR_HEAL} HP`;
-  if (card.kind === 'spoint') return '+1 SKILL POINT';
   if (card.kind === 'skill') {
     const d = UPGRADE_DEFS.find((u) => u.id === card.track);
     return d ? d.stat : '';
@@ -62,9 +60,6 @@ export function cardPool(state) {
       price: pr(SKILL_PRICES[lv]), name: d.name, icon: d.icon,
       tag: 'SKILL', weight: 1, bought: false });
   }
-  pool.push({ id: 'spoint', kind: 'spoint', lv: 0, toLevel: 0,
-    price: Math.round(SPOINT_PRICE * modOf(state, 'price')), name: 'SKILL POINT', icon: '★',
-    tag: 'SKILL POINT', weight: 1, bought: false });
   return pool;
 }
 
@@ -104,8 +99,6 @@ export function buyCard(state, card) {
     state.weapons[card.wid] = card.toLevel;
   } else if (card.kind === 'skill') {
     applyUpgrade(state, card.track);
-  } else if (card.kind === 'spoint') {
-    state.skillPts += 1;
   } else if (card.kind === 'repair') {
     state.player.hp = Math.min(state.player.maxHp, state.player.hp + REPAIR_HEAL);
   }
@@ -128,27 +121,9 @@ function cardScore(card) {
   if (card.kind === 'weapon') return 1000 - card.price;
   if (card.kind === 'wup') return (card.wid === 'claw' ? 900 : 800) - card.price;
   if (card.kind === 'skill') return 300 - SKILL_ORDER.indexOf(card.track) * 10;
-  if (card.kind === 'spoint') return 250;
   return 100;
 }
-const POINT_ORDER = ['claws', 'tempo', 'reach'];
-const POINT_REST = ['legs', 'bubbles', 'magnet'];
-function lowestSkill(state, list) {
-  let best = null, bestLv = 99;
-  for (const id of list) {
-    const lv = state.ups[id];
-    if (lv < 10 && lv < bestLv) { bestLv = lv; best = id; }
-  }
-  return best;
-}
-export function autoSpendPoints(state) {
-  while (state.skillPts > 0) {
-    const id = lowestSkill(state, POINT_ORDER) || lowestSkill(state, POINT_REST);
-    if (!id || !spendSkillPoint(state, id)) break;
-  }
-}
 export function autoBuy(state) {
-  autoSpendPoints(state);
   const owned = WEAPON_ORDER.filter((w) => state.weapons[w] > 0).length;
   for (let fish = 0; fish < 2; fish += 1) {
     if (owned >= WEAPON_ORDER.length) break;
@@ -174,6 +149,5 @@ export function autoBuy(state) {
       if (!rerollHand(state)) break;
     } else break;
   }
-  autoSpendPoints(state);
   return bought;
 }

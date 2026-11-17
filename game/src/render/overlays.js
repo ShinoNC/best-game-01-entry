@@ -1,7 +1,5 @@
-import { ARMOR_PER_BOSS, AWARD_KIND, AWARD_TIERS, BOSS_STAGES, CREATURE_NAMES, CREATURE_ORDER, DIFFICULTIES, DIFF_ORDER, ENEMIES, MODIFIERS, PAL, VIEW_W, bossForStage } from '../config.js';
-import { bestTitle } from '../meta.js';
+import { ARMOR_PER_BOSS, BOSS_STAGES, CREATURE_NAMES, CREATURE_ORDER, ENEMIES, FEAT_DESCS, FEAT_IDS, FEAT_NAMES, MODIFIERS, PAL, VIEW_W, bossForStage } from '../config.js';
 import { drawEnemy } from './creatures.js';
-import { drawAwardIcon } from './icons.js';
 import { bevel, lift, txt } from './polish.js';
 
 const BIG = { x: 140, y: 60, w: 1000, h: 580 };
@@ -91,12 +89,12 @@ export function drawHelp(ctx, state) {
   ctx.font = '14px sans-serif';
   txt(ctx, 'Weapons fire on their own — dodge and position.', 180, 402, PAL.text);
   txt(ctx, 'Coins buy cards after every stage. A new weapon beats a small upgrade.', 180, 419, PAL.text);
-  txt(ctx, 'Each stage clear grants 1 SKILL POINT — click a skill to raise it (6 skills, 10 levels, 30 points total).', 180, 436, PAL.text);
+  txt(ctx, 'Slain creatures grant XP. Level up to choose 1 of 3 upgrades — skills have no level cap.', 180, 436, PAL.text);
   txt(ctx, 'Archers shoot from stage 12 — never stand still.', 180, 453, PAL.text);
   txt(ctx, `ARMOR absorbs damage before HP. Clear a boss to gain +${ARMOR_PER_BOSS} ARMOR. Armor does not heal.`, 180, 470, PAL.text);
-  txt(ctx, 'Each stage is generated fresh every run.', 180, 487, PAL.text);
+  txt(ctx, 'Stages go on forever — each loop, foes grow stronger. Each stage is generated fresh every run.', 180, 487, PAL.text);
   ctx.font = 'bold 15px sans-serif';
-  txt(ctx, 'EFFECTS — ONE PER RUN', 180, 508, PAL.gold);
+  txt(ctx, 'EFFECTS — ONE PER 5 STAGES', 180, 508, PAL.gold);
   ctx.font = '11px sans-serif';
   MODIFIERS.forEach((m, i) => {
     txt(ctx, `${m.n} — ${m.d}`, i < 3 ? 180 : 700, 528 + (i % 3) * 18, PAL.text);
@@ -106,71 +104,55 @@ export function drawHelp(ctx, state) {
 }
 
 export function drawAchievements(ctx, state) {
-  const meta = state.meta || { wins: {} };
-  const wins = meta.wins || {};
+  const meta = state.meta || { feats: [] };
+  const have = new Set(meta.feats || []);
   ctx.fillStyle = 'rgba(6,42,51,0.6)'; ctx.fillRect(0, 0, 1280, 720);
   panel(ctx, FEAT_PANEL);
   ctx.textAlign = 'center';
   ctx.font = 'bold 30px sans-serif';
   txt(ctx, 'ACHIEVEMENTS', VIEW_W / 2, 105, PAL.gold);
-  const title = bestTitle(wins);
-  if (title) {
-    ctx.font = 'bold 16px sans-serif';
-    txt(ctx, `YOUR TITLE: ${title}`, VIEW_W / 2, 142, PAL.gold);
-  }
-  for (let d = 0; d < DIFF_ORDER.length; d += 1) {
-    const diff = DIFF_ORDER[d];
-    const w = wins[diff] || 0;
-    const y = 185 + d * 125;
+  ctx.font = 'bold 16px sans-serif';
+  txt(ctx, `${have.size} / ${FEAT_IDS.length} EARNED`, VIEW_W / 2, 142, PAL.gold);
+  for (let i = 0; i < FEAT_IDS.length; i += 1) {
+    const id = FEAT_IDS[i];
+    const got = have.has(id);
+    const y = 185 + i * 62;
     ctx.textAlign = 'left';
     ctx.font = 'bold 18px sans-serif';
-    txt(ctx, `${DIFFICULTIES[diff].label} — ${w} WIN${w === 1 ? '' : 'S'}`, 330, y, PAL.text);
-    for (let t = 0; t < AWARD_TIERS.length; t += 1) {
-      const tier = AWARD_TIERS[t];
-      const got = w >= tier.wins;
-      const cx = 460 + t * 180;
-      drawAwardIcon(ctx, AWARD_KIND[diff], cx, y + 42, 60, tier.color, !got);
-      ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center';
-      txt(ctx, `${tier.metal} ${AWARD_KIND[diff]}`, cx, y + 80, got ? tier.color : PAL.dim);
-      ctx.font = '13px sans-serif';
-      txt(ctx, got ? 'EARNED' : `WIN ${tier.wins}×`, cx, y + 99, got ? '#7fe0c3' : PAL.dim);
-      ctx.textAlign = 'left';
-    }
+    txt(ctx, `${got ? '★' : '☆'} ${FEAT_NAMES[id]}`, 330, y, got ? PAL.gold : PAL.dim);
+    ctx.font = '13px sans-serif';
+    txt(ctx, FEAT_DESCS[id], 330, y + 22, got ? PAL.text : PAL.dim);
+    ctx.textAlign = 'right';
+    ctx.font = 'bold 14px sans-serif';
+    txt(ctx, got ? 'EARNED' : '—', 950, y, got ? '#7fe0c3' : PAL.dim);
   }
   closeButton(ctx, FEAT_CLOSE);
   dimHint(ctx, 655);
 }
 
 export function drawHistory(ctx, state) {
-  const meta = state.meta || { bests: {}, runs: [] };
+  const meta = state.meta || { best: 0, bestStage: 0, runs: [] };
   const runs = meta.runs || [];
   ctx.fillStyle = 'rgba(6,42,51,0.6)'; ctx.fillRect(0, 0, 1280, 720);
   panel(ctx, HIST_PANEL);
   ctx.textAlign = 'center';
   ctx.font = 'bold 28px sans-serif';
   txt(ctx, 'HISTORY', VIEW_W / 2, 100, PAL.gold);
-  for (let i = 0; i < DIFF_ORDER.length; i += 1) {
-    const d = DIFF_ORDER[i];
-    const x = 180 + i * 320;
-    ctx.textAlign = 'left';
-    ctx.font = 'bold 18px sans-serif';
-    txt(ctx, DIFFICULTIES[d].label, x, 140, PAL.gold);
-    const best = (meta.bests && meta.bests[d]) || 0;
-    ctx.font = 'bold 15px sans-serif';
-    txt(ctx, `BEST ${best > 0 ? best : '—'}`, x, 166, PAL.text);
-    const mine = runs.filter((r) => r.diff === d).slice(0, 3);
-    if (mine.length === 0) {
+  ctx.font = 'bold 18px sans-serif';
+  txt(ctx, `BEST ${meta.best || 0} · BEST STAGE ${meta.bestStage || 0}`, VIEW_W / 2, 136, PAL.gold);
+  if (runs.length === 0) {
+    ctx.font = '15px sans-serif';
+    txt(ctx, 'No runs yet.', VIEW_W / 2, 200, PAL.dim);
+  } else {
+    runs.slice(0, 5).forEach((r, j) => {
+      const mins = Math.floor((r.time || 0) / 60), secs = Math.floor((r.time || 0) % 60);
+      ctx.textAlign = 'left';
+      ctx.font = 'bold 15px sans-serif';
+      txt(ctx, `STAGE ${r.stage} · LEVEL ${r.level || 1} · ${r.score}`, 220, 180 + j * 36, PAL.text);
+      ctx.textAlign = 'right';
       ctx.font = '13px sans-serif';
-      txt(ctx, 'No runs yet.', x, 196, PAL.dim);
-    } else {
-      mine.forEach((r, j) => {
-        const mins = Math.floor((r.time || 0) / 60), secs = Math.floor((r.time || 0) % 60);
-        ctx.font = 'bold 13px sans-serif';
-        txt(ctx, `${r.stage}/30 · ${r.score}`, x, 196 + j * 44, PAL.text);
-        ctx.font = '12px sans-serif';
-        txt(ctx, `${mins}:${String(secs).padStart(2, '0')}`, x, 214 + j * 44, PAL.dim);
-      });
-    }
+      txt(ctx, `${mins}:${String(secs).padStart(2, '0')}`, 1060, 180 + j * 36, PAL.dim);
+    });
   }
   closeButton(ctx, HIST_CLOSE);
   dimHint(ctx, 444);

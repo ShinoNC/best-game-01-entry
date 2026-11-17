@@ -1,8 +1,9 @@
-import { ARMOR_PER_BOSS, COMBO_MAX, COMBO_WINDOW, ENEMIES, POOL, STAGES, STAGE_COUNT, bossForStage, contentStage, envForStage, modOf } from './config.js';
+import { ARMOR_PER_BOSS, BOSS_XP, COMBO_MAX, COMBO_WINDOW, ENEMIES, POOL, STAGES, bossForStage, contentStage, envForStage, modOf } from './config.js';
 import { hurtEnemy, onEnemyKilled, updateEnemies, updateSpawner } from './enemies.js';
 import { hurtPlayer, nearestEnemy, updatePlayer } from './player.js';
 import { drawHand } from './cards.js';
 import { updateHints } from './tutorial.js';
+import { gainXp, rollLevelChoices } from './level.js';
 
 export const STEP = 1 / 60;
 
@@ -41,6 +42,16 @@ function killEnemy(state, e, fx, audio) {
   audio.die();
   onEnemyKilled(state, e, fx);
   dropCoins(state, e);
+  const xp = e.boss ? BOSS_XP : (ENEMIES[e.type] ? ENEMIES[e.type].xp : 1);
+  const lvls = gainXp(state, xp);
+  if (lvls > 0) {
+    state.pendingLevels = (state.pendingLevels || 0) + lvls;
+    if (state.phase === 'play') {
+      state.levelChoices = rollLevelChoices(state);
+      state.phase = 'levelup';
+      if (audio.level) audio.level();
+    }
+  }
 }
 
 export function nextStage(state, audio) {
@@ -75,21 +86,14 @@ export function stepWorld(state, input, dt, fx, audio) {
     state.stageClearT -= dt;
     state.bannerT -= dt;
     if (state.stageClearT <= 0) {
-      if (state.stage >= STAGE_COUNT) {
-        state.phase = 'over'; state.result = 'won';
-        state.score += 1000 + state.stage * 100;
-        audio.win();
-      } else {
-        state.clearBonus = 40 + state.stage * 7;
-        state.coins += state.clearBonus; state.coinsEarned += state.clearBonus;
-        noteCoins(state);
-        state.skillPts += 1;
-        state.score += state.clearBonus * 2;
-        state.hand = drawHand(state);
-        state.rerolls = 0; state.menuMsg = ''; state.menuMsgT = 0;
-        state.phase = 'stageclear';
-        audio.clear();
-      }
+      state.clearBonus = 40 + state.stage * 7;
+      state.coins += state.clearBonus; state.coinsEarned += state.clearBonus;
+      noteCoins(state);
+      state.score += state.clearBonus * 2;
+      state.hand = drawHand(state);
+      state.rerolls = 0; state.menuMsg = ''; state.menuMsgT = 0;
+      state.phase = 'stageclear';
+      audio.clear();
     }
     return;
   }
@@ -213,9 +217,7 @@ export function stepWorld(state, input, dt, fx, audio) {
     if (vacuumedCoins > 0) audio.coin();
     const clearedBoss = bossForStage(state.stage, state.bossOrder);
     if (clearedBoss) state.player.armor += ARMOR_PER_BOSS;
-    if (state.stage >= STAGE_COUNT) {
-      state.banner = 'THE KRAKEN FALLS — HIGH TIDE!'; state.bannerT = 1.2;
-    } else if (clearedBoss) {
+    if (clearedBoss) {
       state.banner = `★ STAGE ${state.stage} CLEAR — ${clearedBoss.name} IS DRIVEN OFF! ★`; state.bannerT = 1.2;
     } else {
       state.banner = `★ STAGE ${state.stage} CLEAR! ★`; state.bannerT = 1.2;

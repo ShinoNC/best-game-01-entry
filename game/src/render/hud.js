@@ -1,4 +1,4 @@
-import { CREATURE_NAMES, DIFFICULTIES, PAL, STAGES, STAGE_COUNT, VIEW_H, VIEW_W, WEAPON_ORDER, bossForStage, contentStage, nextTypes } from '../config.js';
+import { CREATURE_NAMES, PAL, STAGES, VIEW_H, VIEW_W, WEAPON_ORDER, bossForStage, clusterMod, clusterOf, contentStage, nextTypes } from '../config.js';
 import { UPGRADE_DEFS } from '../upgrades.js';
 import { comboMult } from '../world.js';
 import { drawCoin, drawWeaponIcon } from './icons.js';
@@ -14,20 +14,18 @@ export function drawHud(ctx, state, t) {
   ctx.fillRect(0, 70, VIEW_W, 2);
   ctx.fillRect(0, VIEW_H - 72, VIEW_W, 2);
   const remaining = (STAGES[contentStage(state) - 1].budget - state.stageSpawned) + state.enemies.length;
-  const diffLabel = (DIFFICULTIES[state.difficulty || 'normal'] || DIFFICULTIES.normal).label;
   const nx = state.stage + 1;
-  const nextBoss = nx <= STAGE_COUNT ? bossForStage(nx, state.bossOrder) : null;
+  const nextBoss = bossForStage(nx, state.bossOrder);
   const nextBit = nextBoss ? `⚠ ${nextBoss.name}`
-    : nx > STAGE_COUNT ? 'FINAL STAGE'
-    : nextTypes(contentStage(state, nx), state.stageMix).map((k) => CREATURE_NAMES[k]).join(' + ');
+    : nextTypes(nx, state.stageMix).map((k) => CREATURE_NAMES[k]).join(' + ');
   ctx.font = 'bold 22px sans-serif';
-  txt(ctx, `STAGE ${state.stage} / ${STAGE_COUNT} · ${diffLabel}`, 28, 28, PAL.text);
+  txt(ctx, `STAGE ${state.stage}`, 28, 28, PAL.text);
   ctx.font = 'bold 13px sans-serif';
   txt(ctx, `${remaining} LEFT · NEXT: ${nextBit}`, 28, 46, PAL.dim);
-  if (state.modifier) {
-    ctx.font = 'bold 13px sans-serif';
-    txt(ctx, `EFFECT: ${state.modifier.n}`, 28, 64, PAL.gold);
-  }
+  const mod = clusterMod(state, state.stage);
+  const c0 = clusterOf(state.stage) * 5 + 1, c1 = c0 + 4;
+  ctx.font = 'bold 13px sans-serif';
+  txt(ctx, `EFFECT (STAGES ${c0}–${c1}): ${mod.n}`, 28, 64, PAL.gold);
   ctx.textAlign = 'right';
   ctx.font = 'bold 30px sans-serif';
   txt(ctx, `SCORE ${state.score}`, 1252, 38, PAL.gold);
@@ -35,7 +33,7 @@ export function drawHud(ctx, state, t) {
   const coinTxt = `${state.coins} COINS · COMBO ×${comboMult(state)} · BEST ${state.best}`;
   txt(ctx, coinTxt, 1252, 60, PAL.gold);
   drawCoin(ctx, 1252 - ctx.measureText(coinTxt).width - 13, 55, 8);
-  if (STAGES[state.stage - 1].boss && !state.bossSpawned && !state.boss) {
+  if (STAGES[contentStage(state) - 1].boss && !state.bossSpawned && !state.boss) {
     const boss = bossForStage(state.stage, state.bossOrder);
     const warn = `⚠ ${boss ? boss.name : 'THE BEAST'} IS COMING ⚠`;
     ctx.font = 'bold 17px sans-serif';
@@ -75,6 +73,10 @@ export function drawHud(ctx, state, t) {
   }
   ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(490, 677, 300, 14);
   ctx.fillStyle = PAL.hp; ctx.fillRect(490, 677, 300 * (p.hp / p.maxHp), 14);
+  ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'left';
+  txt(ctx, `Lv${state.level}`, 490, 706, PAL.xp, 3);
+  ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(530, 697, 260, 8);
+  ctx.fillStyle = PAL.xp; ctx.fillRect(530, 697, 260 * Math.min(1, state.xp / state.xpNext), 8);
   if (p.armor > 0) {
     ctx.font = 'bold 14px sans-serif';
     const num = `${p.armor}`;

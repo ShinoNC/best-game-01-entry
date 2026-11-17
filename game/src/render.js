@@ -3,17 +3,19 @@ import { weaponStatsFor } from './weapons.js';
 import { drawCrab, drawEnemy } from './render/creatures.js';
 import { drawPool } from './render/pool.js';
 import { drawHud, drawPaused } from './render/hud.js';
-import { drawDifficulty, drawTitle } from './render/title.js';
+import { drawTitle } from './render/title.js';
 import { drawAchievements, drawHelp, drawHistory, drawSettings } from './render/overlays.js';
 import { drawStageMenu } from './render/menu.js';
+import { drawLevelUp } from './render/levelup.js';
 import { drawOver } from './render/over.js';
 import { heart } from './render/icons.js';
 import { txt } from './render/polish.js';
 
-export { MENU_ITEMS, SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE, difficultyLayout, overLayout, stageMenuLayout, titleLayout } from './render/layout.js';
+export { MENU_ITEMS, SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE, levelupLayout, overLayout, stageMenuLayout, titleLayout } from './render/layout.js';
 
 export function createRenderer(canvas) {
   const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
   let cssW = 0, cssH = 0, dpr = 1;
   function resize() {
     cssW = window.innerWidth; cssH = window.innerHeight;
@@ -89,12 +91,12 @@ export function createRenderer(canvas) {
       }
       for (const pe of state.drops) {
         const bobY = Math.sin(pe.bob) * 3;
-        ctx.fillStyle = PAL.gold;
-        ctx.beginPath(); ctx.arc(pe.x, pe.y + bobY, 7, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = '#c9962e'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(pe.x, pe.y + bobY, 7, 0, Math.PI * 2); ctx.stroke();
         ctx.fillStyle = '#c9962e';
-        ctx.beginPath(); ctx.arc(pe.x, pe.y + bobY, 2.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillRect(pe.x - 7, pe.y + bobY - 7, 14, 14);
+        ctx.fillStyle = PAL.gold;
+        ctx.fillRect(pe.x - 5, pe.y + bobY - 5, 10, 10);
+        ctx.fillStyle = '#c9962e';
+        ctx.fillRect(pe.x - 2, pe.y + bobY - 2, 4, 4);
       }
       for (const pk of state.pickups) {
         if (pk.kind === 'heal') heart(ctx, pk.x, pk.y + Math.sin(t * 3) * 2, 13, PAL.hp);
@@ -150,7 +152,7 @@ export function createRenderer(canvas) {
         const ix = lerp(e.px ?? e.x, e.x), iy = lerp(e.py ?? e.y, e.y);
         drawEnemy(ctx, { ...e, x: ix, y: iy }, t, Math.atan2(state.player.y - iy, state.player.x - ix));
       }
-      if (state.phase !== 'title' && state.phase !== 'difficulty') {
+      if (state.phase !== 'title') {
         const p = state.player;
         drawCrab(ctx, { ...p, x: lerp(p.px ?? p.x, p.x), y: lerp(p.py ?? p.y, p.y) }, t,
           weaponStatsFor(state, 'claw'),
@@ -164,10 +166,10 @@ export function createRenderer(canvas) {
         ctx.fillStyle = vg; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
       }
       ctx.setTransform(s, 0, 0, s, oxd, oyd);
-      if (state.phase === 'play' || state.phase === 'paused') drawHud(ctx, state, t);
+      if (state.phase === 'play' || state.phase === 'paused' || state.phase === 'levelup') drawHud(ctx, state, t);
       if (state.phase === 'title') drawTitle(ctx, state);
-      if (state.phase === 'difficulty') drawDifficulty(ctx, state);
       if (state.phase === 'stageclear') drawStageMenu(ctx, state, hover);
+      if (state.phase === 'levelup') drawLevelUp(ctx, state, hover);
       if (state.phase === 'paused') drawPaused(ctx);
       if (state.phase === 'over') drawOver(ctx, state);
       if (state.overlay === 'help') drawHelp(ctx, state);

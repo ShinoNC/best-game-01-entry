@@ -1,7 +1,6 @@
-import { CREATURE_ORDER, DIFFICULTIES, ENEMIES, PAL, VIEW_W } from '../config.js';
-import { bestTitle } from '../meta.js';
+import { CREATURE_ORDER, ENEMIES, PAL, VIEW_W } from '../config.js';
 import { drawCrab, drawEnemy } from './creatures.js';
-import { difficultyLayout, titleLayout } from './layout.js';
+import { titleLayout } from './layout.js';
 import { bevel, logoText, rr, txt } from './polish.js';
 
 const AMBIENT = [];
@@ -45,8 +44,7 @@ export function drawTitle(ctx, state) {
     '#ffb35c', '#e8590c', '#4a2408', 3);
   ctx.letterSpacing = '0px';
   const tagParts = [
-    { t: '★ CLEAR ', f: 'bold 24px sans-serif' },
-    { t: '30 STAGES', f: '900 30px sans-serif' },
+    { t: '★ ENDLESS STAGES', f: '900 30px sans-serif' },
     { t: ' — DEFEND THE REEF, KEEP THE TIDE ★', f: 'bold 24px sans-serif' },
   ];
   let tagW = 0;
@@ -64,10 +62,11 @@ export function drawTitle(ctx, state) {
     tx += ctx.measureText(p.t).width;
   }
   ctx.textAlign = 'center';
-  const title = bestTitle((state.meta || {}).wins || {});
-  if (title) {
+  const best = (state.meta || {}).best || 0;
+  const bestStage = (state.meta || {}).bestStage || 0;
+  if (best > 0) {
     ctx.font = 'bold 17px sans-serif';
-    txt(ctx, `✦ ${title.toUpperCase()} ✦`, VIEW_W / 2, 202, PAL.gold);
+    txt(ctx, `✦ BEST ${best} · STAGE ${bestStage} ✦`, VIEW_W / 2, 202, PAL.gold);
   }
   const TL = titleLayout();
   const items = [['start', 'START GAME'], ['help', 'HOW TO PLAY  ?'], ['feats', 'ACHIEVEMENTS'],
@@ -100,33 +99,3 @@ export function drawTitle(ctx, state) {
   ctx.fillText('v1.0', VIEW_W - 12, 708);
 }
 
-export function drawDifficulty(ctx, state) {
-  const tt = drawAmbient(ctx, state);
-  drawPatrolCrab(ctx, state, tt);
-  ctx.textAlign = 'center';
-  logoText(ctx, 'CHOOSE YOUR TIDE', VIEW_W / 2, 180,
-    '900 40px "Trebuchet MS", "Segoe UI", Verdana, sans-serif',
-    '#ffe08a', '#f0b23e', '#4a2408', 2);
-  const DL = difficultyLayout();
-  const bests = (state.meta || {}).bests || {};
-  for (const b of DL.diffs) {
-    const d = DIFFICULTIES[b.id];
-    const sel = state.difficulty === b.id;
-    bevel(ctx, b.x, b.y, b.w, b.h, 10,
-      sel ? '#16607a' : '#11566b', sel ? '#0a3d4d' : '#062a33',
-      sel ? PAL.gold : PAL.foam, sel ? 3 : 2);
-    ctx.font = 'bold 24px sans-serif';
-    txt(ctx, d.label, b.x + b.w / 2, b.y + 38, sel ? PAL.gold : PAL.text);
-    ctx.font = '14px sans-serif';
-    txt(ctx, d.desc, b.x + b.w / 2, b.y + 62, PAL.dim);
-    const best = bests[b.id] || 0;
-    ctx.font = 'bold 13px sans-serif';
-    txt(ctx, best > 0 ? `BEST ${best}` : 'BEST —', b.x + b.w / 2, b.y + 88, best > 0 ? PAL.gold : PAL.dim);
-  }
-  const bk = DL.back;
-  bevel(ctx, bk.x, bk.y, bk.w, bk.h, 8, '#11566b', '#062a33', PAL.foam, 2);
-  ctx.font = 'bold 17px sans-serif';
-  txt(ctx, '← BACK', bk.x + bk.w / 2, bk.y + 29, PAL.text);
-  ctx.font = '13px sans-serif';
-  txt(ctx, '1–3 or ← → to choose · ENTER to start · ESC to go back', VIEW_W / 2, 560, PAL.dim);
-}

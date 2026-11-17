@@ -1,16 +1,17 @@
-import { AWARD_KIND, AWARD_TIERS, BEST_KEY, DIFF_ORDER } from './config.js';
+import { BEST_KEY } from './config.js';
 import { createRandom } from './random.js';
 import { createState } from './state.js';
 import { createInput } from './input.js';
 import { createAudio } from './audio.js';
 import { createParticles } from './particles.js';
-import { MENU_ITEMS, createRenderer, difficultyLayout, overLayout, stageMenuLayout, titleLayout } from './render.js';
+import { MENU_ITEMS, createRenderer, levelupLayout, overLayout, stageMenuLayout, titleLayout } from './render.js';
 import { STEP, nextStage, stepWorld } from './world.js';
 import { REROLL_COST, autoBuy, buyCard, rerollHand } from './cards.js';
-import { UPGRADE_DEFS, spendSkillPoint } from './upgrades.js';
+import { applyLevelChoice, rollLevelChoices } from './level.js';
 import { stageShot } from './shots.js';
 import { overlayLayout } from './render/overlays.js';
-import { featsEarnedThisRun, readLastDiff, readMeta, recordRun, writeLastDiff } from './meta.js';
+import { featsEarnedThisRun, readMeta, recordRun } from './meta.js';
+import { loadSprites } from './sprites.js';
 
 const params = new URLSearchParams(window.location.search);
 const shot = params.get('shot');
@@ -30,7 +31,7 @@ function readBest() {
 
 function attachMeta(s) {
   s.meta = readMeta();
-  s.best = Math.max(0, ...DIFF_ORDER.map((d) => s.meta.bests[d] || 0), readBest());
+  s.best = Math.max(s.meta.best || 0, readBest());
   s.audio = audio;
   return s;
 }
@@ -46,15 +47,18 @@ function toScreen(lx, ly) {
 
 let state;
 if (shot) {
-  state = stageShot(shot, seed, fx, audio);
-  attachMeta(state);
-  if (state.phase === 'over') state.featsEarned = featsEarnedThisRun(state, state.meta.feats);
-  state.shotMode = true;
-  renderer.render(state, fx, state.time);
-  renderer.render(state, fx, state.time);
-  window.__shotReady = true;
+  (async () => {
+    await loadSprites();
+    state = stageShot(shot, seed, fx, audio);
+    attachMeta(state);
+    if (state.phase === 'over') state.featsEarned = featsEarnedThisRun(state, state.meta.feats);
+    state.shotMode = true;
+    renderer.render(state, fx, state.time);
+    renderer.render(state, fx, state.time);
+    window.__shotReady = true;
+  })();
 } else {
-  state = attachMeta(createState(createRandom(seed), seed, readLastDiff()));
+  state = attachMeta(createState(createRandom(seed), seed));
   window.__tide = { state, fx, audio, step: (inp) => stepWorld(state, inp, STEP, fx, audio), STEP,
     menuLayout: () => stageMenuLayout(state), toScreen, toLogical, viewTransform: () => renderer.viewTransform(),
     autoBuy: () => autoBuy(state) };
@@ -76,13 +80,12 @@ if (shot) {
         const res = recordRun(state, state.meta || readMeta());
         state.meta = res.meta;
         state.featsEarned = res.earned;
-        if (res.award) state.awardEarned = `${AWARD_TIERS[res.award.tier].metal} ${AWARD_KIND[res.award.diff]}`;
-        state.best = Math.max(0, ...DIFF_ORDER.map((d) => res.meta.bests[d] || 0));
+        state.best = Math.max(state.best, res.meta.best);
       }
     }
     fx.update(dt);
     const alpha = state.phase === 'play' ? Math.min(1, acc / STEP) : 1;
-    const hover = state.phase === 'stageclear' ? toLogical(input.mouse().x, input.mouse().y) : null;
+    const hover = (state.phase === 'stageclear' || state.phase === 'levelup') ? toLogical(input.mouse().x, input.mouse().y) : null;
     renderer.render(state, fx, state.time, alpha, hover);
     input.endFrame();
   }
@@ -114,6 +117,21 @@ function doReroll() {
   }
 }
 
+function pickLevelChoice(i) {
+  const c = (state.levelChoices || [])[i];
+  if (!c) return;
+  applyLevelChoice(state, c);
+  audio.buy();
+  status.textContent = `${c.name}!`;
+  state.pendingLevels = Math.max(0, (state.pendingLevels || 1) - 1);
+  if (state.pendingLevels > 0) {
+    state.levelChoices = rollLevelChoices(state);
+  } else {
+    state.levelChoices = null;
+    state.phase = 'play';
+  }
+}
+
 function handleOverlay() {
   if (!state.overlay) return false;
   const L = overlayLayout(state);
@@ -129,14 +147,13 @@ function handleOverlay() {
 
 function startRun() {
   audio.unlock();
-  writeLastDiff(state.difficulty);
   state.phase = 'play';
   state.banner = 'STAGE 1 — SLAY THEM ALL'; state.bannerT = 3;
-  status.textContent = 'Clear 30 stages. A sea beast waits at every fifth stage!';
+  status.textContent = 'Endless stages. A sea beast waits at every fifth stage!';
 }
 
 function activateMenu(item) {
-  if (item === 'start') { state.phase = 'difficulty'; status.textContent = 'Choose your tide'; }
+  if (item === 'start') startRun();
   else state.overlay = item;
 }
 
@@ -166,30 +183,17 @@ function handleMenus() {
     menuPhase = 'title';
     return;
   }
-  if (state.phase === 'difficulty') {
+  if (state.phase === 'levelup') {
     const n = input.numberPressed();
-    if (n >= 1 && n <= DIFF_ORDER.length) { state.difficulty = DIFF_ORDER[n - 1]; startRun(); return; }
-    if (input.wasPressed('arrowleft') || input.wasPressed('arrowup')) {
-      const i = DIFF_ORDER.indexOf(state.difficulty);
-      state.difficulty = DIFF_ORDER[(i + DIFF_ORDER.length - 1) % DIFF_ORDER.length];
-      return;
-    }
-    if (input.wasPressed('arrowright') || input.wasPressed('arrowdown')) {
-      const i = DIFF_ORDER.indexOf(state.difficulty);
-      state.difficulty = DIFF_ORDER[(i + 1) % DIFF_ORDER.length];
-      return;
-    }
-    if (input.wasPressed('escape')) { state.phase = 'title'; menuPhase = 'title'; return; }
+    if (n >= 1 && n <= 3) { pickLevelChoice(n - 1); return; }
     if (input.click()) {
       const m = toLogical(input.mouse().x, input.mouse().y);
-      const DL = difficultyLayout();
-      const hit = DL.diffs.find((b) => inBox(m, b));
-      if (hit) { state.difficulty = hit.id; startRun(); return; }
-      if (inBox(m, DL.back)) { state.phase = 'title'; menuPhase = 'title'; return; }
-      return;
+      const L = levelupLayout();
+      for (let i = 0; i < L.cards.length; i += 1) {
+        if (inBox(m, L.cards[i])) { pickLevelChoice(i); return; }
+      }
     }
-    if (input.confirmPressed()) startRun();
-    menuPhase = 'difficulty';
+    menuPhase = 'levelup';
     return;
   }
   if (state.phase === 'play') {
@@ -218,15 +222,6 @@ function handleMenus() {
       for (let i = 0; i < L.cards.length; i += 1) {
         if (inBox(m, L.cards[i])) { buyMenuCard(i); return; }
       }
-      for (const s of L.skills) {
-        if (inBox(m, s)) {
-          if (spendSkillPoint(state, s.id)) {
-            const d = UPGRADE_DEFS.find((u) => u.id === s.id);
-            audio.buy(); status.textContent = `${d.name} Lv${state.ups[s.id]}!`;
-          }
-          return;
-        }
-      }
       if (inBox(m, L.reroll)) { doReroll(); return; }
       if (inBox(m, L.next)) { nextStage(state, audio); status.textContent = `Stage ${state.stage}`; }
     }
@@ -248,9 +243,8 @@ function handleMenus() {
 function freshState(phase) {
   const best = state.best;
   const meta = state.meta;
-  const difficulty = state.difficulty || 'normal';
   const fresh = Math.floor(Math.random() * 4294967296);
-  state = createState(createRandom(fresh), fresh, difficulty);
+  state = createState(createRandom(fresh), fresh);
   state.best = best;
   state.meta = meta;
   state.audio = audio;
@@ -264,10 +258,10 @@ function freshState(phase) {
 function restart() {
   freshState('play');
   state.banner = 'STAGE 1 — SLAY THEM ALL'; state.bannerT = 3;
-  status.textContent = 'A new tide. Clear 30 stages!';
+  status.textContent = 'A new tide. How far can you go?';
 }
 
 function toTitle() {
   freshState('title');
-  status.textContent = 'TIDEKEEPER — clear 30 stages, beat the sea beasts!';
+  status.textContent = 'TIDEKEEPER — endless stages, sea beasts every fifth stage!';
 }

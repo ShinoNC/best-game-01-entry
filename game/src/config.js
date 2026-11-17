@@ -5,14 +5,27 @@ export const MODIFIERS = [
   { n: 'SWARM TIDE', d: 'foes swarm · +50% coins', spawn: 0.8, coin: 1.5 },
   { n: 'POWER HIT', d: 'foes +10% HP · +20% damage', ehp: 1.1, dmg: 1.2 },
   { n: 'SWIFT CURRENT', d: '+35% speed · +10% damage', spd: 1.35, dmg: 1.1 },
-  { n: 'CHEAP WATERS', d: 'shop -20% · -20 max HP', price: 0.8, hpMul: 0.8 },
+  { n: 'CHEAP WATERS', d: 'shop -20% · -10% coins', price: 0.8, coin: 0.9 },
   { n: 'THICK HIDE', d: 'take 25% less damage', taken: 0.75 },
   { n: 'HIGH RISK', d: '+25% damage · take 15% more', dmg: 1.25, taken: 1.15 },
 ];
-export function modOf(state, key) { return (state.modifier && state.modifier[key]) || 1; }
+export function loopOf(stage) { return Math.floor((stage - 1) / STAGE_COUNT); }
+export function templateStage(stage) { return ((stage - 1) % STAGE_COUNT) + 1; }
+export function clusterOf(stage) { return Math.floor((stage - 1) / 5); }
+export function clusterMod(state, stage) {
+  const c = clusterOf(stage || state.stage);
+  let h = (state.seed >>> 0) ^ (c * 2654435761);
+  h = Math.imul(h ^ (h >>> 15), 2246822519) >>> 0;
+  return MODIFIERS[h % MODIFIERS.length];
+}
+export function modOf(state, key) {
+  const m = clusterMod(state, state.stage);
+  return (m && m[key]) || 1;
+}
 export function contentStage(state, pos) {
+  const s = pos || state.stage;
   const m = state.stageMap;
-  return m ? m[(pos || state.stage) - 1] : (pos || state.stage);
+  return m ? m[templateStage(s) - 1] : templateStage(s);
 }
 export const VIEW_W = 1280;
 export const VIEW_H = 720;
@@ -31,8 +44,9 @@ export const ENV_PALETTES = [
   ['GOLDEN SHOALS', '#b8860b', '#e8b84a'],
 ];
 export function envForStage(stage, envs) {
-  const band = Math.min(5, Math.floor((stage - 1) / 5));
-  const p = (envs && envs[stage - 1]) || ENV_PALETTES[0];
+  const t = templateStage(stage);
+  const band = Math.min(5, Math.floor((t - 1) / 5));
+  const p = (envs && envs[t - 1]) || ENV_PALETTES[0];
   const fx = ENV_BANDS[band];
   return { name: p[0], water: p[1], water2: p[2], sand: '#c9a86a', weed: '#2f8f6b', weed2: '#4fae7d', rays: fx.rays, rain: fx.rain, glow: fx.glow };
 }
@@ -55,15 +69,16 @@ export const PLAYER = {
   dashCd: 3.0, dashSpeed: 640, dashTime: 0.18, magnet: 75, iframes: 0.5,
 };
 export const ENEMIES = {
-  guppy:    { hp: 10, speed: 102, dmg: 4,  r: 10, score: 10, coins: 1, color: '#ffd166', dark: '#c9962e' },
-  jelly:    { hp: 24, speed: 56,  dmg: 7,  r: 16, score: 20, coins: 2, color: '#c9a7ff', dark: '#8a6fd6' },
-  urchin:   { hp: 66, speed: 37,  dmg: 10, r: 20, score: 30, coins: 3, color: '#5d4a8a', dark: '#3a2d5e' },
-  starfish: { hp: 32, speed: 72,  dmg: 6,  r: 15, score: 20, coins: 2, color: '#ff8fb0', dark: '#d65d7e' },
-  eel:      { hp: 18, speed: 152, dmg: 8,  r: 12, score: 30, coins: 2, color: '#7fe0c3', dark: '#3fae8c' },
-  squid:     { hp: 28, speed: 176, dmg: 8,  r: 14, score: 40, coins: 2, color: '#ff8a5c', dark: '#c75a30' },
-  archer:   { hp: 20, speed: 95,  dmg: 3,  r: 13, score: 35, coins: 2, color: '#7fd4e0', dark: '#3a8ea8' },
-  mini:     { hp: 8,  speed: 118, dmg: 5,  r: 8,  score: 5,  coins: 1, color: '#ff8fb0', dark: '#d65d7e' },
+  guppy:    { hp: 10, speed: 102, dmg: 4,  r: 10, score: 10, coins: 1, xp: 1, color: '#ffd166', dark: '#c9962e' },
+  jelly:    { hp: 24, speed: 56,  dmg: 7,  r: 16, score: 20, coins: 2, xp: 2, color: '#c9a7ff', dark: '#8a6fd6' },
+  urchin:   { hp: 66, speed: 37,  dmg: 10, r: 20, score: 30, coins: 3, xp: 5, color: '#5d4a8a', dark: '#3a2d5e' },
+  starfish: { hp: 32, speed: 72,  dmg: 6,  r: 15, score: 20, coins: 2, xp: 2, color: '#ff8fb0', dark: '#d65d7e' },
+  eel:      { hp: 18, speed: 152, dmg: 8,  r: 12, score: 30, coins: 2, xp: 3, color: '#7fe0c3', dark: '#3fae8c' },
+  squid:     { hp: 28, speed: 176, dmg: 8,  r: 14, score: 40, coins: 2, xp: 3, color: '#ff8a5c', dark: '#c75a30' },
+  archer:   { hp: 20, speed: 95,  dmg: 3,  r: 13, score: 35, coins: 2, xp: 4, color: '#7fd4e0', dark: '#3a8ea8' },
+  mini:     { hp: 8,  speed: 118, dmg: 5,  r: 8,  score: 5,  coins: 1, xp: 1, color: '#ff8fb0', dark: '#d65d7e' },
 };
+export const BOSS_XP = 25;
 export const SPIT = { speed: 240, r: 6, cd: 3.0, range: 420, aim: 0.35, life: 2.5 };
 export const ELITE = { hpMul: 3.6, dmgMul: 1.5, sizeMul: 1.55, score: 150, coins: 5 };
 export const BOSS_STAGES = [
@@ -83,10 +98,16 @@ export const BOSS_TYPES = {
   kraken: { name: 'THE KRAKEN', speed: 140, r: 66, color: '#9a4a6a', dark: '#5a2438', dive: 2.8, atk: 'slam', atkEvery: 12 },
 };
 export function bossForStage(stage, order) {
-  const st = BOSS_STAGES.find((b) => b.stage === stage);
+  if (stage % 5 !== 0) return null;
+  const t = templateStage(stage);
+  const st = BOSS_STAGES.find((b) => b.stage === t);
   if (!st) return null;
-  const type = stage === 30 ? 'kraken' : (order || ['turtle', 'octopus', 'hammerhead', 'angler', 'stingray'])[stage / 5 - 1];
-  return { stage, type, ...st, ...BOSS_TYPES[type] };
+  const loop = loopOf(stage);
+  const type = t === 30 ? 'kraken' : (order || ['turtle', 'octopus', 'hammerhead', 'angler', 'stingray'])[(stage / 5 - 1) % 5];
+  const hpMul = 1.35 ** loop, dmgMul = 1.2 ** loop;
+  return { stage, type, ...st, ...BOSS_TYPES[type],
+    hp: Math.round(st.hp * hpMul), dmg: Math.round(st.dmg * dmgMul),
+    score: Math.round(st.score * (1 + loop)), coins: Math.round(st.coins * (1 + loop)) };
 }
 
 export const STAGES = Array.from({ length: STAGE_COUNT }, (_, i) => {
@@ -139,19 +160,22 @@ export function genStageMix(rng, stage) {
   return { ...w };
 }
 export function nextTypes(stage, stageMix) {
-  const w = (stageMix && stageMix[stage - 1]) || spawnWeights(stage);
+  const t = templateStage(stage);
+  const w = (stageMix && stageMix[t - 1]) || spawnWeights(t);
   return Object.keys(w).filter((k) => w[k] > 0)
     .sort((a, b) => w[b] - w[a]).slice(0, 2);
 }
 export function hpScale(stage) {
-  if (stage <= 15) return 1 + (stage - 1) * 0.55;
-  return 1 + 14 * 0.55 + (stage - 15) * 0.95;
+  const t = templateStage(stage);
+  const base = t <= 15 ? 1 + (t - 1) * 0.55 : 1 + 14 * 0.55 + (t - 15) * 0.95;
+  return base * (1.35 ** loopOf(stage));
 }
 export function dmgScale(stage) {
-  if (stage <= 15) return 1 + (stage - 1) * 0.14;
-  return 1 + 14 * 0.14 + (stage - 15) * 0.24;
+  const t = templateStage(stage);
+  const base = t <= 15 ? 1 + (t - 1) * 0.14 : 1 + 14 * 0.14 + (t - 15) * 0.24;
+  return base * (1.2 ** loopOf(stage));
 }
-export function speedScale(stage) { return 1 + (stage - 1) * 0.032; }
+export function speedScale(stage) { return 1 + (templateStage(stage) - 1) * 0.032; }
 
 export const WEAPON_ORDER = ['claw', 'bow', 'blaster', 'shell', 'spin', 'laser', 'trident'];
 export const WEAPON_MAX = 5;
@@ -166,22 +190,16 @@ export const SHOP = [
   { id: 'claw', kind: 'weapon', price: 0, up: [60, 95, 140, 200], name: 'SHARPEN CLAWS', icon: '✂' },
 ];
 
-export const DIFFICULTIES = {
-  easy: { label: 'EASY', desc: 'gentler foes', hp: 0.85, dmg: 0.8, speed: 0.97, bossHp: 0.9, bossDmg: 0.85 },
-  normal: { label: 'NORMAL', desc: 'the true tide', hp: 1, dmg: 1, speed: 1, bossHp: 1, bossDmg: 1 },
-  hard: { label: 'HARD', desc: 'merciless tide', hp: 1.1, dmg: 1.0, speed: 1.0, bossHp: 1.1, bossDmg: 1.0 },
+export const FEAT_IDS = ['firstblood', 'arsenal', 'beast', 'untouched', 'rich', 'combo'];
+export const FEAT_NAMES = {
+  firstblood: 'FIRST BLOOD', arsenal: 'FULL ARSENAL', beast: 'BEAST DRIVER',
+  untouched: 'UNTOUCHED', rich: 'RICH CRAB', combo: 'COMBO MASTER',
 };
-export const DIFF_ORDER = ['easy', 'normal', 'hard'];
-
-export const FEAT_IDS = ['firstblood', 'arsenal', 'beast', 'king', 'untouched', 'rich', 'combo'];
-
-export const AWARD_TIERS = [
-  { wins: 3, metal: 'BRONZE', color: '#cd7f32' },
-  { wins: 10, metal: 'SILVER', color: '#c0c0c0' },
-  { wins: 20, metal: 'GOLD', color: '#ffd700' },
-];
-export const AWARD_KIND = { easy: 'MEDAL', normal: 'CUP', hard: 'CROWN' };
-export const AWARD_TITLES = ['Tide Guardian', 'Kraken Slayer', 'Tidekeeper Legend'];
+export const FEAT_DESCS = {
+  firstblood: 'Slay your first creature', arsenal: 'Own all 7 weapons',
+  beast: 'Drive off a sea beast', untouched: 'Clear a stage without taking damage',
+  rich: 'Hold 500 coins at once', combo: 'Reach an 8-chain combo',
+};
 
 export const CREATURE_NAMES = {
   guppy: 'GUPPY', jelly: 'JELLY', urchin: 'URCHIN',

@@ -3,6 +3,7 @@ import { createRandom } from './random.js';
 import { createState } from './state.js';
 import { nextStage, stepWorld } from './world.js';
 import { autoBuy } from './cards.js';
+import { applyLevelChoice, rollLevelChoices } from './level.js';
 import { spawnEnemy } from './enemies.js';
 
 function autopilotInput(state) {
@@ -56,7 +57,12 @@ function runUntil(state, pred, maxSteps, fx, audio) {
   while (steps < maxSteps) {
     if (pred(state)) return true;
     if (state.phase === 'over') return pred(state);
-    if (state.phase === 'stageclear') {
+    if (state.phase === 'levelup') {
+      applyLevelChoice(state, (state.levelChoices || [])[0]);
+      state.pendingLevels = Math.max(0, (state.pendingLevels || 1) - 1);
+      if (state.pendingLevels > 0) state.levelChoices = rollLevelChoices(state);
+      else { state.levelChoices = null; state.phase = 'play'; }
+    } else if (state.phase === 'stageclear') {
       autoBuy(state);
       nextStage(state, audio);
     } else if (state.phase === 'play') {
@@ -185,17 +191,27 @@ export function stageShot(shot, seed, fx, audio) {
     fx.clear();
     return s;
   }
+  if (shot === 'levelup') {
+    const s = createStateFromSeed(seed); s.phase = 'play';
+    runUntil(s, (st) => st.phase === 'levelup', 20000, fx, audio);
+    if (s.phase !== 'levelup') {
+      s.levelChoices = rollLevelChoices(s);
+      s.pendingLevels = 1;
+      s.phase = 'levelup';
+    }
+    return s;
+  }
   if (shot === 'end') {
-    let bestWin = null;
+    let best = null;
     for (let trySeed = seed; trySeed < seed + 10; trySeed += 1) {
       const s = createStateFromSeed(trySeed); s.phase = 'play';
       runUntil(s, (st) => st.phase === 'over', 120000, fx, audio);
-      if (s.phase === 'over' && s.result === 'won') {
-        if (s.player.hp >= 60) { fx.clear(); return s; }
-        if (!bestWin || s.player.hp > bestWin.player.hp) bestWin = s;
+      if (s.phase === 'over') {
+        if (s.stage >= 15 && s.level >= 8) { fx.clear(); return s; }
+        if (!best || s.stage > best.stage) best = s;
       }
     }
-    if (bestWin) { fx.clear(); return bestWin; }
+    if (best) { fx.clear(); return best; }
     const s = createStateFromSeed(seed); s.phase = 'play';
     runUntil(s, (st) => st.phase === 'over', 120000, fx, audio);
     if (s.phase === 'play') { s.phase = 'over'; s.result = 'lost'; s.player.hp = 0; }

@@ -1,10 +1,8 @@
-import { AWARD_TIERS, AWARD_TITLES, DIFF_ORDER, FEAT_IDS } from './config.js';
+import { FEAT_IDS } from './config.js';
 
 const BESTS_KEY = 'tidekeeper-bests';
 const FEATS_KEY = 'tidekeeper-feats';
 const RUNS_KEY = 'tidekeeper-runs';
-const WINS_KEY = 'tidekeeper-wins';
-const LAST_DIFF_KEY = 'tidekeeper-last-diff';
 export const LEGACY_BEST_KEY = 'tidekeeper-best';
 
 function readJson(key, fallback) {
@@ -20,48 +18,28 @@ function writeJson(key, value) {
 }
 
 export function readMeta() {
-  const bests = readJson(BESTS_KEY, {});
-  for (const d of DIFF_ORDER) if (typeof bests[d] !== 'number') bests[d] = 0;
-  if (bests.normal === 0) {
-    try { bests.normal = Number.parseInt(window.localStorage.getItem(LEGACY_BEST_KEY) ?? '0', 10) || 0; } catch {}
+  let best = readJson(BESTS_KEY, 0);
+  if (typeof best !== 'number') best = 0;
+  if (best === 0) {
+    try { best = Number.parseInt(window.localStorage.getItem(LEGACY_BEST_KEY) ?? '0', 10) || 0; } catch {}
   }
   const feats = readJson(FEATS_KEY, []);
   const runs = readJson(RUNS_KEY, []);
-  const wins = readJson(WINS_KEY, {});
-  for (const d of DIFF_ORDER) if (typeof wins[d] !== 'number') wins[d] = 0;
   return {
-    bests,
+    best,
+    bestStage: readJson('tidekeeper-best-stage', 0) || 0,
     feats: Array.isArray(feats) ? feats.filter((id) => FEAT_IDS.includes(id)) : [],
     runs: Array.isArray(runs) ? runs.slice(0, 9) : [],
-    wins,
   };
-}
-
-export function awardTier(w) { return w >= 20 ? 2 : w >= 10 ? 1 : w >= 3 ? 0 : -1; }
-export function bestTitle(wins) {
-  const t = awardTier((wins || {}).hard || 0);
-  return t < 0 ? null : AWARD_TITLES[t];
-}
-
-export function readLastDiff() {
-  try {
-    const d = window.localStorage.getItem(LAST_DIFF_KEY);
-    return DIFF_ORDER.includes(d) ? d : 'normal';
-  } catch { return 'normal'; }
-}
-export function writeLastDiff(d) {
-  try { window.localStorage.setItem(LAST_DIFF_KEY, d); } catch {}
 }
 
 export function featsEarnedThisRun(state, unlocked) {
   const have = new Set(unlocked);
-  const won = state.result === 'won';
   const earned = [];
   const test = (id, ok) => { if (ok && !have.has(id)) earned.push(id); };
   test('firstblood', state.kills >= 1);
   test('arsenal', ['claw', 'bow', 'blaster', 'shell', 'spin', 'laser', 'trident'].every((w) => state.weapons[w] > 0));
   test('beast', (state.stats.bossesDown || 0) >= 1);
-  test('king', won);
   test('untouched', !!state.stats.cleanStage);
   test('rich', (state.stats.maxCoins || 0) >= 500);
   test('combo', (state.stats.bestCombo || 0) >= 8);
@@ -69,28 +47,17 @@ export function featsEarnedThisRun(state, unlocked) {
 }
 
 export function recordRun(state, meta) {
-  const diff = state.difficulty || 'normal';
-  const bests = { ...meta.bests };
-  if (state.score > (bests[diff] || 0)) bests[diff] = state.score;
+  const best = Math.max(meta.best || 0, state.score);
+  const bestStage = Math.max(meta.bestStage || 0, state.stage);
   const earned = featsEarnedThisRun(state, meta.feats);
   const feats = [...new Set([...meta.feats, ...earned])];
-  const wins = { ...(meta.wins || {}) };
-  let award = null;
-  if (state.result === 'won') {
-    wins[diff] = (wins[diff] || 0) + 1;
-    const tier = AWARD_TIERS.findIndex((t) => t.wins === wins[diff]);
-    if (tier >= 0) award = { diff, tier };
-  }
-  const run = {
-    won: state.result === 'won', stage: state.stage, score: state.score,
-    diff, time: Math.round(state.time),
-  };
+  const run = { stage: state.stage, score: state.score, level: state.level, time: Math.round(state.time) };
   const runs = [run, ...meta.runs].slice(0, 9);
-  const next = { bests, feats, runs, wins };
-  writeJson(BESTS_KEY, bests);
+  const next = { best, bestStage, feats, runs };
+  writeJson(BESTS_KEY, best);
+  writeJson('tidekeeper-best-stage', bestStage);
   writeJson(FEATS_KEY, feats);
   writeJson(RUNS_KEY, runs);
-  writeJson(WINS_KEY, wins);
-  try { window.localStorage.setItem(LEGACY_BEST_KEY, String(Math.max(...DIFF_ORDER.map((d) => bests[d] || 0)))); } catch {}
-  return { meta: next, earned, award };
+  try { window.localStorage.setItem(LEGACY_BEST_KEY, String(best)); } catch {}
+  return { meta: next, earned };
 }

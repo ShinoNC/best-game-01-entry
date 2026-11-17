@@ -1,4 +1,4 @@
-import { DIFFICULTIES, ELITE, ENEMIES, POOL, SPIT, STAGES, bossForStage, contentStage, dmgScale, hpScale, modOf, sandRect, spawnWeights, speedScale } from './config.js';
+import { ELITE, ENEMIES, POOL, SPIT, STAGES, bossForStage, contentStage, dmgScale, hpScale, modOf, sandRect, spawnWeights, speedScale } from './config.js';
 
 let nextId = 1;
 
@@ -10,7 +10,6 @@ export function hurtEnemy(state, e, dmg) {
 
 export function spawnEnemy(state, type, elite, fx) {
   const def = ENEMIES[type];
-  const diff = DIFFICULTIES[state.difficulty || 'normal'];
   const sand = sandRect(state.sandCorner), M = 20;
   let x, y;
   for (let tries = 0; tries < 6; tries += 1) {
@@ -22,11 +21,11 @@ export function spawnEnemy(state, type, elite, fx) {
     if (tries === 5) { x = POOL.cx; y = POOL.y1 + 14; }
   }
   if (fx && fx.ring) fx.ring(Math.max(POOL.x0 + 8, Math.min(POOL.x1 - 8, x)), Math.max(POOL.y0 + 8, Math.min(POOL.y1 - 8, y)));
-  const cs = contentStage(state);
-  const hp = Math.round(def.hp * hpScale(cs) * diff.hp * (elite ? ELITE.hpMul : 1) * modOf(state, 'ehp'));
+  const st = state.stage;
+  const hp = Math.round(def.hp * hpScale(st) * (elite ? ELITE.hpMul : 1) * modOf(state, 'ehp'));
   const e = {
     id: nextId += 1, type, x, y, hp, maxHp: hp, r: def.r * (elite ? ELITE.sizeMul : 1),
-    speed: def.speed * speedScale(cs) * diff.speed * modOf(state, 'espd') * state.rng.range(0.9, 1.1), dmg: Math.round(def.dmg * dmgScale(cs) * diff.dmg * (elite ? ELITE.dmgMul : 1)),
+    speed: def.speed * speedScale(st) * modOf(state, 'espd') * state.rng.range(0.9, 1.1), dmg: Math.round(def.dmg * dmgScale(st) * (elite ? ELITE.dmgMul : 1)),
     score: elite ? ELITE.score : def.score,
     coins: elite ? ELITE.coins : def.coins,
     color: def.color, dark: def.dark, elite: !!elite,
@@ -50,13 +49,12 @@ function pickType(state) {
 function spawnBoss(state, fx, audio) {
   state.bossSpawned = true;
   const def = bossForStage(state.stage, state.bossOrder);
-  const diff = DIFFICULTIES[state.difficulty || 'normal'];
   const b = spawnEnemy(state, 'squid', true, fx);
   b.type = def.type;
   b.boss = true;
   b.name = def.name;
-  b.hp = Math.round(def.hp * diff.bossHp * modOf(state, 'ehp')); b.maxHp = b.hp; b.r = def.r;
-  b.speed = def.speed * modOf(state, 'espd'); b.dmg = Math.round(def.dmg * diff.bossDmg); b.score = def.score;
+  b.hp = Math.round(def.hp * modOf(state, 'ehp')); b.maxHp = b.hp; b.r = def.r;
+  b.speed = def.speed * modOf(state, 'espd'); b.dmg = Math.round(def.dmg); b.score = def.score;
   b.coins = def.coins;
   b.color = def.color;
   b.dark = def.dark;

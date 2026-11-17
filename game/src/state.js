@@ -1,6 +1,6 @@
-import { ENV_PALETTES, MODIFIERS, PAL, PLAYER, POOL, genStageMix } from './config.js';
+import { ENV_PALETTES, PLAYER, POOL, genStageMix } from './config.js';
 
-export function createState(rng, seed, difficulty = 'normal') {
+export function createState(rng, seed) {
   const theme = rng.pick(['rocky', 'weedy', 'shelly', 'coral']);
   const kinds = theme === 'rocky' ? ['rock', 'rock', 'rock', 'rock', 'rock', 'rock', 'rock', 'rock', 'weed', 'shell']
     : theme === 'weedy' ? ['weed', 'weed', 'weed', 'weed', 'weed', 'weed', 'weed', 'weed', 'rock', 'shell']
@@ -43,23 +43,20 @@ export function createState(rng, seed, difficulty = 'normal') {
   }
   const stageMix = [];
   for (let s = 1; s <= 30; s += 1) stageMix.push(s % 5 === 0 ? null : genStageMix(rng, s));
-  const modifier = rng.pick(MODIFIERS);
-  const hp0 = Math.round(PLAYER.hp * (modifier.hpMul || 1));
   return {
-    rng, seed, decor, theme, stageMix, envs, bossOrder, stageMap, modifier, sandCorner: ['tl', 'tr', 'bl', 'br'][((seed % 4) + 4) % 4], time: 0, phase: 'title', menuSel: 0,
-    difficulty,
+    rng, seed, decor, theme, stageMix, envs, bossOrder, stageMap, sandCorner: ['tl', 'tr', 'bl', 'br'][((seed % 4) + 4) % 4], time: 0, phase: 'title', menuSel: 0,
     combo: 0, comboT: 0,
+    level: 1, xp: 0, xpNext: 14, levelChoices: null,
     player: {
       x: POOL.cx, y: POOL.cy + 40, px: POOL.cx, py: POOL.cy + 40,
       vx: 0, vy: 0, angle: -Math.PI / 2,
-      hp: hp0, maxHp: hp0, armor: 0, radius: PLAYER.radius,
-      speed: PLAYER.speed * (modifier.spd || 1), weapCd: { claw: 0, bow: 0, blaster: 0, shell: 0, spin: 0, laser: 0, trident: 0 },
+      hp: PLAYER.hp, maxHp: PLAYER.hp, armor: 0, radius: PLAYER.radius,
+      speed: PLAYER.speed, weapCd: { claw: 0, bow: 0, blaster: 0, shell: 0, spin: 0, laser: 0, trident: 0 },
       dashCd: 0, dashT: 0,
       iframes: 0, magnet: PLAYER.magnet, shellTier: 0, flash: 0, swing: 0, spin: 0,
       laser: 0, laserLen: 0, laserBeams: 1, moving: 0,
     },
     ups: { claws: 0, tempo: 0, reach: 0, shell: 0, legs: 0, bubbles: 0, magnet: 0 },
-    skillPts: 1,
     coins: 0, coinsEarned: 0,
     weapons: { claw: 1, bow: 0, blaster: 0, shell: 0, spin: 0, laser: 0, trident: 0 },
     stage: 1, stageSpawned: 0, stageEliteDone: false, stageClearT: 0,
@@ -75,4 +72,3 @@ export function createState(rng, seed, difficulty = 'normal') {
   };
 }
 
-export { PAL };

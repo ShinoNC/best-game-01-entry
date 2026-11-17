@@ -66,7 +66,7 @@ export function createAudio() {
     heal() { tone(660, 0.12, 'sine', 0.10, 990); },
     elite() { tone(196, 0.3, 'sawtooth', 0.12, 392); },
     boss() { tone(1200, 0.5, 'sawtooth', 0.12, 300); noise(0.4, 0.10, 700); },
-    win() { [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => tone(f, 0.22, 'triangle', 0.12), i * 110)); },
+    level() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.16, 'triangle', 0.12), i * 90)); },
     lose() { [392, 330, 262, 196].forEach((f, i) => setTimeout(() => tone(f, 0.25, 'triangle', 0.12), i * 130)); },
   };
 }

@@ -1,12 +1,10 @@
-import { ARMOR_PER_BOSS, PAL, VIEW_H, VIEW_W, bossForStage, envForStage } from '../config.js';
+import { ARMOR_PER_BOSS, PAL, VIEW_H, VIEW_W, bossForStage, clusterMod, clusterOf, envForStage } from '../config.js';
 import { REROLL_COST, cardStats } from '../cards.js';
-import { UPGRADE_DEFS } from '../upgrades.js';
 import { drawCoin, drawPips, drawWeaponIcon } from './icons.js';
 import { stageMenuLayout } from './layout.js';
 import { bevel, rr, txt } from './polish.js';
 
-const KIND_COLOR = { skill: '#7fe0c3', wup: '#ffd166', weapon: '#c9a7ff', repair: '#ff8fb0', spoint: '#ffd166' };
-const SABBR = { claws: 'DM', tempo: 'FR', reach: 'RG', legs: 'SW', bubbles: 'BB', magnet: 'MG' };
+const KIND_COLOR = { skill: '#7fe0c3', wup: '#ffd166', weapon: '#c9a7ff', repair: '#ff8fb0' };
 
 function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   const poor = !card.bought && state.coins < card.price;
@@ -46,7 +44,7 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   ctx.font = 'bold 13px sans-serif';
   if (ctx.measureText(st).width > w - 16) ctx.font = 'bold 12px sans-serif';
   txt(ctx, st, x + w / 2, y + 134, PAL.foam);
-  if (card.kind !== 'repair' && card.kind !== 'spoint') drawPips(ctx, x + w / 2, y + 158, card.lv, !card.bought);
+  if (card.kind !== 'repair') drawPips(ctx, x + w / 2, y + 158, card.lv, !card.bought);
   if (card.bought) {
     ctx.font = 'bold 18px sans-serif';
     txt(ctx, '✓ BOUGHT', x + w / 2, y + 198, '#7fe0c3');
@@ -68,18 +66,20 @@ export function drawStageMenu(ctx, state, hover) {
   ctx.textAlign = 'center';
   ctx.font = 'bold 36px sans-serif';
   txt(ctx, `★ STAGE ${state.stage} CLEAR — ${envForStage(state.stage, state.envs).name} ★`, VIEW_W / 2, 70, PAL.gold, 3);
-  if (state.modifier) {
-    ctx.font = 'bold 15px sans-serif';
-    txt(ctx, `EFFECT: ${state.modifier.n}`, VIEW_W / 2, 100, PAL.xp);
-  }
+  const mod = clusterMod(state, state.stage);
+  const c0 = clusterOf(state.stage) * 5 + 1, c1 = c0 + 4;
+  ctx.font = 'bold 15px sans-serif';
+  txt(ctx, `EFFECT (STAGES ${c0}–${c1}): ${mod.n} — ${mod.d}`, VIEW_W / 2, 100, PAL.xp);
+  ctx.font = 'bold 15px sans-serif';
+  txt(ctx, `LEVEL ${state.level} · ${state.xp}/${state.xpNext} XP`, VIEW_W / 2, 122, PAL.gold);
   ctx.font = 'bold 28px sans-serif';
   const ct = `${state.coins} COINS`;
   const cw = ctx.measureText(ct).width;
-  drawCoin(ctx, VIEW_W / 2 - cw / 2 - 18, 132, 12);
-  txt(ctx, ct, VIEW_W / 2 + 10, 140, PAL.gold);
+  drawCoin(ctx, VIEW_W / 2 - cw / 2 - 18, 146, 12);
+  txt(ctx, ct, VIEW_W / 2 + 10, 154, PAL.gold);
   if (bossForStage(state.stage)) {
     ctx.font = 'bold 20px sans-serif';
-    txt(ctx, `+${ARMOR_PER_BOSS} ARMOR`, VIEW_W / 2, 168, PAL.armor, 3);
+    txt(ctx, `+${ARMOR_PER_BOSS} ARMOR`, VIEW_W / 2, 180, PAL.armor, 3);
   }
   const hand = state.hand || [];
   if (hand.length === 0) {
@@ -115,38 +115,5 @@ export function drawStageMenu(ctx, state, hover) {
   if (state.menuMsgT > 0 && state.menuMsg) {
     ctx.font = 'bold 16px sans-serif';
     txt(ctx, state.menuMsg, VIEW_W / 2, 570, '#ff8fa0');
-  }
-  drawSkillRow(ctx, state, hover);
-}
-
-function drawSkillRow(ctx, state, hover) {
-  const L = stageMenuLayout(state);
-  ctx.textAlign = 'center';
-  ctx.font = 'bold 16px sans-serif';
-  txt(ctx, `SKILL POINTS: ${state.skillPts} — CLICK A SKILL TO RAISE IT`, VIEW_W / 2, 590, PAL.gold, 3);
-  for (const s of L.skills) {
-    const d = UPGRADE_DEFS.find((u) => u.id === s.id);
-    const lv = state.ups[s.id];
-    const maxed = lv >= d.max;
-    const canSpend = !maxed && state.skillPts > 0;
-    const hovered = hover && hover.x >= s.x && hover.x <= s.x + s.w && hover.y >= s.y && hover.y <= s.y + s.h;
-    ctx.save();
-    if (!canSpend) ctx.globalAlpha = maxed ? 0.8 : 0.6;
-    ctx.fillStyle = '#0b4256';
-    rr(ctx, s.x, s.y, s.w, s.h, 8); ctx.fill();
-    ctx.strokeStyle = hovered && canSpend ? PAL.gold : maxed ? '#7fe0c3' : 'rgba(159,196,189,0.5)';
-    ctx.lineWidth = hovered && canSpend ? 3 : 2;
-    rr(ctx, s.x, s.y, s.w, s.h, 8); ctx.stroke();
-    ctx.font = 'bold 20px sans-serif';
-    txt(ctx, d.icon, s.x + s.w / 2, s.y + 22, PAL.xp);
-    ctx.font = 'bold 13px sans-serif';
-    txt(ctx, `${SABBR[s.id]} Lv${lv}`, s.x + s.w / 2, s.y + 41, PAL.text);
-    ctx.font = '10px sans-serif';
-    txt(ctx, maxed ? 'MAX' : d.stat, s.x + s.w / 2, s.y + 57, maxed ? '#7fe0c3' : PAL.dim);
-    if (canSpend) {
-      ctx.font = 'bold 18px sans-serif';
-      txt(ctx, '+', s.x + s.w - 11, s.y + 19, '#7fe0c3');
-    }
-    ctx.restore();
   }
 }
