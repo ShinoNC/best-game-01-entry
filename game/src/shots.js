@@ -132,6 +132,18 @@ export function stageShot(shot, seed, fx, audio) {
     runUntil(s, (st) => st.phase === 'play' && st.stage >= 12 && st.enemies.length >= 10, 60000, fx, audio);
     return s;
   }
+  if (shot.startsWith('band')) {
+    // ?shot=band16 — a live play frame at the given stage (water-band check).
+    const target = parseInt(shot.slice(4), 10) || 1;
+    for (let trySeed = seed; trySeed < seed + 8; trySeed += 1) {
+      const s = createStateFromSeed(trySeed); s.phase = 'play';
+      runUntil(s, (st) => st.phase === 'play' && st.stage >= target && st.enemies.length >= 8, 120000, fx, audio);
+      if (s.phase === 'play' && s.stage >= target) return s;
+    }
+    const s = createStateFromSeed(seed); s.phase = 'play';
+    runUntil(s, (st) => st.phase === 'play' && st.stage >= 12 && st.enemies.length >= 10, 60000, fx, audio);
+    return s;
+  }
   if (shot === 'stageclear') {
     // Stage-clear menu after a later stage (15, then 10, then 3).
     for (const wantStage of [15, 10, 3]) {

@@ -5,13 +5,17 @@ export const VIEW_H = 720;
 export const POOL = { x0: 0, y0: 72, x1: 1280, y1: 648, cx: 640, cy: 360, rx: 640, ry: 288 }; // full width between the HUD bars (top 0–72, bottom 648–720); rx/ry = half-extents
 export const BEST_KEY = 'tidekeeper-best';
 
-// Environments: the water changes by stage band — SHALLOWS / DEEP REEF / STORM TIDE.
+// Environments: the water changes by stage band — six colours, 5 stages each.
+// Bosses sit at 5/10/15/20/25/30, the last stage of each band: beat the boss, the tide turns.
 export const ENVS = [
-  { name: 'SHALLOWS', water: '#12809e', water2: '#54d2ee', sand: '#c9a86a', weed: '#2f8f6b', weed2: '#4fae7d', rays: 1, rain: 0, glow: 0 },
-  { name: 'DEEP REEF', water: '#0a4058', water2: '#0e5a75', sand: '#8a7a5a', weed: '#b04a7a', weed2: '#d97aa8', rays: 0.4, rain: 0, glow: 0 },
-  { name: 'STORM TIDE', water: '#0d1b2e', water2: '#1a2f4a', sand: '#5a6270', weed: '#2a5a6a', weed2: '#3a7a8a', rays: 0, rain: 1, glow: 1 },
+  { name: 'SHALLOWS', water: '#35b8dc', water2: '#8fe8f8', sand: '#c9a86a', weed: '#2f8f6b', weed2: '#4fae7d', rays: 1, rain: 0, glow: 0 },
+  { name: 'EMERALD LAGOON', water: '#0e7a4e', water2: '#3fc98a', sand: '#b0a05e', weed: '#0a5a36', weed2: '#1f7a4a', rays: 0.8, rain: 0, glow: 0 },
+  { name: 'OPEN SEA', water: '#1a2f7e', water2: '#3563d8', sand: '#8a7a5a', weed: '#b04a7a', weed2: '#d97aa8', rays: 0.4, rain: 0, glow: 0 },
+  { name: 'TWILIGHT DEEP', water: '#2a1a5e', water2: '#4d33a0', sand: '#6a5a7a', weed: '#5a3a8a', weed2: '#7a55a8', rays: 0.15, rain: 0, glow: 0 },
+  { name: 'RED TIDE', water: '#5e1220', water2: '#8f2a3d', sand: '#7a5a4a', weed: '#5a2230', weed2: '#7a3040', rays: 0, rain: 0, glow: 0 },
+  { name: 'STORM TIDE', water: '#0a0f24', water2: '#1a2547', sand: '#4a5060', weed: '#1a2a4a', weed2: '#2a3a5a', rays: 0, rain: 1, glow: 1 },
 ];
-export function envForStage(stage) { return ENVS[stage <= 10 ? 0 : stage <= 20 ? 1 : 2]; }
+export function envForStage(stage) { return ENVS[Math.min(5, Math.floor((stage - 1) / 5))]; }
 
 export const PAL = {
   deep: '#062a33', water: '#12708a', water2: '#1d8aa6', sand: '#c9a86a',

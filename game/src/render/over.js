@@ -2,7 +2,7 @@
 // PLAY AGAIN + MENU buttons. Stats, feats and history live in the menus now.
 import { PAL, STAGE_COUNT, VIEW_H, VIEW_W } from '../config.js';
 import { overLayout } from './layout.js';
-import { bevel, logoText } from './polish.js';
+import { bevel, logoText, txt } from './polish.js';
 
 export function drawOver(ctx, state) {
   const won = state.result === 'won';
@@ -26,22 +26,19 @@ export function drawOver(ctx, state) {
       '900 64px "Trebuchet MS", "Segoe UI", Verdana, sans-serif',
       '#ff8fa0', '#e8354f', '#3a0a12', 3);
   }
-  ctx.fillStyle = PAL.text; ctx.font = 'bold 22px sans-serif';
-  ctx.fillText(won ? 'You held the rockpool. The crab keeps its shell.' : 'The creatures feast tonight. Try again, little crab.', VIEW_W / 2, 160);
-  ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 8; ctx.shadowOffsetY = 3;
-  ctx.fillStyle = PAL.gold; ctx.font = 'bold 48px sans-serif';
-  ctx.fillText(`SCORE ${state.score}`, VIEW_W / 2, 280);
-  ctx.restore();
-  ctx.fillStyle = PAL.dim; ctx.font = 'bold 20px sans-serif';
-  ctx.fillText(`STAGE ${state.stage}/${STAGE_COUNT} · ${mins}:${String(secs).padStart(2, '0')}`, VIEW_W / 2, 326);
-  ctx.fillStyle = PAL.xp; ctx.font = 'bold 19px sans-serif';
-  ctx.fillText(nextGoal, VIEW_W / 2, 380);
+  ctx.font = 'bold 22px sans-serif';
+  txt(ctx, won ? 'You held the rockpool. The crab keeps its shell.' : 'The creatures feast tonight. Try again, little crab.', VIEW_W / 2, 160, PAL.text);
+  ctx.font = 'bold 48px sans-serif';
+  txt(ctx, `SCORE ${state.score}`, VIEW_W / 2, 280, PAL.gold, 3);
+  ctx.font = 'bold 20px sans-serif';
+  txt(ctx, `STAGE ${state.stage}/${STAGE_COUNT} · ${mins}:${String(secs).padStart(2, '0')}`, VIEW_W / 2, 326, PAL.dim);
+  ctx.font = 'bold 19px sans-serif';
+  txt(ctx, nextGoal, VIEW_W / 2, 380, PAL.xp);
   const L = overLayout();
   bevel(ctx, L.playAgain.x, L.playAgain.y, L.playAgain.w, L.playAgain.h, 10, '#ffe08a', '#f0b23e', PAL.gold, 2);
-  ctx.fillStyle = '#062a33'; ctx.font = 'bold 22px sans-serif';
-  ctx.fillText('PLAY AGAIN', VIEW_W / 2, L.playAgain.y + 37);
+  ctx.font = 'bold 22px sans-serif';
+  txt(ctx, 'PLAY AGAIN', VIEW_W / 2, L.playAgain.y + 37, '#062a33');
   bevel(ctx, L.menu.x, L.menu.y, L.menu.w, L.menu.h, 8, '#11566b', '#062a33', PAL.foam, 2);
-  ctx.fillStyle = PAL.text; ctx.font = 'bold 17px sans-serif';
-  ctx.fillText('MENU', VIEW_W / 2, L.menu.y + 29);
+  ctx.font = 'bold 17px sans-serif';
+  txt(ctx, 'MENU', VIEW_W / 2, L.menu.y + 29, PAL.text);
 }

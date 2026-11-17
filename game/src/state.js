@@ -17,6 +17,18 @@ export function createState(rng, seed, difficulty = 'normal') {
       s: rng.range(0.6, 1.6), rot: rng.angle(),
     });
   }
+  // Seaweed grows on rocks or on the floor — never floating mid-water.
+  // (Rocks near the top are skipped: a standing strand needs room to rise.)
+  const rocks = decor.filter((d) => d.kind === 'rock' && d.y >= 180);
+  for (const d of decor) {
+    if (d.kind !== 'weed') continue;
+    if (rocks.length && rng.next() < 0.6) {
+      const r = rocks[Math.floor(rng.next() * rocks.length)];
+      d.x = r.x; d.y = r.y - 4 * r.s;
+    } else {
+      d.y = POOL.y1 - 10 - rng.next() * 20;
+    }
+  }
   const mix = {};
   for (const k of ['guppy', 'jelly', 'urchin', 'starfish', 'eel', 'gull', 'archer']) mix[k] = rng.range(0.85, 1.2);
   return {

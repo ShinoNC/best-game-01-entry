@@ -3,7 +3,7 @@ import { PAL, VIEW_H, VIEW_W, envForStage } from '../config.js';
 import { REROLL_COST } from '../cards.js';
 import { drawCoin, drawPips, drawWeaponIcon } from './icons.js';
 import { stageMenuLayout } from './layout.js';
-import { bevel, rr } from './polish.js';
+import { bevel, rr, txt } from './polish.js';
 
 // Card colour coding: SKILL mint, LEVEL-UP gold, NEW WEAPON purple, REPAIR pink.
 const KIND_COLOR = { skill: '#7fe0c3', wup: '#ffd166', weapon: '#c9a7ff', repair: '#ff8fb0' };
@@ -37,38 +37,35 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   }
   ctx.textAlign = 'center';
   // Tag (top) + key badge (top-right): both own their own corner, they never meet.
-  ctx.fillStyle = kc;
   ctx.font = 'bold 12px sans-serif';
-  ctx.fillText(card.tag, x + w / 2, y + 22);
-  ctx.fillStyle = PAL.dim; ctx.font = 'bold 14px sans-serif';
-  ctx.fillText(`[${i + 1}]`, x + w - 24, y + 22);
+  txt(ctx, card.tag, x + w / 2, y + 22, kc);
+  ctx.font = 'bold 14px sans-serif';
+  txt(ctx, `[${i + 1}]`, x + w - 24, y + 22, PAL.dim);
   // Picture first: a weapon card shows its drawn icon, a skill card its glyph.
   if (card.kind === 'weapon' || card.kind === 'wup') drawWeaponIcon(ctx, card.wid, x + w / 2, y + 62, 48, true);
   else {
-    ctx.fillStyle = card.kind === 'repair' ? '#ff8fb0' : PAL.xp;
     ctx.font = 'bold 40px sans-serif';
-    ctx.fillText(card.icon, x + w / 2, y + 78);
+    txt(ctx, card.icon, x + w / 2, y + 78, card.kind === 'repair' ? '#ff8fb0' : PAL.xp);
   }
   // The name shrinks one step if it would overflow the card.
-  ctx.fillStyle = PAL.text;
   ctx.font = 'bold 18px sans-serif';
   if (ctx.measureText(card.name).width > w - 20) ctx.font = 'bold 15px sans-serif';
-  ctx.fillText(card.name, x + w / 2, y + 108);
+  txt(ctx, card.name, x + w / 2, y + 108, PAL.text);
   // Level pips: filled = owned, gold = the level this card adds.
   if (card.kind !== 'repair') drawPips(ctx, x + w / 2, y + 148, card.lv, !card.bought);
   // Price — a drawn coin + the number — or the bought stamp, or the shortfall in words (never colour alone).
   if (card.bought) {
-    ctx.fillStyle = '#7fe0c3'; ctx.font = 'bold 18px sans-serif';
-    ctx.fillText('✓ BOUGHT', x + w / 2, y + 198);
+    ctx.font = 'bold 18px sans-serif';
+    txt(ctx, '✓ BOUGHT', x + w / 2, y + 198, '#7fe0c3');
   } else {
-    ctx.fillStyle = poor ? '#ff8fa0' : PAL.gold; ctx.font = 'bold 22px sans-serif';
+    ctx.font = 'bold 22px sans-serif';
     const pt = `${card.price}`;
     const pw = ctx.measureText(pt).width;
     drawCoin(ctx, x + w / 2 - pw / 2 - 14, y + 190, 10);
-    ctx.fillText(pt, x + w / 2 + 8, y + 198);
+    txt(ctx, pt, x + w / 2 + 8, y + 198, poor ? '#ff8fa0' : PAL.gold);
     if (poor) {
-      ctx.fillStyle = '#ff8fa0'; ctx.font = 'bold 13px sans-serif';
-      ctx.fillText(`NEED ${need} MORE`, x + w / 2, y + 222);
+      ctx.font = 'bold 13px sans-serif';
+      txt(ctx, `NEED ${need} MORE`, x + w / 2, y + 222, '#ff8fa0');
     }
   }
   ctx.restore();
@@ -82,18 +79,18 @@ export function drawStageMenu(ctx, state, hover) {
   bg.addColorStop(0, '#0a3542'); bg.addColorStop(1, '#041f28');
   ctx.fillStyle = bg; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   ctx.textAlign = 'center';
-  ctx.fillStyle = PAL.gold; ctx.font = 'bold 36px sans-serif';
-  ctx.fillText(`★ STAGE ${state.stage} CLEAR — ${envForStage(state.stage).name} ★`, VIEW_W / 2, 130);
-  ctx.fillStyle = PAL.gold; ctx.font = 'bold 28px sans-serif';
+  ctx.font = 'bold 36px sans-serif';
+  txt(ctx, `★ STAGE ${state.stage} CLEAR — ${envForStage(state.stage).name} ★`, VIEW_W / 2, 130, PAL.gold, 3);
+  ctx.font = 'bold 28px sans-serif';
   const ct = `${state.coins} COINS`;
   const cw = ctx.measureText(ct).width;
   drawCoin(ctx, VIEW_W / 2 - cw / 2 - 18, 178, 12);
-  ctx.fillText(ct, VIEW_W / 2 + 10, 186);
+  txt(ctx, ct, VIEW_W / 2 + 10, 186, PAL.gold);
   const hand = state.hand || [];
   if (hand.length === 0) {
     // Empty state: everything is owned and maxed and the shell is whole.
-    ctx.fillStyle = PAL.foam; ctx.font = 'bold 22px sans-serif';
-    ctx.fillText('BUILD COMPLETE — NOTHING LEFT TO BUY', VIEW_W / 2, 360);
+    ctx.font = 'bold 22px sans-serif';
+    txt(ctx, 'BUILD COMPLETE — NOTHING LEFT TO BUY', VIEW_W / 2, 360, PAL.foam);
   }
   hand.forEach((c, i) => {
     const b = L.cards[i];
@@ -107,26 +104,25 @@ export function drawStageMenu(ctx, state, hover) {
   ctx.globalAlpha = canReroll ? 1 : 0.45;
   bevel(ctx, r.x, r.y, r.w, r.h, 8, '#116072', '#0b4256',
     canReroll ? (rHover ? PAL.gold : PAL.foam) : 'rgba(159,196,189,0.5)', 2);
-  ctx.fillStyle = canReroll ? PAL.text : PAL.dim;
   ctx.font = 'bold 18px sans-serif';
   const rt = `REROLL — ${REROLL_COST}`, rs = '  [R]';
   const totW = ctx.measureText(rt).width + 24 + ctx.measureText(rs).width;
   const tx0 = r.x + r.w / 2 - totW / 2;
   ctx.textAlign = 'left';
-  ctx.fillText(rt, tx0, r.y + 33);
+  txt(ctx, rt, tx0, r.y + 33, canReroll ? PAL.text : PAL.dim);
   drawCoin(ctx, tx0 + ctx.measureText(rt).width + 12, r.y + 26, 9);
-  ctx.fillText(rs, tx0 + ctx.measureText(rt).width + 24, r.y + 33);
+  txt(ctx, rs, tx0 + ctx.measureText(rt).width + 24, r.y + 33, canReroll ? PAL.text : PAL.dim);
   ctx.textAlign = 'center';
   ctx.globalAlpha = 1;
   const n = L.next;
   const nHover = hover && hover.x >= n.x && hover.x <= n.x + n.w && hover.y >= n.y && hover.y <= n.y + n.h;
   bevel(ctx, n.x, n.y, n.w, n.h, 8, nHover ? '#ffe08a' : '#ffd97a', '#f0b23e', PAL.gold, 2);
-  ctx.fillStyle = '#062a33'; ctx.font = 'bold 20px sans-serif';
-  ctx.fillText(`NEXT STAGE ${state.stage + 1} →  [Enter]`, n.x + n.w / 2, n.y + 33);
+  ctx.font = 'bold 20px sans-serif';
+  txt(ctx, `NEXT STAGE ${state.stage + 1} →  [Enter]`, n.x + n.w / 2, n.y + 33, '#062a33');
   // One line under the buttons: an error message shows while it lasts — the
   // [1]–[5] numbers, [R] and [Enter] on the buttons already teach the keys.
   if (state.menuMsgT > 0 && state.menuMsg) {
-    ctx.fillStyle = '#ff8fa0'; ctx.font = 'bold 16px sans-serif';
-    ctx.fillText(state.menuMsg, VIEW_W / 2, 600);
+    ctx.font = 'bold 16px sans-serif';
+    txt(ctx, state.menuMsg, VIEW_W / 2, 600, '#ff8fa0');
   }
 }

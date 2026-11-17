@@ -1,5 +1,5 @@
 // The fixed-step simulation: spawn, move, collide, collect, win, lose.
-import { COMBO_MAX, COMBO_WINDOW, ENEMIES, POOL, STAGES, STAGE_COUNT, bossForStage } from './config.js';
+import { COMBO_MAX, COMBO_WINDOW, ENEMIES, POOL, STAGES, STAGE_COUNT, bossForStage, envForStage } from './config.js';
 import { onEnemyKilled, updateEnemies, updateSpawner } from './enemies.js';
 import { hurtPlayer, nearestEnemy, updatePlayer } from './player.js';
 import { drawHand } from './cards.js';
@@ -61,10 +61,9 @@ export function nextStage(state, audio) {
   if (boss) {
     state.banner = `⚠ STAGE ${state.stage} — ${boss.name}! ⚠`; state.bannerT = 3;
     if (audio) audio.elite();
-  } else if (state.stage === 11) {
-    state.banner = 'THE TIDE DEEPENS — DEEP REEF'; state.bannerT = 3;
-  } else if (state.stage === 21) {
-    state.banner = '⚠ STORM TIDE! ⚠'; state.bannerT = 3;
+  } else if (state.stage % 5 === 1 && state.stage > 1) {
+    // A new water: the last band's boss is beaten, the tide turns.
+    state.banner = `THE TIDE TURNS — ${envForStage(state.stage).name}`; state.bannerT = 3;
   } else {
     state.banner = `STAGE ${state.stage} — THE TIDE RISES`; state.bannerT = 2.5;
   }

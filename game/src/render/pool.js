@@ -17,6 +17,29 @@ const rainDrops = table(60, 7654321);
 const glowDots = table(24, 987654);
 const motes = table(36, 24680); // drifting plankton dots
 
+// Seaweed that STANDS: 3–5 tapered vertical strands from a dark floor anchor,
+// swaying with the current. Drawn outside the decor rotation — rotation is
+// what made the old blades lie flat. Strands are 44–80px tall so they read
+// as plants at a glance, not streaks; height is capped so tips stay in the pool.
+function drawWeed(ctx, d, env, t, swA, swS) {
+  ctx.save(); ctx.translate(d.x, d.y); ctx.globalAlpha = 0.9;
+  ctx.fillStyle = 'rgba(4,26,32,0.35)';
+  ctx.beginPath(); ctx.ellipse(0, 3, 14 * d.s, 5 * d.s, 0, 0, Math.PI * 2); ctx.fill();
+  const n = 3 + Math.floor((d.rot * 10) % 3); // 3–5 strands, seeded by rot
+  for (let i = 0; i < n; i += 1) {
+    const off = (i - (n - 1) / 2) * 6 * d.s;
+    const h = Math.min((44 + ((i * 17 + Math.floor(d.rot * 100)) % 36)) * d.s, d.y - POOL.y0 - 6);
+    const sw = Math.sin(t * swS + i * 1.3 + d.rot) * swA;
+    ctx.fillStyle = i % 2 ? env.weed2 : env.weed;
+    ctx.beginPath();
+    ctx.moveTo(off - 3 * d.s, 0);
+    ctx.quadraticCurveTo(off + sw * 0.3 - 2 * d.s, -h * 0.6, off + sw, -h);
+    ctx.quadraticCurveTo(off + sw * 0.3 + 2 * d.s, -h * 0.6, off + 3 * d.s, 0);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+
 // The water gradient is cached per environment, rebuilt only when the band changes.
 let poolGrad = null, gradEnv = '';
 
@@ -39,7 +62,7 @@ export function drawPool(ctx, state, t) {
   if (env.rays > 0) {
     for (let i = 0; i < 4; i += 1) {
       const rx = 200 + i * 260 + Math.sin(t * 0.25 + i * 1.7) * 24;
-      ctx.fillStyle = `rgba(220,255,245,${0.09 * env.rays * (1 + 0.15 * Math.sin(t * 0.7 + i * 2.1))})`;
+      ctx.fillStyle = `rgba(230,255,250,${0.13 * env.rays * (1 + 0.15 * Math.sin(t * 0.7 + i * 2.1))})`;
       ctx.beginPath();
       ctx.moveTo(rx, y0 - 10); ctx.lineTo(rx + 70, y0 - 10);
       ctx.lineTo(rx + 170, y0 + ph + 10); ctx.lineTo(rx + 60, y0 + ph + 10);
@@ -48,7 +71,7 @@ export function drawPool(ctx, state, t) {
     for (let i = 0; i < 2; i += 1) {
       const cx = POOL.cx + Math.sin(t * 0.11 + i * 2.4) * 260;
       const cy = POOL.cy + Math.cos(t * 0.09 + i * 1.3) * 130;
-      ctx.fillStyle = `rgba(200,255,240,${0.09 * Math.max(0.15, env.rays)})`;
+      ctx.fillStyle = `rgba(210,255,245,${0.12 * Math.max(0.15, env.rays)})`;
       ctx.beginPath(); ctx.ellipse(cx, cy, 150, 70, 0.3 * i, 0, Math.PI * 2); ctx.fill();
     }
     for (let i = 0; i < 10; i += 1) {
@@ -92,9 +115,10 @@ export function drawPool(ctx, state, t) {
   ctx.restore();
   // Decor: rocks, weed, shells, sand dollars — placed by the seeded RNG.
   // Weed sway: visible bend, random phase per plant; the storm current is
-  // faster and stronger. SHALLOWS gentle, DEEP REEF same, STORM wild.
+  // faster and stronger. Bright bands gentle, STORM wild.
   const swA = env.rain ? 17 : 13, swS = env.rain ? 3 : 1.8;
   for (const d of state.decor) {
+    if (d.kind === 'weed') { drawWeed(ctx, d, env, t, swA, swS); continue; }
     ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.rot); ctx.globalAlpha = 0.85;
     ctx.fillStyle = 'rgba(4,26,32,0.28)';
     ctx.beginPath(); ctx.ellipse(3, 6, 15 * d.s, 7 * d.s, 0, 0, Math.PI * 2); ctx.fill();
@@ -102,18 +126,6 @@ export function drawPool(ctx, state, t) {
       ctx.fillStyle = '#5a6b66'; ctx.beginPath(); ctx.ellipse(0, 0, 16 * d.s, 11 * d.s, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = 'rgba(255,255,255,0.14)';
       ctx.beginPath(); ctx.ellipse(-4 * d.s, -3 * d.s, 7 * d.s, 4 * d.s, 0, 0, Math.PI * 2); ctx.fill();
-    } else if (d.kind === 'weed') {
-      // Blades bend with the current — coral pink in the DEEP REEF.
-      ctx.strokeStyle = env.weed; ctx.lineWidth = 3; ctx.lineCap = 'round';
-      for (let i = -1; i <= 1; i += 1) {
-        const sw = Math.sin(t * swS + i * 1.3 + d.rot) * swA;
-        ctx.beginPath(); ctx.moveTo(i * 6, 0);
-        ctx.quadraticCurveTo(i * 8 + sw * 0.5, -16 * d.s, i * 4 + sw, -32 * d.s); ctx.stroke();
-      }
-      ctx.strokeStyle = env.weed2; ctx.lineWidth = 2;
-      const sw2 = Math.sin(t * swS + d.rot) * swA * 1.2;
-      ctx.beginPath(); ctx.moveTo(0, 0);
-      ctx.quadraticCurveTo(4 + sw2 * 0.5, -20 * d.s, sw2, -38 * d.s); ctx.stroke();
     } else if (d.kind === 'shell') {
       // Pale lavender, never gold — a gold shell would read as a coin.
       ctx.fillStyle = '#d8cfe8'; ctx.beginPath(); ctx.arc(0, 0, 7 * d.s, Math.PI, 0); ctx.fill();

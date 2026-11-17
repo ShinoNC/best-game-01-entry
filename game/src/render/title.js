@@ -3,7 +3,7 @@
 import { CREATURE_ORDER, DIFFICULTIES, ENEMIES, PAL, VIEW_W } from '../config.js';
 import { drawCrab, drawEnemy } from './creatures.js';
 import { difficultyLayout, titleLayout } from './layout.js';
-import { bevel, logoText } from './polish.js';
+import { bevel, logoText, txt } from './polish.js';
 
 // Ambient life: 24 creatures, all 7 types, drifting slowly across the whole
 // screen behind the menu. Random mix per page load; positions are a pure
@@ -55,11 +55,8 @@ export function drawTitle(ctx, state) {
     '900 88px "Trebuchet MS", "Segoe UI", Verdana, sans-serif',
     '#ffb35c', '#e8590c', '#4a2408', 3);
   ctx.letterSpacing = '0px';
-  ctx.save();
-  ctx.shadowColor = 'rgba(4,26,32,0.8)'; ctx.shadowBlur = 6; ctx.shadowOffsetY = 2;
-  ctx.fillStyle = PAL.gold; ctx.font = 'bold 21px sans-serif';
-  ctx.fillText('★ CLEAR 30 STAGES — BEAT THE HERONS, WIN THE POOL ★', VIEW_W / 2, 152);
-  ctx.restore();
+  ctx.font = 'bold 21px sans-serif';
+  txt(ctx, '★ CLEAR 30 STAGES — BEAT THE HERONS, WIN THE POOL ★', VIEW_W / 2, 152, PAL.gold);
   // The vertical menu: START first (gold, taller), then four dark buttons.
   // Beveled: gradient + top highlight + shadow. Keyboard selection
   // (Up/Down + Enter) gets a gold highlight ring.
@@ -83,15 +80,10 @@ export function drawTitle(ctx, state) {
       ctx.fillStyle = 'rgba(255,255,255,0.55)';
       ctx.fillText(label, b.x + b.w / 2, ty - 1);
       ctx.fillStyle = '#062a33';
-    } else { // light text on dark: a dark shadow below gives depth
-      ctx.save();
-      ctx.shadowColor = 'rgba(0,0,0,0.7)'; ctx.shadowBlur = 3; ctx.shadowOffsetY = 2;
-      ctx.fillStyle = PAL.text;
       ctx.fillText(label, b.x + b.w / 2, ty);
-      ctx.restore();
-      continue;
+    } else { // light text on dark: outlined, so it stays crisp over the water
+      txt(ctx, label, b.x + b.w / 2, ty, PAL.text);
     }
-    ctx.fillText(label, b.x + b.w / 2, ty);
   }
 }
 
@@ -112,18 +104,18 @@ export function drawDifficulty(ctx, state) {
     bevel(ctx, b.x, b.y, b.w, b.h, 10,
       sel ? '#16607a' : '#11566b', sel ? '#0a3d4d' : '#062a33',
       sel ? PAL.gold : PAL.foam, sel ? 3 : 2);
-    ctx.fillStyle = sel ? PAL.gold : PAL.text; ctx.font = 'bold 24px sans-serif';
-    ctx.fillText(d.label, b.x + b.w / 2, b.y + 38);
-    ctx.fillStyle = PAL.dim; ctx.font = '14px sans-serif';
-    ctx.fillText(d.desc, b.x + b.w / 2, b.y + 62);
+    ctx.font = 'bold 24px sans-serif';
+    txt(ctx, d.label, b.x + b.w / 2, b.y + 38, sel ? PAL.gold : PAL.text);
+    ctx.font = '14px sans-serif';
+    txt(ctx, d.desc, b.x + b.w / 2, b.y + 62, PAL.dim);
     const best = bests[b.id] || 0;
-    ctx.fillStyle = best > 0 ? PAL.gold : PAL.dim; ctx.font = 'bold 13px sans-serif';
-    ctx.fillText(best > 0 ? `BEST ${best}` : 'BEST —', b.x + b.w / 2, b.y + 88);
+    ctx.font = 'bold 13px sans-serif';
+    txt(ctx, best > 0 ? `BEST ${best}` : 'BEST —', b.x + b.w / 2, b.y + 88, best > 0 ? PAL.gold : PAL.dim);
   }
   const bk = DL.back;
   bevel(ctx, bk.x, bk.y, bk.w, bk.h, 8, '#11566b', '#062a33', PAL.foam, 2);
-  ctx.fillStyle = PAL.text; ctx.font = 'bold 17px sans-serif';
-  ctx.fillText('← BACK', bk.x + bk.w / 2, bk.y + 29);
-  ctx.fillStyle = PAL.dim; ctx.font = '13px sans-serif';
-  ctx.fillText('1–3 or ← → to choose · ENTER to start · ESC to go back', VIEW_W / 2, 560);
+  ctx.font = 'bold 17px sans-serif';
+  txt(ctx, '← BACK', bk.x + bk.w / 2, bk.y + 29, PAL.text);
+  ctx.font = '13px sans-serif';
+  txt(ctx, '1–3 or ← → to choose · ENTER to start · ESC to go back', VIEW_W / 2, 560, PAL.dim);
 }

@@ -1,6 +1,11 @@
 // The creatures: the crab (with weapon effects) and the seven enemy types.
 import { PAL } from '../config.js';
 import { star } from './icons.js';
+import { txt } from './polish.js';
+
+// Outline the just-filled path with a dark shade — creatures pop against
+// bright shallows and dark storm alike. Call right after the fill.
+function ol(ctx, c, w = 2) { ctx.strokeStyle = c; ctx.lineWidth = w; ctx.lineJoin = 'round'; ctx.stroke(); }
 
 export function drawCrab(ctx, p, t, clawStats, spinStats) {
   const s = p.radius / 20; // every part scales with the radius
@@ -29,6 +34,7 @@ export function drawCrab(ctx, p, t, clawStats, spinStats) {
   }
   // Body and the shell — the shell's colour IS the armour tier, so upgrades are visible.
   ctx.fillStyle = PAL.crab; ctx.beginPath(); ctx.ellipse(0, 0, 20, 16, 0, 0, Math.PI * 2); ctx.fill();
+  ol(ctx, PAL.crabDark, 2.5);
   const shellColors = [PAL.shell0, PAL.shell1, PAL.shell2, PAL.shell3];
   ctx.fillStyle = shellColors[p.shellTier] || PAL.shell0;
   ctx.beginPath(); ctx.arc(-4, 0, 14, Math.PI * 0.5, Math.PI * 1.5); ctx.fill();
@@ -99,6 +105,7 @@ export function drawEnemy(ctx, e, t, ang) {
     ctx.scale(1 / pu, pu);
     ctx.fillStyle = flash ? '#fff' : e.color;
     ctx.beginPath(); ctx.arc(0, 0, e.r, Math.PI, 0); ctx.fill();
+    ol(ctx, flash ? '#fff' : e.dark, 2);
     ctx.fillStyle = flash ? '#fff' : e.dark; // inner bell shading
     ctx.beginPath(); ctx.arc(0, -e.r * 0.25, e.r * 0.55, Math.PI, 0); ctx.fill();
     ctx.strokeStyle = flash ? '#fff' : e.dark; ctx.lineWidth = 2;
@@ -119,6 +126,7 @@ export function drawEnemy(ctx, e, t, ang) {
     }
     ctx.fillStyle = flash ? '#fff' : e.color;
     ctx.beginPath(); ctx.arc(0, 0, e.r * 0.62, 0, Math.PI * 2); ctx.fill();
+    ol(ctx, flash ? '#fff' : e.dark, 2);
     ctx.fillStyle = 'rgba(255,255,255,0.25)';
     ctx.beginPath(); ctx.arc(-e.r * 0.2, -e.r * 0.2, e.r * 0.25, 0, Math.PI * 2); ctx.fill();
   } else if (e.type === 'starfish' || e.type === 'mini') {
@@ -126,6 +134,7 @@ export function drawEnemy(ctx, e, t, ang) {
     const pu = 1 + Math.sin(t * 3 + e.wob) * 0.05;
     ctx.rotate(rock); ctx.scale(pu, pu);
     star(ctx, 0, 0, e.r, 0, flash ? '#fff' : e.color);
+    ol(ctx, flash ? '#fff' : e.dark, 2);
     ctx.fillStyle = flash ? '#fff' : e.dark;
     ctx.beginPath(); ctx.arc(0, 0, e.r * 0.25, 0, Math.PI * 2); ctx.fill();
   } else if (e.type === 'eel') {
@@ -139,6 +148,7 @@ export function drawEnemy(ctx, e, t, ang) {
     }
     ctx.fillStyle = flash ? '#fff' : e.color;
     ctx.beginPath(); ctx.arc(e.r * 1.15, 0, e.r * 0.52, 0, Math.PI * 2); ctx.fill();
+    ol(ctx, flash ? '#fff' : e.dark, 2);
     ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(e.r * 1.3, -e.r * 0.18, 2.4, 0, Math.PI * 2); ctx.fill();
     if (e.lungeT > 0) { // mid-lunge: a white streak sells the burst
       ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 3;
@@ -152,6 +162,7 @@ export function drawEnemy(ctx, e, t, ang) {
     ctx.rotate(face);
     ctx.fillStyle = flash ? '#fff' : e.color;
     ctx.beginPath(); ctx.ellipse(0, 0, e.r, e.r * 0.62, 0, 0, Math.PI * 2); ctx.fill();
+    ol(ctx, flash ? '#fff' : e.dark, 2);
     ctx.fillStyle = flash ? '#fff' : e.dark;
     ctx.fillRect(-e.r * 0.2, -e.r * 0.55, e.r * 0.3, e.r * 1.1);
     ctx.fillStyle = flash ? '#fff' : e.color;
@@ -172,9 +183,11 @@ export function drawEnemy(ctx, e, t, ang) {
     for (const sgn of [-1, 1]) {
       ctx.save(); ctx.translate(-2, sgn * 4); ctx.rotate(sgn * (0.5 + flap * 0.5));
       ctx.beginPath(); ctx.ellipse(-e.r * 0.7, 0, e.r * 0.95, 7, 0, 0, Math.PI * 2); ctx.fill();
+      ol(ctx, flash ? '#fff' : e.dark, 2);
       ctx.restore();
     }
     ctx.beginPath(); ctx.ellipse(0, 0, e.r * 0.9, e.r * 0.55, 0, 0, Math.PI * 2); ctx.fill();
+    ol(ctx, flash ? '#fff' : e.dark, 2);
     ctx.fillStyle = flash ? '#fff' : '#ffd166';
     ctx.beginPath(); ctx.moveTo(e.r * 0.7, -3); ctx.lineTo(e.r * 1.5, 0); ctx.lineTo(e.r * 0.7, 3); ctx.closePath(); ctx.fill();
     ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(e.r * 0.5, -4, 2.5, 0, Math.PI * 2); ctx.fill();
@@ -201,6 +214,7 @@ export function drawEnemy(ctx, e, t, ang) {
     ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-e.r * 0.7, -e.r * 0.6); ctx.lineTo(-e.r * 0.7, e.r * 0.6); ctx.closePath(); ctx.fill();
     ctx.restore();
     ctx.beginPath(); ctx.ellipse(0, 0, e.r, e.r * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+    ol(ctx, flash ? '#fff' : e.dark, 2);
     ctx.fillStyle = 'rgba(255,255,255,0.35)';
     ctx.beginPath(); ctx.ellipse(-e.r * 0.2, -e.r * 0.2, e.r * 0.4, e.r * 0.22, 0, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(e.r * 0.5, -2, 2, 0, Math.PI * 2); ctx.fill();
@@ -209,8 +223,8 @@ export function drawEnemy(ctx, e, t, ang) {
   if (e.elite) { // gold ring + star: elites are worth hunting
     ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(e.x, e.y, e.r + 7, 0, Math.PI * 2); ctx.stroke();
-    ctx.fillStyle = '#ffd166'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText('★', e.x, e.y - e.r - 26);
+    ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
+    txt(ctx, '★', e.x, e.y - e.r - 26, '#ffd166');
   }
 // HP bars on every DAMAGED enemy: thin + small for regulars, larger for
 // elites/boss. Full-HP enemies need no bar (they are full by definition).

@@ -9,6 +9,7 @@ import { drawAchievements, drawHelp, drawHistory, drawSettings } from './render/
 import { drawStageMenu } from './render/menu.js';
 import { drawOver } from './render/over.js';
 import { heart } from './render/icons.js';
+import { txt } from './render/polish.js';
 
 export { MENU_ITEMS, SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE, difficultyLayout, overLayout, stageMenuLayout, titleLayout } from './render/layout.js';
 
@@ -65,8 +66,8 @@ export function createRenderer(canvas) {
           ctx.strokeStyle = `rgba(255,93,115,${0.45 + 0.3 * pulse})`;
           ctx.lineWidth = 2;
           ctx.beginPath(); ctx.arc(jx, jy, 44 + pulse * 6, 0, Math.PI * 2); ctx.stroke();
-          ctx.fillStyle = '#ff5d73'; ctx.font = 'bold 24px sans-serif'; ctx.textAlign = 'center';
-          ctx.fillText('!', ix, iy - e.r - 10);
+          ctx.font = 'bold 24px sans-serif'; ctx.textAlign = 'center';
+          txt(ctx, '!', ix, iy - e.r - 10, '#ff5d73');
           ctx.restore();
         }
       }
@@ -83,13 +84,13 @@ export function createRenderer(canvas) {
         if (pk.kind === 'heal') heart(ctx, pk.x, pk.y + Math.sin(t * 3) * 2, 13, PAL.hp);
         else if (pk.kind === 'bomb') {
           ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(pk.x, pk.y, 13, 0, Math.PI * 2); ctx.fill();
-          ctx.fillStyle = '#062a33'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center';
-          ctx.fillText('✹', pk.x, pk.y + 5);
+          ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center';
+          txt(ctx, '✹', pk.x, pk.y + 5, '#062a33');
         } else {
           ctx.strokeStyle = '#7fe0c3'; ctx.lineWidth = 3;
           ctx.beginPath(); ctx.arc(pk.x, pk.y, 12, 0, Math.PI * 2); ctx.stroke();
-          ctx.fillStyle = '#7fe0c3'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center';
-          ctx.fillText('◎', pk.x, pk.y + 5);
+          ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center';
+          txt(ctx, '◎', pk.x, pk.y + 5, '#7fe0c3');
         }
       }
       for (const b of state.bolts) {

@@ -47,6 +47,10 @@ export function createParticles() {
       }
     },
     bubbles(x, y, n) { this.burst(x, y, '#bfe8e0', n, 50, 'bubble'); },
+    // Spawn telegraph: an expanding ripple ring at the edge point where an
+    // enemy enters — the player sees the flood coming instead of enemies
+    // materialising under them. 0.45s, fades as it grows.
+    ring(x, y) { this.add({ x, y, vx: 0, vy: 0, life: 0.45, max: 0.45, r: 6, color: '#bfe8e0', kind: 'ring' }); },
     shake(amount) { trauma = Math.min(1, trauma + amount); },
     get shakeX() { return trauma * trauma * 14 * (Math.random() * 2 - 1); },
     get shakeY() { return trauma * trauma * 14 * (Math.random() * 2 - 1); },
@@ -71,6 +75,9 @@ export function createParticles() {
         if (p.kind === 'bubble') {
           ctx.strokeStyle = p.color; ctx.lineWidth = 1.5;
           ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.stroke();
+        } else if (p.kind === 'ring') {
+          ctx.strokeStyle = p.color; ctx.lineWidth = 2.5;
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r + (1 - p.life / p.max) * 24, 0, Math.PI * 2); ctx.stroke();
         } else {
           ctx.fillStyle = p.color;
           ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();

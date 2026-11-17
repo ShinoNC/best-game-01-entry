@@ -43,6 +43,16 @@ export function logoText(ctx, text, x, y, font, top, bottom, outline, lw = 3) {
   ctx.restore();
 }
 
+// Outlined text: a thin dark stroke behind the fill so text stays crisp
+// over bright shallows and dark storm alike. Font/align set by the caller.
+export function txt(ctx, text, x, y, fill, lw = 2) {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(4,26,32,0.8)'; ctx.lineWidth = lw; ctx.lineJoin = 'round';
+  ctx.strokeText(text, x, y);
+  ctx.fillStyle = fill; ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
 // Lift a flat panel off the background: soft shadow + faint top highlight.
 export function lift(ctx, x, y, w, h, r = 4) {
   ctx.save();

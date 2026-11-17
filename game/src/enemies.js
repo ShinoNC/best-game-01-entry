@@ -3,12 +3,15 @@ import { DIFFICULTIES, ELITE, ENEMIES, POOL, SPIT, STAGES, bossForStage, dmgScal
 
 let nextId = 1;
 
-export function spawnEnemy(state, type, elite) {
+export function spawnEnemy(state, type, elite, fx) {
   const def = ENEMIES[type];
   const diff = DIFFICULTIES[state.difficulty || 'normal'];
   const s = Math.floor(state.rng.next() * 4), f = state.rng.next(); // one of the four edges, just outside it
   const x = s === 1 ? POOL.x1 + 14 : s === 3 ? POOL.x0 - 14 : POOL.x0 + f * (POOL.x1 - POOL.x0);
   const y = s === 0 ? POOL.y0 - 14 : s === 2 ? POOL.y1 + 14 : POOL.y0 + f * (POOL.y1 - POOL.y0);
+  // Spawn telegraph: a ripple ring at the edge point where the enemy enters,
+  // clamped inside the pool so it never draws over the HUD bars.
+  if (fx && fx.ring) fx.ring(Math.max(POOL.x0 + 8, Math.min(POOL.x1 - 8, x)), Math.max(POOL.y0 + 8, Math.min(POOL.y1 - 8, y)));
   const hp = Math.round(def.hp * hpScale(state.stage) * diff.hp * (elite ? ELITE.hpMul : 1));
   const e = {
     id: nextId += 1, type, x, y, hp, maxHp: hp, r: def.r * (elite ? ELITE.sizeMul : 1),
@@ -39,7 +42,7 @@ function spawnBoss(state, fx, audio) {
   state.bossSpawned = true;
   const def = bossForStage(state.stage);
   const diff = DIFFICULTIES[state.difficulty || 'normal'];
-  const b = spawnEnemy(state, 'gull', true);
+  const b = spawnEnemy(state, 'gull', true, fx);
   b.type = def.type;
   b.boss = true;
   b.name = def.name;
@@ -69,13 +72,13 @@ export function updateSpawner(state, dt, fx, audio) {
   if (state.spawnT <= 0 && state.stageSpawned < plan.budget && state.enemies.length < 60) {
     state.spawnT = plan.interval;
     const n = Math.min(plan.batch, plan.budget - state.stageSpawned);
-    for (let i = 0; i < n; i += 1) { spawnEnemy(state, pickType(state), false); state.stageSpawned += 1; }
+    for (let i = 0; i < n; i += 1) { spawnEnemy(state, pickType(state), false, fx); state.stageSpawned += 1; }
   }
   // The elite (and the boss) arrive at half the budget — the stage's midpoint twist.
   if (plan.elite && !state.stageEliteDone && state.stageSpawned >= plan.budget / 2) {
     state.stageEliteDone = true;
     const type = state.rng.pick(['urchin', 'jelly', 'eel', 'starfish']);
-    const e = spawnEnemy(state, type, true);
+    const e = spawnEnemy(state, type, true, fx);
     state.banner = `★ ELITE ${type.toUpperCase()} — big coins!`; state.bannerT = 2.5;
     fx.burst(e.x, e.y, '#ffd166', 14, 180); audio.elite();
   }
@@ -84,15 +87,15 @@ export function updateSpawner(state, dt, fx, audio) {
   }
   // A summoning heron calls gulls while it lives — its adds do not count against
   // the stage budget, so the fight stays a fight even after the budget is spent.
+  // Called gulls fly in from the edges (with the spawn ripple); they never pop
+  // up next to the boss mid-pool — that was the "coming from the ground" feel.
   if (state.boss && state.boss.summonN > 0) {
     state.boss.summonT -= dt;
     if (state.boss.summonT <= 0 && state.enemies.length < 55) {
       state.boss.summonT = state.boss.summonEvery;
       for (let i = 0; i < state.boss.summonN; i += 1) {
-        const g = spawnEnemy(state, 'gull', false);
-        const a = state.rng.angle();
-        g.x = state.boss.x + Math.cos(a) * 120; g.y = state.boss.y + Math.sin(a) * 90;
-        g.state = 'circle'; g.diveT = 0.8;
+        const g = spawnEnemy(state, 'gull', false, fx);
+        g.state = 'approach';
       }
       fx.burst(state.boss.x, state.boss.y, state.boss.color, 10, 160);
     }
@@ -164,12 +167,17 @@ export function updateEnemies(state, dt) {
 }
 
 // Starfish split into two minis when killed — the only enemy that multiplies.
+// The split happens at the death spot by design (it IS a split, not a spawn);
+// the pink burst + spawn ripple mark it so it reads as a split, not a pop-up.
 export function onEnemyKilled(state, e, fx) {
   if (e.type === 'starfish') {
     for (let i = 0; i < 2; i += 1) {
       const m = spawnEnemy(state, 'mini', false);
       m.x = e.x + (i ? 14 : -14); m.y = e.y + (i ? -10 : 10);
     }
+    // No fx passed above: the minis do NOT enter from an edge, so no edge
+    // ripple — the burst + ring mark the split point itself instead.
+    if (fx) { fx.burst(e.x, e.y, '#ff8fb0', 8, 120); if (fx.ring) fx.ring(e.x, e.y); }
   }
   if (e.boss) {
     state.boss = null;
