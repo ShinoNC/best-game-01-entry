@@ -1,6 +1,8 @@
 export function createAudio() {
   let ctx = null, master = null, musicGain = null, muted = false;
   let musicOn = false, musicBuf = null, musicSrc = null;
+  let musicOff = false;
+  try { musicOff = localStorage.getItem('tidekeeper-music') === 'off'; } catch { /* ignore */ }
   // ONE master gain for all sound: mute sets it to 0 instantly.
   // Music is a looping MP3 (Pixabay "Sea and Beach") via musicGain.
   function playMusic() {
@@ -14,7 +16,7 @@ export function createAudio() {
         .catch(() => {});
     }
   }
-  function startMusic() { if (musicOn) return; musicOn = true; if (musicGain) musicGain.gain.value = 0.35; playMusic(); }
+  function startMusic() { if (musicOn || musicOff) return; musicOn = true; if (musicGain) musicGain.gain.value = 0.35; playMusic(); }
   function ensure() {
     if (!ctx) {
       try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch { return null; }
@@ -48,7 +50,7 @@ export function createAudio() {
     unlock() { ensure(); startMusic(); },
     toggleMute() { muted = !muted; if (master) master.gain.value = muted ? 0 : 1; return muted; },
     get muted() { return muted; },
-    toggleMusic() { musicOn = !musicOn; if (musicGain) musicGain.gain.value = musicOn ? 0.35 : 0; if (musicOn) playMusic(); return musicOn; },
+    toggleMusic() { musicOn = !musicOn; musicOff = !musicOn; try { localStorage.setItem('tidekeeper-music', musicOn ? 'on' : 'off'); } catch { /* ignore */ } if (musicGain) musicGain.gain.value = musicOn ? 0.35 : 0; if (musicOn) playMusic(); return musicOn; },
     get music() { return musicOn; },
     pop() { tone(880, 0.09, 'sine', 0.12, 1400); },
     coin() { tone(1320, 0.07, 'sine', 0.10, 1760); },
