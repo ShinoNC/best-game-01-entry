@@ -105,6 +105,15 @@ function fireWeapon(state, id, aim, target, fx, audio) {
       hits += 1;
     }
     audio.pop();
+  } else if (id === 'trident') { // a fan of 3 harpoons — the crowd weapon
+    for (let i = 0; i < w.harpoons; i += 1) {
+      const off = (i - (w.harpoons - 1) / 2) * w.spread;
+      state.bolts.push({ x: p.x + Math.cos(aim) * 28, y: p.y + Math.sin(aim) * 28,
+        vx: Math.cos(aim + off) * 600, vy: Math.sin(aim + off) * 600, dmg: Math.round(w.dmg),
+        pierce: 0, r: 6, life: 1.0, kind: 'harpoon' });
+    }
+    fx.bubbles(p.x + Math.cos(aim) * 28, p.y + Math.sin(aim) * 28, 2);
+    audio.bolt();
   } else { // blaster: a tight spread of ink pellets
     for (let i = 0; i < w.pellets; i += 1) {
       const off = (i - (w.pellets - 1) / 2) * 0.14;
@@ -140,9 +149,6 @@ export function updatePlayer(state, input, dt, fx, audio) {
     const s = slideAtEdge(p, p.dashVx, p.dashVy);
     p.x += s.vx * dt; p.y += s.vy * dt;
     fx.bubbles(p.x, p.y, 1); // a bubble trail marks the dash path
-    if (state.ups.ink > 0 && state.rng.chance(0.7)) {
-      state.inks.push({ x: p.x, y: p.y, r: 26 + state.ups.ink * 6, life: 2.2, dmg: 6 + state.ups.ink * 4 });
-    }
   } else if (mv.x || mv.y) {
     const s = slideAtEdge(p, mv.x * p.speed, mv.y * p.speed);
     p.x += s.vx * dt; p.y += s.vy * dt;

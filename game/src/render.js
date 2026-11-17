@@ -4,13 +4,13 @@ import { weaponStatsFor } from './weapons.js';
 import { drawCrab, drawEnemy } from './render/creatures.js';
 import { drawPool } from './render/pool.js';
 import { drawHud, drawPaused } from './render/hud.js';
-import { drawTitle } from './render/title.js';
+import { drawDifficulty, drawTitle } from './render/title.js';
 import { drawAchievements, drawHelp, drawHistory, drawSettings } from './render/overlays.js';
 import { drawStageMenu } from './render/menu.js';
 import { drawOver } from './render/over.js';
 import { heart } from './render/icons.js';
 
-export { SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE, stageMenuLayout, titleLayout } from './render/layout.js';
+export { MENU_ITEMS, SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE, difficultyLayout, overLayout, stageMenuLayout, titleLayout } from './render/layout.js';
 
 export function createRenderer(canvas) {
   const ctx = canvas.getContext('2d');
@@ -45,7 +45,11 @@ export function createRenderer(canvas) {
       const a = Math.max(0, Math.min(1, alpha));
       const lerp = (prev, cur) => prev + (cur - prev) * a;
       ctx.setTransform(s, 0, 0, s, oxd + fx.shakeX * s, oyd + fx.shakeY * s);
-      drawPool(ctx, state, t);
+      // Background life runs on the render clock, not sim time — the water
+      // keeps moving on the title and while paused. Staged shots use the
+      // frozen sim time so captures stay deterministic.
+      const rt = state.shotMode ? t : performance.now() / 1000;
+      drawPool(ctx, state, rt);
       // Dive telegraph: a swooper about to dive shows a dashed line to the crab, a ring on the crab, "!" over the bird.
       for (const e of state.enemies) {
         if ((e.type === 'gull' || e.type.endsWith('heron')) && e.state === 'circle' && e.diveT < 0.6) {
@@ -65,11 +69,6 @@ export function createRenderer(canvas) {
           ctx.fillText('!', ix, iy - e.r - 10);
           ctx.restore();
         }
-      }
-      // Ink pools under everything that swims.
-      for (const ink of state.inks) {
-        ctx.fillStyle = `rgba(123,92,255,${Math.min(0.55, ink.life / 2)})`;
-        ctx.beginPath(); ctx.arc(ink.x, ink.y, ink.r, 0, Math.PI * 2); ctx.fill();
       }
       for (const pe of state.drops) { // coins bob and glint — the menu money
         const bobY = Math.sin(pe.bob) * 3;
@@ -112,6 +111,18 @@ export function createRenderer(canvas) {
           ctx.strokeStyle = '#a894c4'; ctx.lineWidth = 2;
           ctx.beginPath(); ctx.arc(b.x, b.y, b.r * 0.55, t * 6, t * 6 + Math.PI * 1.5); ctx.stroke();
           ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.x - 2, b.y - 2, 2, 0, Math.PI * 2); ctx.fill();
+        } else if (b.kind === 'harpoon') { // trident harpoon: a steel shaft, barbed tip
+          const ba = Math.atan2(b.vy, b.vx);
+          const cx = Math.cos(ba), sx = Math.sin(ba);
+          ctx.strokeStyle = '#c8d8e0'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(b.x - cx * 14, b.y - sx * 14);
+          ctx.lineTo(b.x + cx * 6, b.y + sx * 6); ctx.stroke();
+          ctx.fillStyle = '#e8f4ff';
+          ctx.beginPath();
+          ctx.moveTo(b.x + cx * 13, b.y + sx * 13);
+          ctx.lineTo(b.x - sx * 5 + cx * 4, b.y + cx * 5 + sx * 4);
+          ctx.lineTo(b.x + sx * 5 + cx * 4, b.y - cx * 5 + sx * 4);
+          ctx.closePath(); ctx.fill();
         }
       }
       for (const s of state.spits) { // enemy spit: a bright droplet, easy to see and dodge
@@ -122,7 +133,7 @@ export function createRenderer(canvas) {
         const ix = lerp(e.px ?? e.x, e.x), iy = lerp(e.py ?? e.y, e.y);
         drawEnemy(ctx, { ...e, x: ix, y: iy }, t, Math.atan2(state.player.y - iy, state.player.x - ix));
       }
-      if (state.phase !== 'title') {
+      if (state.phase !== 'title' && state.phase !== 'difficulty') {
         const p = state.player;
         drawCrab(ctx, { ...p, x: lerp(p.px ?? p.x, p.x), y: lerp(p.py ?? p.y, p.y) }, t,
           weaponStatsFor(state, 'claw'),
@@ -141,6 +152,7 @@ export function createRenderer(canvas) {
       ctx.setTransform(s, 0, 0, s, oxd, oyd);
       if (state.phase === 'play' || state.phase === 'paused') drawHud(ctx, state, t);
       if (state.phase === 'title') drawTitle(ctx, state);
+      if (state.phase === 'difficulty') drawDifficulty(ctx, state);
       if (state.phase === 'stageclear') drawStageMenu(ctx, state, hover); // no HUD here — its own title owns the top
       if (state.phase === 'paused') drawPaused(ctx);
       if (state.phase === 'over') drawOver(ctx, state);

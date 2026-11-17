@@ -1,4 +1,4 @@
-// Weapons: six tools with six feels. ALL owned weapons fire at once, each at the nearest creature in ITS range.
+// Weapons: seven tools with seven feels. ALL owned weapons fire at once, each at the nearest creature in ITS range.
 import { WEAPON_MAX } from './config.js';
 
 // The weapon table: five levels each. Lv1 bow = 1 arrow, Lv1 blaster =
@@ -52,6 +52,14 @@ export const WEAPONS = {
       { dmg: 50, rate: 1.10, range: 480, beams: 1 },
       { dmg: 60, rate: 1.00, range: 560, beams: 2 },
     ] },
+  trident: { name: 'TRIDENT', icon: 'Ψ',
+    levels: [
+      { dmg: 18, rate: 0.90, range: 380, harpoons: 3, spread: 0.35 },
+      { dmg: 21, rate: 0.84, range: 400, harpoons: 3, spread: 0.38 },
+      { dmg: 24, rate: 0.78, range: 420, harpoons: 3, spread: 0.42 },
+      { dmg: 28, rate: 0.72, range: 440, harpoons: 3, spread: 0.46 },
+      { dmg: 32, rate: 0.66, range: 460, harpoons: 3, spread: 0.50 },
+    ] },
 };
 
 // Effective stats of ONE weapon (by id): its level table, multiplied by the
@@ -66,5 +74,6 @@ export function weaponStatsFor(state, id) {
     arc: def.arc ?? 0, pierce: def.pierce ?? 0, pellets: def.pellets ?? 1,
     hits: def.hits ?? 1, turn: def.turn ?? 0, speed: def.speed ?? 0,
     arrows: def.arrows ?? 1, beams: def.beams ?? 0,
+    harpoons: def.harpoons ?? 0, spread: def.spread ?? 0,
   };
 }

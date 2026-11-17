@@ -4,6 +4,7 @@ import { DIFF_ORDER, FEATS } from './config.js';
 const BESTS_KEY = 'tidekeeper-bests';
 const FEATS_KEY = 'tidekeeper-feats';
 const RUNS_KEY = 'tidekeeper-runs';
+const LAST_DIFF_KEY = 'tidekeeper-last-diff';
 export const LEGACY_BEST_KEY = 'tidekeeper-best';
 
 function readJson(key, fallback) {
@@ -35,6 +36,17 @@ export function readMeta() {
   };
 }
 
+// The last difficulty chosen — the difficulty screen opens on it.
+export function readLastDiff() {
+  try {
+    const d = window.localStorage.getItem(LAST_DIFF_KEY);
+    return DIFF_ORDER.includes(d) ? d : 'normal';
+  } catch { return 'normal'; }
+}
+export function writeLastDiff(d) {
+  try { window.localStorage.setItem(LAST_DIFF_KEY, d); } catch { /* private mode */ }
+}
+
 // Which feats did THIS run earn that were not already unlocked? Pure — it
 // reads the run's stats and the stored set, and never writes. The caller
 // writes the union.
@@ -44,7 +56,7 @@ export function featsEarnedThisRun(state, unlocked) {
   const earned = [];
   const test = (id, ok) => { if (ok && !have.has(id)) earned.push(id); };
   test('firstblood', state.kills >= 1);
-  test('arsenal', ['claw', 'bow', 'blaster', 'shell', 'spin', 'laser'].every((w) => state.weapons[w] > 0));
+  test('arsenal', ['claw', 'bow', 'blaster', 'shell', 'spin', 'laser', 'trident'].every((w) => state.weapons[w] > 0));
   test('heron', (state.stats.bossesDown || 0) >= 1);
   test('king', won);
   test('untouched', !!state.stats.cleanStage);

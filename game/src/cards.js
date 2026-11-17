@@ -97,7 +97,7 @@ export function rerollHand(state) {
 }
 
 // The sim autopilot's shopper: new weapons first, then level-ups, skills, repair last.
-const SKILL_ORDER = ['claws', 'tempo', 'shell', 'reach', 'bubbles', 'legs', 'ink', 'magnet'];
+const SKILL_ORDER = ['claws', 'tempo', 'shell', 'reach', 'bubbles', 'legs', 'magnet'];
 function cardScore(card) {
   if (card.kind === 'weapon') return 1000 - card.price;
   if (card.kind === 'wup') return (card.wid === 'claw' ? 900 : 800) - card.price;

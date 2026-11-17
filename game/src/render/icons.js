@@ -58,6 +58,16 @@ export function drawWeaponIcon(ctx, id, x, y, s, owned) {
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(18, 0); ctx.stroke();
     ctx.fillStyle = '#ff2e88'; ctx.beginPath(); ctx.arc(19, 0, 3, 0, Math.PI * 2); ctx.fill();
+  } else if (id === 'trident') { // a steel trident: shaft + 3 prongs
+    ctx.strokeStyle = '#c8d8e0'; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-14, 0); ctx.lineTo(10, 0); ctx.stroke();
+    ctx.strokeStyle = '#e8f4ff'; ctx.lineWidth = 3;
+    for (const dy of [-12, 0, 12]) {
+      ctx.beginPath(); ctx.moveTo(10, dy); ctx.lineTo(17, dy); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.moveTo(10, -12); ctx.lineTo(10, 12); ctx.stroke();
+    ctx.fillStyle = '#e8f4ff';
+    ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(14, -4); ctx.lineTo(14, 4); ctx.closePath(); ctx.fill();
   } else { // spin: a whirlpool arrow
     ctx.strokeStyle = '#7fe0c3'; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.arc(0, 0, 13, 0.4, 4.8); ctx.stroke();

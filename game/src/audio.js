@@ -1,15 +1,29 @@
 // WebAudio SFX + a soft music loop, synthesised — no audio files. M toggles mute.
 export function createAudio() {
   let ctx = null, muted = false;
-  // Music: a slow C-major pentatonic arpeggio, one soft note every 0.9 s —
-  // calm tidewater under the SFX. tone() checks muted, so M silences it.
-  const MELODY = [523, 659, 784, 880, 784, 659, 587, 659];
+  // Music: a barely-there ambient pad — two soft chords (C major, A minor),
+  // one every 6 s, slow fades so they melt into each other. Sine only, very
+  // quiet: felt, not heard. pad() checks muted, so M silences it.
+  const CHORDS = [[131, 165, 196], [110, 131, 165]];
   let musicOn = false, musicStep = 0;
+  function pad(freqs) {
+    if (muted) return; const c = ensure(); if (!c) return;
+    const g = c.createGain(), t0 = c.currentTime;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(0.022, t0 + 1.5);
+    g.gain.setValueAtTime(0.022, t0 + 5);
+    g.gain.linearRampToValueAtTime(0.0001, t0 + 7);
+    g.connect(c.destination);
+    for (const f of freqs) {
+      const o = c.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+      o.connect(g); o.start(t0); o.stop(t0 + 7);
+    }
+  }
   function musicTick() {
     if (!musicOn) return;
-    tone(MELODY[musicStep % MELODY.length], 1.6, 'sine', 0.045);
+    pad(CHORDS[musicStep % CHORDS.length]);
     musicStep += 1;
-    setTimeout(musicTick, 900);
+    setTimeout(musicTick, 6000);
   }
   function startMusic() { if (musicOn) return; musicOn = true; musicTick(); }
   function ensure() {

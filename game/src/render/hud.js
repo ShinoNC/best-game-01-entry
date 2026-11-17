@@ -4,16 +4,16 @@ import { UPGRADE_DEFS } from '../upgrades.js';
 import { comboMult } from '../world.js';
 import { drawCoin, drawWeaponIcon } from './icons.js';
 
-// Minimap: the whole pool in one glance — crab white, creatures coral, elite gold, boss orange.
+// Minimap: the whole pool in one glance — crab white, creatures coral, elite gold, boss orange. Top-right corner.
 function drawMinimap(ctx, state, t) {
-  const mx = 1215, my = 684;
+  const mx = 1225, my = 36;
   ctx.fillStyle = 'rgba(6,42,51,0.78)';
-  ctx.fillRect(mx - 30, my - 18, 60, 36);
+  ctx.fillRect(mx - 40, my - 24, 80, 48);
   ctx.strokeStyle = 'rgba(255,209,102,0.5)'; ctx.lineWidth = 1.5;
-  ctx.strokeRect(mx - 30, my - 18, 60, 36);
+  ctx.strokeRect(mx - 40, my - 24, 80, 48);
   ctx.fillStyle = 'rgba(29,138,166,0.9)';
-  ctx.fillRect(mx - 25, my - 13, 50, 26);
-  const dot = (wx, wy) => [mx + ((wx - POOL.cx) / POOL.rx) * 25, my + ((wy - POOL.cy) / POOL.ry) * 13];
+  ctx.fillRect(mx - 35, my - 19, 70, 38);
+  const dot = (wx, wy) => [mx + ((wx - POOL.cx) / POOL.rx) * 35, my + ((wy - POOL.cy) / POOL.ry) * 19];
   for (const e of state.enemies) {
     const [dx, dy] = dot(e.x, e.y);
     if (e.boss) {
@@ -43,35 +43,24 @@ export function drawHud(ctx, state, t) {
   ctx.fillStyle = 'rgba(6,42,51,0.92)';
   ctx.fillRect(0, 0, VIEW_W, 72);
   ctx.fillRect(0, VIEW_H - 72, VIEW_W, 72);
-  ctx.fillStyle = PAL.hp; ctx.font = 'bold 26px sans-serif';
-  ctx.fillText('♥', 28, 38);
-  ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(58, 26, 190, 18);
-  ctx.fillStyle = PAL.hp; ctx.fillRect(58, 26, 190 * (p.hp / p.maxHp), 18);
-  ctx.fillStyle = PAL.text; ctx.font = 'bold 15px sans-serif';
-  ctx.fillText(`${Math.ceil(p.hp)} / ${p.maxHp} HP`, 258, 42);
-  ctx.fillStyle = PAL.gold;
-  ctx.fillText(`SHELL ${'●'.repeat(p.shellTier + 1)}${'○'.repeat(3 - p.shellTier)}`, 58, 62);
+  // A light edge lifts each bar off the water.
+  ctx.fillStyle = 'rgba(255,255,255,0.14)';
+  ctx.fillRect(0, 70, VIEW_W, 2);
+  ctx.fillRect(0, VIEW_H - 72, VIEW_W, 2);
+  // Top bar: STAGE (left) + SCORE / COINS / COMBO (right). Nothing else —
+  // the goal lives on the title and in HOW TO PLAY, the HP bar lives below.
   const remaining = (STAGES[state.stage - 1].budget - state.stageSpawned) + state.enemies.length;
   const diffLabel = (DIFFICULTIES[state.difficulty || 'normal'] || DIFFICULTIES.normal).label;
-  ctx.textAlign = 'center';
-  ctx.fillStyle = PAL.text; ctx.font = 'bold 22px sans-serif';
-  ctx.fillText(`STAGE ${state.stage} / ${STAGE_COUNT} · ${diffLabel}`, VIEW_W / 2, 32);
-  ctx.font = 'bold 13px sans-serif';
-  const winTxt = 'WIN: CLEAR STAGE 30', loseTxt = 'LOSE: HP = 0';
-  const w1 = ctx.measureText(winTxt).width + 20, w2 = ctx.measureText(loseTxt).width + 20;
-  const px = VIEW_W / 2 - (w1 + w2 + 8) / 2;
-  ctx.fillStyle = '#1e7d4f'; ctx.fillRect(px, 44, w1, 19);
-  ctx.fillStyle = '#a83246'; ctx.fillRect(px + w1 + 8, 44, w2, 19);
-  ctx.fillStyle = '#fff';
-  ctx.fillText(winTxt, px + w1 / 2, 58);
-  ctx.fillText(loseTxt, px + w1 + 8 + w2 / 2, 58);
+  ctx.fillStyle = PAL.text; ctx.font = 'bold 24px sans-serif';
+  ctx.fillText(`STAGE ${state.stage} / ${STAGE_COUNT} · ${diffLabel}`, 28, 44);
   ctx.textAlign = 'right';
   ctx.fillStyle = PAL.gold; ctx.font = 'bold 30px sans-serif';
-  ctx.fillText(`SCORE ${state.score}`, VIEW_W - 28, 38);
+  ctx.fillText(`SCORE ${state.score}`, 1170, 38);
   ctx.font = 'bold 15px sans-serif';
-  const coinTxt = `${state.coins} COINS · COMBO ×${comboMult(state)}`;
-  ctx.fillText(coinTxt, VIEW_W - 28, 60);
-  drawCoin(ctx, VIEW_W - 28 - ctx.measureText(coinTxt).width - 13, 55, 8);
+  const coinTxt = `${state.coins} COINS · COMBO ×${comboMult(state)} · BEST ${state.best}`;
+  ctx.fillText(coinTxt, 1170, 60);
+  drawCoin(ctx, 1170 - ctx.measureText(coinTxt).width - 13, 55, 8);
+  drawMinimap(ctx, state, t);
   const nx = state.stage + 1;
   const nextBoss = nx <= STAGE_COUNT ? bossForStage(nx) : null;
   const nextLine = nextBoss ? `NEXT: ⚠ ${nextBoss.name}`
@@ -99,44 +88,49 @@ export function drawHud(ctx, state, t) {
     ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(VIEW_W / 2 - 180, 100, 360, 6);
     ctx.fillStyle = '#ff5d73'; ctx.fillRect(VIEW_W / 2 - 180, 100, 360 * (state.boss.hp / state.boss.maxHp), 6);
   }
-  ctx.textAlign = 'left';
-  ctx.fillStyle = PAL.dim; ctx.font = 'bold 13px sans-serif';
-  ctx.fillText('SKILLS', 18, 690);
-  let sx = 80;
-  for (const d of UPGRADE_DEFS) {
-    const lv = state.ups[d.id];
-    const by = VIEW_H - 58;
-    ctx.fillStyle = lv > 0 ? 'rgba(127,224,195,0.9)' : 'rgba(255,255,255,0.18)';
-    ctx.fillRect(sx, by, 30, 36);
-    ctx.fillStyle = lv > 0 ? '#062a33' : '#9fc4bd'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText(d.icon, sx + 15, by + 17);
-    if (lv > 0) {
-      ctx.fillStyle = '#062a33'; ctx.font = 'bold 9px sans-serif';
-      ctx.fillText(`Lv${lv}`, sx + 15, by + 31);
-    }
-    sx += 33;
-  }
-  ctx.textAlign = 'left';
+  // Bottom bar: weapons (left) | HP (centre) | skills (right). 7 + 7 slots,
+  // all the same 44×44 size with level pips — the HP bar separates them.
   for (let i = 0; i < WEAPON_ORDER.length; i += 1) {
     const id = WEAPON_ORDER[i];
     const lv = state.weapons[id];
-    const bx = 360 + i * 52, by = VIEW_H - 60;
+    const bx = 28 + i * 52, by = 662;
     ctx.fillStyle = lv > 0 ? 'rgba(127,224,195,0.22)' : 'rgba(255,255,255,0.08)';
-    ctx.fillRect(bx, by, 48, 48);
+    ctx.fillRect(bx, by, 44, 44);
+    ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(bx, by, 44, 2);
     ctx.strokeStyle = lv > 0 ? 'rgba(127,224,195,0.6)' : 'rgba(255,255,255,0.15)';
-    ctx.lineWidth = 1; ctx.strokeRect(bx, by, 48, 48);
-    drawWeaponIcon(ctx, id, bx + 24, by + 20, 34, lv > 0);
+    ctx.lineWidth = 1; ctx.strokeRect(bx, by, 44, 44);
+    drawWeaponIcon(ctx, id, bx + 22, by + 18, 30, lv > 0);
     for (let j = 0; j < WEAPON_MAX; j += 1) {
       ctx.fillStyle = j < lv ? '#7fe0c3' : 'rgba(255,255,255,0.25)';
-      ctx.beginPath(); ctx.arc(bx + 10 + j * 6, by + 41, 2.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(bx + 10 + j * 6, by + 37, 2.5, 0, Math.PI * 2); ctx.fill();
     }
   }
-  ctx.textAlign = 'center';
-  ctx.fillStyle = PAL.foam; ctx.font = '13px sans-serif';
-  ctx.fillText('WASD move · SPACE dash · P pause · M mute', 850, 676);
-  ctx.fillStyle = PAL.text; ctx.font = 'bold 13px sans-serif';
-  ctx.fillText(`BEST ${state.best}  •  ${state.kills} slain`, 850, 700);
-  drawMinimap(ctx, state, t);
+  // HP in the middle: heart + numbers, the bar, the shell tier below.
+  ctx.textAlign = 'left'; ctx.font = 'bold 14px sans-serif';
+  const hpTxt = `${Math.ceil(p.hp)} / ${p.maxHp} HP`;
+  const hx = 640 - ctx.measureText(`♥ ${hpTxt}`).width / 2;
+  ctx.fillStyle = PAL.hp; ctx.fillText('♥', hx, 668);
+  ctx.fillStyle = PAL.text; ctx.fillText(hpTxt, hx + ctx.measureText('♥ ').width, 668);
+  ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(490, 677, 300, 14);
+  ctx.fillStyle = PAL.hp; ctx.fillRect(490, 677, 300 * (p.hp / p.maxHp), 14);
+  ctx.textAlign = 'center'; ctx.fillStyle = PAL.gold; ctx.font = 'bold 12px sans-serif';
+  ctx.fillText(`SHELL ${'●'.repeat(p.shellTier + 1)}${'○'.repeat(3 - p.shellTier)}`, 640, 706);
+  for (let i = 0; i < UPGRADE_DEFS.length; i += 1) {
+    const d = UPGRADE_DEFS[i];
+    const lv = state.ups[d.id];
+    const bx = 896 + i * 52, by = 662; // 7 chips: 896–1252, mirroring the weapons (28–384)
+    ctx.fillStyle = lv > 0 ? 'rgba(127,224,195,0.22)' : 'rgba(255,255,255,0.08)';
+    ctx.fillRect(bx, by, 44, 44);
+    ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(bx, by, 44, 2);
+    ctx.strokeStyle = lv > 0 ? 'rgba(127,224,195,0.6)' : 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 1; ctx.strokeRect(bx, by, 44, 44);
+    ctx.fillStyle = lv > 0 ? '#7fe0c3' : '#9fc4bd'; ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(d.icon, bx + 22, by + 24);
+    for (let j = 0; j < d.max; j += 1) {
+      ctx.fillStyle = j < lv ? '#7fe0c3' : 'rgba(255,255,255,0.25)';
+      ctx.beginPath(); ctx.arc(bx + 10 + j * 6, by + 37, 2.5, 0, Math.PI * 2); ctx.fill();
+    }
+  }
   ctx.textAlign = 'right';
   ctx.fillStyle = 'rgba(6,42,51,0.85)'; ctx.fillRect(1092, 606, 160, 30);
   ctx.fillStyle = PAL.text; ctx.font = 'bold 15px sans-serif';

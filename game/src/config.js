@@ -2,12 +2,12 @@
 export const STAGE_COUNT = 30; // a full run is ~20–25 minutes
 export const VIEW_W = 1280;
 export const VIEW_H = 720;
-export const POOL = { x0: 4, y0: 74, x1: 1276, y1: 646, cx: 640, cy: 360, rx: 636, ry: 286 }; // full rectangle between the HUD bars (top 0–72, bottom 648–720); rx/ry = half-extents
+export const POOL = { x0: 0, y0: 72, x1: 1280, y1: 648, cx: 640, cy: 360, rx: 640, ry: 288 }; // full width between the HUD bars (top 0–72, bottom 648–720); rx/ry = half-extents
 export const BEST_KEY = 'tidekeeper-best';
 
 // Environments: the water changes by stage band — SHALLOWS / DEEP REEF / STORM TIDE.
 export const ENVS = [
-  { name: 'SHALLOWS', water: '#12708a', water2: '#1d8aa6', sand: '#c9a86a', weed: '#2f8f6b', weed2: '#4fae7d', rays: 1, rain: 0, glow: 0 },
+  { name: 'SHALLOWS', water: '#12809e', water2: '#54d2ee', sand: '#c9a86a', weed: '#2f8f6b', weed2: '#4fae7d', rays: 1, rain: 0, glow: 0 },
   { name: 'DEEP REEF', water: '#0a4058', water2: '#0e5a75', sand: '#8a7a5a', weed: '#b04a7a', weed2: '#d97aa8', rays: 0.4, rain: 0, glow: 0 },
   { name: 'STORM TIDE', water: '#0d1b2e', water2: '#1a2f4a', sand: '#5a6270', weed: '#2a5a6a', weed2: '#3a7a8a', rays: 0, rain: 1, glow: 1 },
 ];
@@ -87,7 +87,7 @@ export function dmgScale(stage) {
 }
 export function speedScale(stage) { return 1 + (stage - 1) * 0.032; } // stage 30: 1.93x enemy speed
 
-export const WEAPON_ORDER = ['claw', 'bow', 'blaster', 'shell', 'spin', 'laser'];
+export const WEAPON_ORDER = ['claw', 'bow', 'blaster', 'shell', 'spin', 'laser', 'trident'];
 export const WEAPON_MAX = 5; // levels per weapon
 
 export const SHOP = [
@@ -96,6 +96,7 @@ export const SHOP = [
   { id: 'shell', kind: 'weapon', price: 90, up: [170, 230, 300, 380], name: 'HOMING SHELL', icon: '◎' },
   { id: 'spin', kind: 'weapon', price: 70, up: [140, 190, 250, 320], name: 'WHIRLPOOL SPIN', icon: '↻' },
   { id: 'laser', kind: 'weapon', price: 130, up: [200, 260, 330, 420], name: 'LASER GUN', icon: '≋' },
+  { id: 'trident', kind: 'weapon', price: 120, up: [190, 250, 320, 410], name: 'TRIDENT', icon: 'Ψ' },
   { id: 'claw', kind: 'weapon', price: 0, up: [60, 95, 140, 200], name: 'SHARPEN CLAWS', icon: '✂' },
 ];
 
@@ -108,7 +109,7 @@ export const DIFF_ORDER = ['easy', 'normal', 'hard'];
 
 export const FEATS = [
   { id: 'firstblood', name: 'FIRST BLOOD', desc: 'Slay your first creature' },
-  { id: 'arsenal', name: 'FULL ARSENAL', desc: 'Own all 6 weapons in one run' },
+  { id: 'arsenal', name: 'FULL ARSENAL', desc: 'Own all 7 weapons in one run' },
   { id: 'heron', name: 'HERON SLAYER', desc: 'Drive off a heron' },
   { id: 'king', name: 'KINGSLAYER', desc: 'Beat the Heron King' },
   { id: 'untouched', name: 'UNTOUCHED', desc: 'Clear a stage without a scratch' },

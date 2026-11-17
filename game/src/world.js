@@ -156,7 +156,7 @@ export function stepWorld(state, input, dt, fx, audio) {
         if (b.pierce < 0) dead = true;
       }
     }
-    if (dead || Math.hypot(b.x - POOL.cx, b.y - POOL.cy) > 700) state.bolts.splice(i, 1);
+    if (dead || Math.hypot(b.x - POOL.cx, b.y - POOL.cy) > 720) state.bolts.splice(i, 1);
   }
 
   for (let i = state.spits.length - 1; i >= 0; i -= 1) {
@@ -166,17 +166,7 @@ export function stepWorld(state, input, dt, fx, audio) {
       hurtPlayer(state, s.dmg, fx, audio); dead = true;
       if (state.phase !== 'play') return;
     }
-    if (dead || Math.hypot(s.x - POOL.cx, s.y - POOL.cy) > 700) state.spits.splice(i, 1);
-  }
-
-  for (let i = state.inks.length - 1; i >= 0; i -= 1) {
-    const ink = state.inks[i]; ink.life -= dt;
-    if (ink.life <= 0) { state.inks.splice(i, 1); continue; }
-    for (const e of state.enemies) {
-      if (Math.hypot(e.x - ink.x, e.y - ink.y) < ink.r + e.r) {
-        e.hp -= ink.dmg * dt; e.flash = Math.max(e.flash, 0.05);
-      }
-    }
+    if (dead || Math.hypot(s.x - POOL.cx, s.y - POOL.cy) > 720) state.spits.splice(i, 1);
   }
 
   for (const e of state.enemies) {

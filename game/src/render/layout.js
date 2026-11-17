@@ -5,10 +5,10 @@ export const SCREEN_TITLE = 'title';
 export const SCREEN_PLAY = 'play';
 export const SCREEN_OVER = 'over';
 
-// Stage-clear menu: 5 × 200×240 cards, 16px gaps, y 140–380; buttons
-// REROLL 240×52 + 24 + NEXT 280×52, y 404–456. The card row centres on the
+// Stage-clear menu: 5 × 200×240 cards, 16px gaps, y 240–480; buttons
+// REROLL 240×52 + 24 + NEXT 280×52, y 520–572. The card row centres on the
 // hand size; the buttons centre as a pair.
-export const MENU_CARD_W = 200, MENU_CARD_H = 240, MENU_CARD_GAP = 16, MENU_CARDS_Y = 140;
+export const MENU_CARD_W = 200, MENU_CARD_H = 240, MENU_CARD_GAP = 16, MENU_CARDS_Y = 240;
 export function stageMenuLayout(state) {
   const hand = state.hand || [];
   const n = hand.length;
@@ -17,24 +17,39 @@ export function stageMenuLayout(state) {
   const cards = hand.map((c, i) => ({ x: x0 + i * (MENU_CARD_W + MENU_CARD_GAP), y: MENU_CARDS_Y, w: MENU_CARD_W, h: MENU_CARD_H }));
   return {
     cards,
-    reroll: { x: 368, y: 404, w: 240, h: 52 },
-    next: { x: 632, y: 404, w: 280, h: 52 },
+    reroll: { x: 368, y: 520, w: 240, h: 52 },
+    next: { x: 632, y: 520, w: 280, h: 52 },
   };
 }
 
-// Title screen: difficulty buttons 3 × 220×64, y 160–224; START 320×56,
-// y 244–300; four menu buttons 220×44 each in one row, y 316–360 — all centred.
-export const DIFF_BTN_W = 220, DIFF_BTN_H = 64, DIFF_BTN_Y = 160;
+// Title screen: a vertical menu stack, centred — START (gold, taller) then
+// four dark buttons, all 340 wide, 16px gaps. y 272–594.
+export const MENU_BTN_W = 340, MENU_BTN_H = 48, MENU_BTN_GAP = 16;
+export const MENU_ITEMS = ['start', 'help', 'feats', 'history', 'settings'];
 export function titleLayout() {
-  const total = DIFF_ORDER.length * DIFF_BTN_W + (DIFF_ORDER.length - 1) * 16;
-  const x0 = (VIEW_W - total) / 2;
-  const mx0 = VIEW_W / 2 - 464;
+  const x = VIEW_W / 2 - MENU_BTN_W / 2;
   return {
-    diffs: DIFF_ORDER.map((id, i) => ({ id, x: x0 + i * (DIFF_BTN_W + 16), y: DIFF_BTN_Y, w: DIFF_BTN_W, h: DIFF_BTN_H })),
-    start: { x: VIEW_W / 2 - 160, y: 244, w: 320, h: 56 },
-    help: { x: mx0, y: 316, w: 220, h: 44 },
-    feats: { x: mx0 + 236, y: 316, w: 220, h: 44 },
-    history: { x: mx0 + 472, y: 316, w: 220, h: 44 },
-    settings: { x: mx0 + 708, y: 316, w: 220, h: 44 },
+    start: { x, y: 272, w: MENU_BTN_W, h: 66 },
+    help: { x, y: 354, w: MENU_BTN_W, h: MENU_BTN_H },
+    feats: { x, y: 418, w: MENU_BTN_W, h: MENU_BTN_H },
+    history: { x, y: 482, w: MENU_BTN_W, h: MENU_BTN_H },
+    settings: { x, y: 546, w: MENU_BTN_W, h: MENU_BTN_H },
+  };
+}
+
+// End screen: PLAY AGAIN 300×56, y 470–526; MENU 200×44 below, y 546–590.
+export function overLayout() {
+  return {
+    playAgain: { x: VIEW_W / 2 - 150, y: 470, w: 300, h: 56 },
+    menu: { x: VIEW_W / 2 - 100, y: 546, w: 200, h: 44 },
+  };
+}
+export const DIFF_CARD_W = 260, DIFF_CARD_H = 110, DIFF_CARD_GAP = 24, DIFF_CARD_Y = 300;
+export function difficultyLayout() {
+  const total = DIFF_ORDER.length * DIFF_CARD_W + (DIFF_ORDER.length - 1) * DIFF_CARD_GAP;
+  const x0 = (VIEW_W - total) / 2;
+  return {
+    diffs: DIFF_ORDER.map((id, i) => ({ id, x: x0 + i * (DIFF_CARD_W + DIFF_CARD_GAP), y: DIFF_CARD_Y, w: DIFF_CARD_W, h: DIFF_CARD_H })),
+    back: { x: VIEW_W / 2 - 80, y: 470, w: 160, h: 44 },
   };
 }

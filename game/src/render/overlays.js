@@ -1,6 +1,7 @@
 // The title overlays: HOW TO PLAY, ACHIEVEMENTS, HISTORY, SETTINGS. One shared panel style.
 import { BOSSES, CREATURE_NAMES, CREATURE_ORDER, DIFFICULTIES, DIFF_ORDER, ENEMIES, FEATS, PAL, VIEW_W } from '../config.js';
 import { drawEnemy } from './creatures.js';
+import { bevel, lift } from './polish.js';
 
 const BIG = { x: 140, y: 60, w: 1000, h: 580 }; // the help panel
 const BIG_CLOSE = { x: 560, y: 576, w: 160, h: 44 };
@@ -22,12 +23,13 @@ export function overlayLayout(state) {
 }
 
 function panel(ctx, p) {
-  ctx.fillStyle = 'rgba(6,42,51,0.94)'; ctx.fillRect(p.x, p.y, p.w, p.h);
-  ctx.strokeStyle = PAL.gold; ctx.lineWidth = 2; ctx.strokeRect(p.x, p.y, p.w, p.h);
+  lift(ctx, p.x, p.y, p.w, p.h, 8);
+  ctx.strokeStyle = PAL.gold; ctx.lineWidth = 2;
+  ctx.strokeRect(p.x, p.y, p.w, p.h);
 }
 
 function closeButton(ctx, b) {
-  ctx.fillStyle = PAL.gold; ctx.fillRect(b.x, b.y, b.w, b.h);
+  bevel(ctx, b.x, b.y, b.w, b.h, 8, '#ffe08a', '#f0b23e', PAL.gold, 2);
   ctx.fillStyle = '#062a33'; ctx.font = 'bold 18px sans-serif'; ctx.textAlign = 'center';
   ctx.fillText('CLOSE', b.x + b.w / 2, b.y + 29);
 }
@@ -55,7 +57,7 @@ export function drawHelp(ctx, state) {
   ctx.textAlign = 'left'; ctx.fillStyle = PAL.gold; ctx.font = 'bold 15px sans-serif';
   ctx.fillText('CONTROLS', 180, 132);
   ctx.fillStyle = PAL.text; ctx.font = '14px sans-serif';
-  const left = ['WASD / ARROWS — move', 'SPACE — dash', '1–3 — difficulty', 'P / ESC — pause'];
+  const left = ['WASD / ARROWS — move', 'SPACE — dash', '↑ ↓ — menu · ENTER — choose', 'P / ESC — pause'];
   const right = ['1–5 — buy a card', 'R — reroll the hand', 'ENTER — continue', 'M — mute · H — help'];
   left.forEach((s, i) => ctx.fillText(s, 180, 156 + i * 22));
   right.forEach((s, i) => ctx.fillText(s, 700, 156 + i * 22));

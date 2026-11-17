@@ -68,14 +68,16 @@ export function drawCrab(ctx, p, t, clawStats, spinStats) {
     ctx.beginPath(); ctx.arc(0, 0, 30 + prog * (spinStats.range - 30), 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
-  if (p.laser > 0) {
+  if (p.laser > 0) { // the beam: soft outer glow + thick magenta body + white-hot core
     const a = (p.laser / 0.15) * 0.75;
     const dirs = p.laserBeams >= 2 ? [1, -1] : [1];
     ctx.save(); ctx.lineCap = 'round';
     for (const dir of dirs) {
-      ctx.strokeStyle = `rgba(255,46,136,${a})`; ctx.lineWidth = 4;
+      ctx.strokeStyle = `rgba(255,46,136,${a * 0.28})`; ctx.lineWidth = 12;
       ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + dir * p.laserLen, p.y); ctx.stroke();
-      ctx.strokeStyle = `rgba(255,255,255,${a})`; ctx.lineWidth = 1.5;
+      ctx.strokeStyle = `rgba(255,46,136,${a})`; ctx.lineWidth = 7;
+      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + dir * p.laserLen, p.y); ctx.stroke();
+      ctx.strokeStyle = `rgba(255,255,255,${a})`; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + dir * p.laserLen, p.y); ctx.stroke();
     }
     ctx.restore();
@@ -210,10 +212,13 @@ export function drawEnemy(ctx, e, t, ang) {
     ctx.fillStyle = '#ffd166'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
     ctx.fillText('★', e.x, e.y - e.r - 26);
   }
-// HP bars only on elites + boss.
-  if (e.hp < e.maxHp && (e.elite || e.boss)) {
-    const w = e.r * 2;
-    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(e.x - w / 2, e.y - e.r - 10, w, 5);
-    ctx.fillStyle = '#ff5d73'; ctx.fillRect(e.x - w / 2, e.y - e.r - 10, w * (e.hp / e.maxHp), 5);
+// HP bars on every DAMAGED enemy: thin + small for regulars, larger for
+// elites/boss. Full-HP enemies need no bar (they are full by definition).
+  if (e.hp < e.maxHp) {
+    const big = e.elite || e.boss;
+    const w = big ? e.r * 2 : 22, h = big ? 5 : 3;
+    const y = e.y - e.r - (big ? 10 : 8);
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(e.x - w / 2, y, w, h);
+    ctx.fillStyle = '#ff5d73'; ctx.fillRect(e.x - w / 2, y, w * (e.hp / e.maxHp), h);
   }
 }

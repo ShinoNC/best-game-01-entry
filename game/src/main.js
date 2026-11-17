@@ -5,12 +5,12 @@ import { createState } from './state.js';
 import { createInput } from './input.js';
 import { createAudio } from './audio.js';
 import { createParticles } from './particles.js';
-import { createRenderer, stageMenuLayout, titleLayout } from './render.js';
+import { MENU_ITEMS, createRenderer, difficultyLayout, overLayout, stageMenuLayout, titleLayout } from './render.js';
 import { STEP, nextStage, stepWorld } from './world.js';
 import { REROLL_COST, autoBuy, buyCard, rerollHand } from './cards.js';
 import { stageShot } from './shots.js';
 import { overlayLayout } from './render/overlays.js';
-import { featsEarnedThisRun, readMeta, recordRun } from './meta.js';
+import { featsEarnedThisRun, readLastDiff, readMeta, recordRun, writeLastDiff } from './meta.js';
 
 const params = new URLSearchParams(window.location.search);
 const shot = params.get('shot');
@@ -56,7 +56,7 @@ if (shot) {
   renderer.render(state, fx, state.time);
   window.__shotReady = true;
 } else {
-  state = attachMeta(createState(createRandom(seed), seed));
+  state = attachMeta(createState(createRandom(seed), seed, readLastDiff()));
   window.__tide = { state, fx, audio, step: (inp) => stepWorld(state, inp, STEP, fx, audio), STEP,
     menuLayout: () => stageMenuLayout(state), toScreen, toLogical, viewTransform: () => renderer.viewTransform(),
     autoBuy: () => autoBuy(state) };
@@ -133,43 +133,68 @@ function handleOverlay() {
 
 function startRun() {
   audio.unlock();
+  writeLastDiff(state.difficulty);
   state.phase = 'play';
   state.banner = 'STAGE 1 — SLAY THEM ALL'; state.bannerT = 3;
   status.textContent = 'Clear 30 stages. A heron waits at every fifth stage!';
+}
+
+// The title menu: START opens the difficulty select; the rest open overlays.
+function activateMenu(item) {
+  if (item === 'start') { state.phase = 'difficulty'; status.textContent = 'Choose your tide'; }
+  else state.overlay = item;
 }
 
 function handleMenus() {
   if (input.mutePressed()) { const m = audio.toggleMute(); status.textContent = m ? 'Muted' : 'Sound on'; }
   if (state.phase === 'title') {
     if (handleOverlay()) { menuPhase = 'title'; return; }
-    const n = input.numberPressed();
-    if (n >= 1 && n <= DIFF_ORDER.length) {
-      state.difficulty = DIFF_ORDER[n - 1];
-      status.textContent = `Difficulty: ${state.difficulty}`;
-      menuPhase = 'title';
-      return;
+    if (input.wasPressed('arrowup')) {
+      state.menuSel = (state.menuSel + MENU_ITEMS.length - 1) % MENU_ITEMS.length;
+      menuPhase = 'title'; return;
+    }
+    if (input.wasPressed('arrowdown')) {
+      state.menuSel = (state.menuSel + 1) % MENU_ITEMS.length;
+      menuPhase = 'title'; return;
     }
     if (input.helpPressed()) { state.overlay = 'help'; menuPhase = 'title'; return; }
     if (input.click()) {
       const m = toLogical(input.mouse().x, input.mouse().y);
       const TL = titleLayout();
-      const hit = TL.diffs.find((b) => inBox(m, b));
-      if (hit) {
-        state.difficulty = hit.id;
-        status.textContent = `Difficulty: ${state.difficulty}`;
-        menuPhase = 'title';
-        return;
+      for (let i = 0; i < MENU_ITEMS.length; i += 1) {
+        if (inBox(m, TL[MENU_ITEMS[i]])) { state.menuSel = i; activateMenu(MENU_ITEMS[i]); menuPhase = 'title'; return; }
       }
-      if (inBox(m, TL.start)) { startRun(); menuPhase = 'title'; return; }
-      if (inBox(m, TL.help)) { state.overlay = 'help'; menuPhase = 'title'; return; }
-      if (inBox(m, TL.feats)) { state.overlay = 'feats'; menuPhase = 'title'; return; }
-      if (inBox(m, TL.history)) { state.overlay = 'history'; menuPhase = 'title'; return; }
-      if (inBox(m, TL.settings)) { state.overlay = 'settings'; menuPhase = 'title'; return; }
       menuPhase = 'title';
       return;
     }
-    if (input.confirmPressed()) startRun();
+    if (input.confirmPressed()) activateMenu(MENU_ITEMS[state.menuSel]);
     menuPhase = 'title';
+    return;
+  }
+  if (state.phase === 'difficulty') {
+    const n = input.numberPressed();
+    if (n >= 1 && n <= DIFF_ORDER.length) { state.difficulty = DIFF_ORDER[n - 1]; startRun(); return; }
+    if (input.wasPressed('arrowleft') || input.wasPressed('arrowup')) {
+      const i = DIFF_ORDER.indexOf(state.difficulty);
+      state.difficulty = DIFF_ORDER[(i + DIFF_ORDER.length - 1) % DIFF_ORDER.length];
+      return;
+    }
+    if (input.wasPressed('arrowright') || input.wasPressed('arrowdown')) {
+      const i = DIFF_ORDER.indexOf(state.difficulty);
+      state.difficulty = DIFF_ORDER[(i + 1) % DIFF_ORDER.length];
+      return;
+    }
+    if (input.wasPressed('escape')) { state.phase = 'title'; menuPhase = 'title'; return; }
+    if (input.click()) {
+      const m = toLogical(input.mouse().x, input.mouse().y);
+      const DL = difficultyLayout();
+      const hit = DL.diffs.find((b) => inBox(m, b));
+      if (hit) { state.difficulty = hit.id; startRun(); return; }
+      if (inBox(m, DL.back)) { state.phase = 'title'; menuPhase = 'title'; return; }
+      return;
+    }
+    if (input.confirmPressed()) startRun();
+    menuPhase = 'difficulty';
     return;
   }
   if (state.phase === 'play') {
@@ -204,12 +229,20 @@ function handleMenus() {
     return;
   }
   if (state.phase === 'over') {
-    if (input.restartPressed() || input.click()) restart();
+    if (input.wasPressed('escape')) { toTitle(); menuPhase = 'title'; return; }
+    if (input.restartPressed()) { restart(); menuPhase = 'play'; return; }
+    if (input.click()) {
+      const m = toLogical(input.mouse().x, input.mouse().y);
+      if (inBox(m, overLayout().menu)) { toTitle(); menuPhase = 'title'; return; }
+      restart(); // any other click (incl. PLAY AGAIN) restarts
+      menuPhase = 'play';
+    }
     menuPhase = 'over';
   }
 }
 
-function restart() {
+// A fresh state for a new run or a return to the title — meta survives.
+function freshState(phase) {
   const best = state.best;
   const meta = state.meta;
   const difficulty = state.difficulty || 'normal';
@@ -218,11 +251,20 @@ function restart() {
   state.best = best;
   state.meta = meta;
   state.audio = audio;
-  state.phase = 'play';
-  state.banner = 'STAGE 1 — SLAY THEM ALL'; state.bannerT = 3;
+  state.phase = phase;
   fx.clear();
   window.__tide = { state, fx, audio, step: (inp) => stepWorld(state, inp, STEP, fx, audio), STEP,
     menuLayout: () => stageMenuLayout(state), toScreen, toLogical, viewTransform: () => renderer.viewTransform(),
     autoBuy: () => autoBuy(state) };
+}
+
+function restart() {
+  freshState('play');
+  state.banner = 'STAGE 1 — SLAY THEM ALL'; state.bannerT = 3;
   status.textContent = 'A new tide. Clear 30 stages!';
+}
+
+function toTitle() {
+  freshState('title');
+  status.textContent = 'TIDEKEEPER — clear 30 stages, beat the herons!';
 }
