@@ -5,10 +5,10 @@ import { drawCoin, drawPips, drawWeaponIcon } from './icons.js';
 import { stageMenuLayout } from './layout.js';
 import { bevel, rr, txt } from './polish.js';
 
-// Card colours: SKILL mint, LEVEL-UP gold, WEAPON purple, REPAIR pink.
+// Card colours.
 const KIND_COLOR = { skill: '#7fe0c3', wup: '#ffd166', weapon: '#c9a7ff', repair: '#ff8fb0' };
 
-// One menu card: tag, picture, name, stats, pips, price. Unaffordable
+// One menu card.
 // red price + dimmed; bought = green border + ✓.
 function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   const poor = !card.bought && state.coins < card.price;

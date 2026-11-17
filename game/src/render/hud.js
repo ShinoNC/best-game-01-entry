@@ -1,4 +1,4 @@
-// The HUD: two bars framing the play area, boss bar, banner, hint pill.
+// The HUD.
 // No minimap: the whole pool is on one screen.
 import { CREATURE_NAMES, DIFFICULTIES, PAL, STAGES, STAGE_COUNT, VIEW_H, VIEW_W, WEAPON_ORDER, bossForStage, nextTypes } from '../config.js';
 import { UPGRADE_DEFS } from '../upgrades.js';
@@ -16,7 +16,7 @@ export function drawHud(ctx, state, t) {
   ctx.fillStyle = 'rgba(255,255,255,0.14)';
   ctx.fillRect(0, 70, VIEW_W, 2);
   ctx.fillRect(0, VIEW_H - 72, VIEW_W, 2);
-  // Top bar: STAGE + left/next (left) + SCORE / COINS / COMBO (right).
+  // Top bar.
   const remaining = (STAGES[state.stage - 1].budget - state.stageSpawned) + state.enemies.length;
   const diffLabel = (DIFFICULTIES[state.difficulty || 'normal'] || DIFFICULTIES.normal).label;
   const nx = state.stage + 1;
@@ -37,7 +37,7 @@ export function drawHud(ctx, state, t) {
   drawCoin(ctx, 1252 - ctx.measureText(coinTxt).width - 13, 55, 8);
   if (STAGES[state.stage - 1].boss && !state.bossSpawned && !state.boss) {
     const boss = bossForStage(state.stage);
-    const warn = `⚠ ${boss ? boss.name : 'THE HERON'} IS COMING ⚠`;
+    const warn = `⚠ ${boss ? boss.name : 'THE BEAST'} IS COMING ⚠`;
     ctx.font = 'bold 17px sans-serif';
     const ww = ctx.measureText(warn).width + 40;
     ctx.fillStyle = 'rgba(6,42,51,0.85)'; ctx.fillRect(VIEW_W / 2 - ww / 2, 78, ww, 32);
@@ -51,7 +51,7 @@ export function drawHud(ctx, state, t) {
     ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(VIEW_W / 2 - 180, 100, 360, 6);
     ctx.fillStyle = '#ff5d73'; ctx.fillRect(VIEW_W / 2 - 180, 100, 360 * (state.boss.hp / state.boss.maxHp), 6);
   }
-  // Bottom bar: weapons | HP | skills. 7 + 7 slots, 52×52: big icon +
+  // Bottom bar: weapons | HP | skills.
   // 2-letter label with the level (CL3 = claw Lv3). No pips.
   const WABBR = { claw: 'CL', bow: 'BW', blaster: 'BL', shell: 'SH', spin: 'SP', laser: 'LZ', trident: 'TR' };
   const SABBR = { claws: 'DM', tempo: 'FR', reach: 'RG', shell: 'EN', legs: 'SW', bubbles: 'BB', magnet: 'MG' };
@@ -79,7 +79,7 @@ export function drawHud(ctx, state, t) {
   }
   ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(490, 677, 300, 14);
   ctx.fillStyle = PAL.hp; ctx.fillRect(490, 677, 300 * (p.hp / p.maxHp), 14);
-  // Armor: steel shield + pool, centred above the HP bar. Hidden at 0.
+  // Armor: shield + pool above the HP bar.
   if (p.armor > 0) {
     ctx.font = 'bold 14px sans-serif';
     const num = `${p.armor}`;

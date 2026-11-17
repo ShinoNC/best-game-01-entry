@@ -6,7 +6,7 @@
 // copies game/ and screenshots/ into the grader's output directory and writes
 // dossier.json, the summary the judge reads, using the vendored make.fun
 // library. The game itself is a hermit crab holding a rockpool against 30
-// stages of creatures and six heron bosses until high tide.
+// stages of creatures and six sea-beast bosses until high tide.
 //
 // Run it locally with MAKEFUN_OUTPUT_DIR standing in for /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts

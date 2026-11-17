@@ -224,7 +224,7 @@ export function stepWorld(state, input, dt, fx, audio) {
     const clearedBoss = bossForStage(state.stage);
     if (clearedBoss) state.player.armor += ARMOR_PER_BOSS; // boss-clear reward
     if (state.stage >= STAGE_COUNT) {
-      state.banner = 'THE HERON KING FALLS — HIGH TIDE!'; state.bannerT = 1.2;
+      state.banner = 'THE KRAKEN FALLS — HIGH TIDE!'; state.bannerT = 1.2;
     } else if (clearedBoss) {
       state.banner = `★ STAGE ${state.stage} CLEAR — ${clearedBoss.name} IS DRIVEN OFF! ★`; state.bannerT = 1.2;
     } else {

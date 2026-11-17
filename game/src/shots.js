@@ -100,12 +100,12 @@ export function stageShot(shot, seed, fx, audio) {
       runUntil(s, (st) => st.phase === 'play' && st.stage === wantStage && st.boss, 120000, fx, audio);
       if (s.phase === 'play' && s.boss && s.stage === wantStage) {
         const b = s.boss;
-        // Frame the heron whole: crab left, bird upper-right.
+        // Frame the boss whole: crab left, beast upper-right.
         s.player.x = 480; s.player.y = 430; s.player.angle = -0.5;
         b.x = 830; b.y = 280;
         b.state = 'dive'; b.diveT = 0.4;
         b.hp = Math.min(b.hp, b.maxHp * 0.7);
-        // Stage a plausible armor remainder: the autopilot burns it all by 30.
+
         if (shot === 'storm') s.player.armor = Math.max(s.player.armor, 60);
         for (let i = 0; i < 3; i += 1) {
           const g = spawnEnemy(s, 'gull', false);

@@ -1,4 +1,4 @@
-// Keyboard + mouse, read once per frame: WASD, Space dash, 1-5 buy, R, P/Esc, M, H.
+// Keyboard + mouse.
 export const ACTION_CONFIRM = 'confirm';
 export const ACTION_PAUSE = 'pause';
 export const ACTION_MUTE = 'mute';
@@ -17,7 +17,7 @@ export function createInput(canvas) {
   const clearAll = () => { keys.clear(); pressed.clear(); };
   addEventListener('keydown', down);
   addEventListener('keyup', up);
-  // Losing focus clears BOTH sets: no held key sticks across the blur.
+  // Losing focus clears keys.
   addEventListener('blur', clearAll);
   document.addEventListener('visibilitychange', () => { if (document.hidden) clearAll(); });
   canvas.addEventListener('pointermove', (e) => {

@@ -36,7 +36,7 @@ export function titleLayout() {
   };
 }
 
-// End screen: PLAY AGAIN 300×56 y470–526; MENU 200×44 y546–590.
+// End screen layout.
 export function overLayout() {
   return {
     playAgain: { x: VIEW_W / 2 - 150, y: 440, w: 300, h: 56 },

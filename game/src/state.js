@@ -1,4 +1,4 @@
-// One GameState holds everything: title, play, stageclear, paused, over.
+// One GameState.
 import { PAL, PLAYER, POOL } from './config.js';
 
 export function createState(rng, seed, difficulty = 'normal') {
@@ -47,17 +47,17 @@ export function createState(rng, seed, difficulty = 'normal') {
     },
     ups: { claws: 0, tempo: 0, reach: 0, shell: 0, legs: 0, bubbles: 0, magnet: 0 },
     coins: 0, coinsEarned: 0,
-// Seven auto-weapons, ALL firing at once. Claw owned from the start.
+// Seven auto-weapons.
     weapons: { claw: 1, bow: 0, blaster: 0, shell: 0, spin: 0, laser: 0, trident: 0 },
 // A stage clears when the budget is spent and the pool is empty.
     stage: 1, stageSpawned: 0, stageEliteDone: false, stageClearT: 0,
     enemies: [], bolts: [], spits: [], drops: [], pickups: [],
     kills: 0, score: 0, spawnT: 0.8, bossSpawned: false,
     boss: null, banner: '', bannerT: 0, bubbleT: 6, result: null, best: 0,
-// Stage-clear menu: 5-card hand, rerolls, clear bonus, message slot.
+// Stage-clear menu.
     hand: [], rerolls: 0, clearBonus: 0, menuMsg: '', menuMsgT: 0,
     stats: { damage: 0, taken: 0, dashes: 0, spent: 0, rerolls: 0,
-// Feat counters: bosses, best combo, most coins, scratch-free stages.
+// Feat counters.
       bossesDown: 0, bestCombo: 0, maxCoins: 0, cleanStage: false },
     stageTaken: 0, // damage taken during the current stage (UNTOUCHED feat)
     hints: { idx: 0, cur: null, t: 0, wait: 0, done: [false, false, false, false] },

@@ -1,9 +1,9 @@
-// The creatures: the crab (with weapon effects) and seven enemy types.
+// The creatures.
 import { PAL } from '../config.js';
 import { star } from './icons.js';
 import { txt } from './polish.js';
 
-// Outline the just-filled path dark — creatures pop against bright and dark water.
+// Outline the path dark.
 function ol(ctx, c, w = 2) { ctx.strokeStyle = c; ctx.lineWidth = w; ctx.lineJoin = 'round'; ctx.stroke(); }
 
 export function drawCrab(ctx, p, t, clawStats, spinStats) {
@@ -31,7 +31,7 @@ export function drawCrab(ctx, p, t, clawStats, spinStats) {
     ctx.beginPath(); ctx.moveTo(6, -4); ctx.lineTo(16, -1); ctx.lineTo(6, 2); ctx.closePath(); ctx.fill();
     ctx.restore();
   }
-  // The shell's colour IS the armour tier, so upgrades are visible.
+
   ctx.fillStyle = PAL.crab; ctx.beginPath(); ctx.ellipse(0, 0, 20, 16, 0, 0, Math.PI * 2); ctx.fill();
   ol(ctx, PAL.crabDark, 2.5);
   const shellColors = [PAL.shell0, PAL.shell1, PAL.shell2, PAL.shell3];
@@ -171,29 +171,13 @@ export function drawEnemy(ctx, e, t, ang) {
       ctx.fillStyle = 'rgba(191,232,224,0.95)';
       ctx.beginPath(); ctx.arc(e.r * 1.85, 0, 3 + (0.35 - e.windup) * 12, 0, Math.PI * 2); ctx.fill();
     }
-  } else if (e.type === 'gull' || e.type.endsWith('heron')) {
-    // Herons must read as BIRDS: dangling legs, feathered wings, S-neck, dagger beak.
-    // Legs hang DOWN in screen space (drawn before the facing rotation).
-    const s = e.type === 'gull' ? 1 : e.r / 26; // herons scale with their radius
-    const heron = e.type.endsWith('heron');
+  } else if (e.type === 'gull') { // small seabird
     ctx.fillStyle = 'rgba(4,26,32,0.22)';
-    ctx.beginPath(); ctx.ellipse(0, e.r * (heron ? 3.4 : 2.4), e.r * 1.1, e.r * 0.45, 0, 0, Math.PI * 2); ctx.fill();
-    if (heron) { // long legs dangle below the body, with splayed toes
-      ctx.save(); ctx.scale(s, s);
-      ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3; ctx.lineCap = 'round';
-      for (const sgn of [-1, 1]) {
-        const lx = sgn * e.r * 0.25, ly = e.r * 1.15;
-        ctx.beginPath(); ctx.moveTo(lx, e.r * 0.3); ctx.lineTo(lx + sgn * 3, ly); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(lx + sgn * 3, ly); ctx.lineTo(lx + sgn * 3 - 6, ly + 7);
-        ctx.moveTo(lx + sgn * 3, ly); ctx.lineTo(lx + sgn * 3 + 6, ly + 7); ctx.stroke();
-      }
-      ctx.restore();
-    }
+    ctx.beginPath(); ctx.ellipse(0, e.r * 2.4, e.r * 1.1, e.r * 0.45, 0, 0, Math.PI * 2); ctx.fill();
     ctx.rotate(face);
-    ctx.scale(s, s);
-    const flap = Math.sin(t * 10 + e.wob) * 0.7; // wings sweep up and down
+    const flap = Math.sin(t * 10 + e.wob) * 0.7;
     ctx.fillStyle = flash ? '#fff' : e.color;
-    for (const sgn of [-1, 1]) { // feathered wings: 3 pointed primaries, not smooth fins
+    for (const sgn of [-1, 1]) { // feathered wings
       ctx.save(); ctx.translate(-2, sgn * 4); ctx.rotate(sgn * (0.5 + flap * 0.5));
       ctx.beginPath();
       ctx.moveTo(e.r * 0.3, -8);
@@ -206,7 +190,6 @@ export function drawEnemy(ctx, e, t, ang) {
     }
     ctx.beginPath(); ctx.ellipse(0, 0, e.r * 0.9, e.r * 0.55, 0, 0, Math.PI * 2); ctx.fill();
     ol(ctx, flash ? '#fff' : e.dark, 2);
-    // S-neck: rises from the body front, curves to the head.
     const neck = new Path2D();
     neck.moveTo(e.r * 0.45, -e.r * 0.15);
     neck.quadraticCurveTo(e.r * 0.9, -e.r * 0.85, e.r * 1.25, -e.r * 0.55);
@@ -216,20 +199,92 @@ export function drawEnemy(ctx, e, t, ang) {
     ctx.fillStyle = flash ? '#fff' : e.color;
     ctx.beginPath(); ctx.arc(e.r * 1.3, -e.r * 0.55, e.r * 0.22, 0, Math.PI * 2); ctx.fill();
     ol(ctx, flash ? '#fff' : e.dark, 2);
-    ctx.fillStyle = flash ? '#fff' : '#ffd166'; // long dagger beak
+    ctx.fillStyle = flash ? '#fff' : '#ffd166';
     ctx.beginPath();
     ctx.moveTo(e.r * 1.42, -e.r * 0.62); ctx.lineTo(e.r * 2.15, -e.r * 0.5); ctx.lineTo(e.r * 1.42, -e.r * 0.38);
     ctx.closePath(); ctx.fill();
     ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(e.r * 1.28, -e.r * 0.62, 2.5, 0, Math.PI * 2); ctx.fill();
-    if (heron && e.type !== 'heron') { // crest: a dark plume on the head
-      ctx.strokeStyle = flash ? '#fff' : e.dark; ctx.lineWidth = 4; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(e.r * 1.1, -e.r * 0.72); ctx.lineTo(e.r * 0.75, -e.r * 1.05); ctx.stroke();
-    }
-    if (e.type === 'kingheron') { // the Heron King wears a gold crown
-      ctx.fillStyle = '#ffd166';
+  } else if (e.boss) { // sea-beast bosses
+    const s = e.r / 26, R = e.r;
+    const col = flash ? '#fff' : e.color, drk = flash ? '#fff' : e.dark;
+    const eye = (x, y, r) => { ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); };
+    ctx.rotate(face);
+    ctx.scale(s, s);
+    ctx.fillStyle = col;
+    if (e.type === 'turtle') { // domed shell, flippers, head out front
+      const pad = Math.sin(t * 4 + e.wob) * 0.25;
+      for (const [fx, fy, fa] of [[0.5, -0.7, -0.6], [0.5, 0.7, 0.6], [-0.6, -0.6, 0.6], [-0.6, 0.6, -0.6]]) {
+        ctx.save(); ctx.translate(R * fx, R * fy); ctx.rotate(fa + pad);
+        ctx.beginPath(); ctx.ellipse(0, 0, R * 0.32, R * 0.14, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      }
+      ctx.beginPath(); ctx.ellipse(0, 0, R * 0.85, R * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+      ol(ctx, drk, 2);
+      ctx.strokeStyle = drk; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, R * 0.45, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(R * 0.95, 0, R * 0.22, 0, Math.PI * 2); ctx.fill();
+      ol(ctx, drk, 2);
+      eye(R * 1.0, -R * 0.07, 3);
+    } else if (e.type === 'octopus' || e.type === 'kraken') { // tentacles trail
+      const n = e.type === 'kraken' ? 10 : 8, len = e.type === 'kraken' ? 1.8 : 1.3;
+      ctx.strokeStyle = col; ctx.lineCap = 'round'; ctx.lineWidth = R * 0.11;
+      for (let i = 0; i < n; i += 1) {
+        const sp = (i - (n - 1) / 2) * R * 0.17;
+        const w = Math.sin(t * 2.5 + e.wob + i * 0.7) * R * 0.18;
+        ctx.beginPath(); ctx.moveTo(-R * 0.2, sp * 0.4);
+        ctx.quadraticCurveTo(-R * 0.9, sp + w, -R * len, sp * 1.4 + w); ctx.stroke();
+      }
+      ctx.fillStyle = col;
+      if (e.type === 'kraken') { // squid mantle + fins
+        ctx.beginPath(); ctx.ellipse(R * 0.2, 0, R * 0.75, R * 0.45, 0, 0, Math.PI * 2); ctx.fill();
+        ol(ctx, drk, 2);
+        ctx.beginPath(); ctx.moveTo(R * 0.6, -R * 0.35); ctx.lineTo(R * 0.95, -R * 0.7); ctx.lineTo(R * 0.85, -R * 0.15); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(R * 0.6, R * 0.35); ctx.lineTo(R * 0.95, R * 0.7); ctx.lineTo(R * 0.85, R * 0.15); ctx.closePath(); ctx.fill();
+        eye(R * 0.55, -R * 0.2, R * 0.1); eye(R * 0.55, R * 0.2, R * 0.1);
+      } else { // round head
+        ctx.beginPath(); ctx.arc(R * 0.15, 0, R * 0.65, 0, Math.PI * 2); ctx.fill();
+        ol(ctx, drk, 2);
+        eye(R * 0.5, -R * 0.25, R * 0.09); eye(R * 0.5, R * 0.25, R * 0.09);
+      }
+    } else if (e.type === 'hammerhead') { // T-shaped head
+      ctx.beginPath(); ctx.moveTo(-R * 0.8, 0); ctx.lineTo(-R * 1.3, -R * 0.35); ctx.lineTo(-R * 1.15, 0); ctx.lineTo(-R * 1.3, R * 0.35); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(0, 0, R * 0.9, R * 0.35, 0, 0, Math.PI * 2); ctx.fill();
+      ol(ctx, drk, 2);
+      ctx.beginPath(); ctx.moveTo(-R * 0.1, -R * 0.3); ctx.lineTo(R * 0.15, -R * 0.7); ctx.lineTo(R * 0.35, -R * 0.3); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(R * 0.7, -R * 0.7); ctx.lineTo(R * 1.0, -R * 0.7); ctx.lineTo(R * 1.0, R * 0.7); ctx.lineTo(R * 0.7, R * 0.7); ctx.closePath(); ctx.fill();
+      ol(ctx, drk, 2);
+      eye(R * 0.85, -R * 0.55, 3.5); eye(R * 0.85, R * 0.55, 3.5);
+    } else if (e.type === 'angler') { // toothed mouth + glowing lure
+      ctx.beginPath(); ctx.arc(0, 0, R * 0.7, 0, Math.PI * 2); ctx.fill();
+      ol(ctx, drk, 2);
+      ctx.fillStyle = '#1a0a2e';
+      ctx.beginPath(); ctx.ellipse(R * 0.35, R * 0.15, R * 0.45, R * 0.3, 0.2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff';
+      for (let i = 0; i < 5; i += 1) {
+        const tx = R * (0.05 + i * 0.16);
+        ctx.beginPath(); ctx.moveTo(tx, 0); ctx.lineTo(tx + R * 0.05, R * 0.12); ctx.lineTo(tx + R * 0.1, 0); ctx.closePath(); ctx.fill();
+      }
+      ctx.strokeStyle = drk; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(-R * 0.1, -R * 0.6); ctx.quadraticCurveTo(R * 0.3, -R * 1.1, R * 0.7, -R * 0.9); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,220,100,0.35)';
+      ctx.beginPath(); ctx.arc(R * 0.7, -R * 0.9, R * 0.22, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ffe66d';
+      ctx.beginPath(); ctx.arc(R * 0.7, -R * 0.9, R * 0.1, 0, Math.PI * 2); ctx.fill();
+      eye(R * 0.45, -R * 0.3, 4);
+    } else if (e.type === 'stingray') { // wide wings + whip tail
+      ctx.strokeStyle = drk; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(-R * 0.8, 0);
+      ctx.quadraticCurveTo(-R * 1.6, Math.sin(t * 2 + e.wob) * R * 0.2, -R * 2.2, Math.sin(t * 2 + e.wob + 1) * R * 0.3);
+      ctx.stroke();
+      ctx.fillStyle = col;
       ctx.beginPath();
-      ctx.moveTo(e.r * 1.05, -e.r * 0.72); ctx.lineTo(e.r * 1.2, -e.r * 1.05); ctx.lineTo(e.r * 1.35, -e.r * 0.74);
-      ctx.lineTo(e.r * 1.5, -e.r * 1.05); ctx.lineTo(e.r * 1.6, -e.r * 0.7); ctx.closePath(); ctx.fill();
+      ctx.moveTo(R * 0.9, 0);
+      ctx.quadraticCurveTo(R * 0.3, -R * 1.1, -R * 0.5, -R * 0.9);
+      ctx.quadraticCurveTo(-R * 0.9, -R * 0.35, -R * 0.8, 0);
+      ctx.quadraticCurveTo(-R * 0.9, R * 0.35, -R * 0.5, R * 0.9);
+      ctx.quadraticCurveTo(R * 0.3, R * 1.1, R * 0.9, 0);
+      ctx.closePath(); ctx.fill();
+      ol(ctx, drk, 2);
+      eye(R * 0.45, -R * 0.15, 3.5); eye(R * 0.45, R * 0.15, 3.5);
     }
   } else { // guppy: a little fish with a wagging tail
     ctx.rotate(face);
@@ -251,7 +306,7 @@ export function drawEnemy(ctx, e, t, ang) {
     ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
     txt(ctx, '★', e.x, e.y - e.r - 26, '#ffd166');
   }
-// HP bars on DAMAGED enemies: thin for regulars, larger for elites/boss.
+// HP bars on damaged enemies.
   if (e.hp < e.maxHp) {
     const big = e.elite || e.boss;
     const w = big ? e.r * 2 : 22, h = big ? 5 : 3;

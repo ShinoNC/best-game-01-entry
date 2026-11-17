@@ -43,17 +43,17 @@ export function drawTitle(ctx, state) {
   const tt = drawAmbient(ctx, state);
   drawPatrolCrab(ctx, state, tt); // behind the menu, along the bottom
   ctx.textAlign = 'center';
-  // Logo: gradient orange + dark outline + drop shadow.
+  // Logo.
   ctx.letterSpacing = '3px';
   logoText(ctx, 'TIDEKEEPER', VIEW_W / 2, 112,
     '900 88px "Trebuchet MS", "Segoe UI", Verdana, sans-serif',
     '#ffb35c', '#e8590c', '#4a2408', 3);
   ctx.letterSpacing = '0px';
-  // Tagline: pill-backed, "30 STAGES" emphasized, 30px below the logo.
+  // Tagline: pill-backed.
   const tagParts = [
     { t: '★ CLEAR ', f: 'bold 24px sans-serif' },
     { t: '30 STAGES', f: '900 30px sans-serif' },
-    { t: ' — BEAT THE HERONS, WIN THE POOL ★', f: 'bold 24px sans-serif' },
+    { t: ' — DEFEND THE REEF, WIN THE POOL ★', f: 'bold 24px sans-serif' },
   ];
   let tagW = 0;
   for (const p of tagParts) { ctx.font = p.f; tagW += ctx.measureText(p.t).width; }
@@ -76,7 +76,7 @@ export function drawTitle(ctx, state) {
     ctx.font = 'bold 17px sans-serif';
     txt(ctx, `✦ ${title.toUpperCase()} ✦`, VIEW_W / 2, 202, PAL.gold);
   }
-  // Vertical menu: gold START, then four dark buttons; keyboard gets a gold ring.
+  // Vertical menu.
   const TL = titleLayout();
   const items = [['start', 'START GAME'], ['help', 'HOW TO PLAY  ?'], ['feats', 'ACHIEVEMENTS'],
     ['history', 'HISTORY'], ['settings', 'SETTINGS']];

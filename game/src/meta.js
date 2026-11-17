@@ -1,4 +1,4 @@
-// Meta-progression in localStorage: bests, feats, runs, win counts.
+// Meta-progression.
 import { AWARD_TIERS, AWARD_TITLES, DIFF_ORDER, FEATS } from './config.js';
 
 const BESTS_KEY = 'tidekeeper-bests';
@@ -59,7 +59,7 @@ export function writeLastDiff(d) {
   try { window.localStorage.setItem(LAST_DIFF_KEY, d); } catch { /* private mode */ }
 }
 
-// Which feats did THIS run earn that were not already unlocked? Pure —
+// Which feats did THIS run earn?
 // it never writes; the caller writes the union.
 export function featsEarnedThisRun(state, unlocked) {
   const have = new Set(unlocked);
@@ -68,7 +68,7 @@ export function featsEarnedThisRun(state, unlocked) {
   const test = (id, ok) => { if (ok && !have.has(id)) earned.push(id); };
   test('firstblood', state.kills >= 1);
   test('arsenal', ['claw', 'bow', 'blaster', 'shell', 'spin', 'laser', 'trident'].every((w) => state.weapons[w] > 0));
-  test('heron', (state.stats.bossesDown || 0) >= 1);
+  test('beast', (state.stats.bossesDown || 0) >= 1);
   test('king', won);
   test('untouched', !!state.stats.cleanStage);
   test('rich', (state.stats.maxCoins || 0) >= 500);
@@ -76,7 +76,7 @@ export function featsEarnedThisRun(state, unlocked) {
   return earned;
 }
 
-// Record a finished run: best, feats, wins, history. Returns the new
+// Record a finished run.
 // meta record, feats earned, and award earned (win hit 3/10/20).
 export function recordRun(state, meta) {
   const diff = state.difficulty || 'normal';

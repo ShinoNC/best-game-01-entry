@@ -11,8 +11,8 @@ export function star(ctx, x, y, r, rot, color) {
   ctx.closePath(); ctx.fill();
 }
 
-// Health is a HEART: HUD + SHELL REPAIR use ♥, so the pickup must
-// match — a star reads as score, not health. Two lobes + a point.
+// Health is a HEART.
+
 export function heart(ctx, x, y, r, c) {
   ctx.fillStyle = c; ctx.beginPath();
   ctx.moveTo(x, y + r * 0.85);
@@ -21,7 +21,7 @@ export function heart(ctx, x, y, r, c) {
   ctx.closePath(); ctx.fill();
 }
 
-// Weapon icons (40-unit box): pincer, bow+arrow, ink burst, spiral
+// Weapon icons.
 // shell, whirlpool, gun+beam, trident. Unowned = dimmed.
 export function drawWeaponIcon(ctx, id, x, y, s, owned) {
   ctx.save(); ctx.translate(x, y); ctx.scale(s / 40, s / 40);
@@ -80,7 +80,7 @@ export function drawWeaponIcon(ctx, id, x, y, s, owned) {
 }
 
 // Award icons (40-unit box): medal (disc + ribbon), cup (trophy),
-// crown (three points + band). Locked grey, earned = metal colour.
+// Crown.
 export function drawAwardIcon(ctx, kind, x, y, s, color, locked) {
   ctx.save(); ctx.translate(x, y); ctx.scale(s / 40, s / 40);
   const c = locked ? '#5a6a6a' : color;
@@ -120,7 +120,7 @@ export function drawCoin(ctx, x, y, r) {
   ctx.restore();
 }
 
-// Level pips: five dots — filled owned, gold = the level a card adds,
+// Level pips.
 // empty = the rest. Centred on (cx, y).
 export function drawPips(ctx, cx, y, lv, next) {
   for (let i = 0; i < WEAPON_MAX; i += 1) {

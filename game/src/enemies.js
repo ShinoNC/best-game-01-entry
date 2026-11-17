@@ -1,4 +1,4 @@
-// Enemies: seven behaviours + elites + six boss herons.
+// Enemies: seven behaviours + elites + six bosses.
 import { DIFFICULTIES, ELITE, ENEMIES, POOL, SPIT, STAGES, bossForStage, dmgScale, hpScale, spawnWeights, speedScale } from './config.js';
 
 let nextId = 1;
@@ -59,7 +59,7 @@ function spawnBoss(state, fx, audio) {
   audio.boss(); fx.shake(0.6);
 }
 
-// Spawn director: a budget per stage; elite + boss at half budget.
+// Spawn director.
 export function updateSpawner(state, dt, fx, audio) {
   const plan = STAGES[state.stage - 1];
   state.spawnT -= dt;
@@ -68,7 +68,7 @@ export function updateSpawner(state, dt, fx, audio) {
     const n = Math.min(plan.batch, plan.budget - state.stageSpawned);
     for (let i = 0; i < n; i += 1) { spawnEnemy(state, pickType(state), false, fx); state.stageSpawned += 1; }
   }
-  // Elites and bosses arrive at half the budget — the midpoint twist.
+  // Elites and bosses at half budget.
   if (plan.elite && !state.stageEliteDone && state.stageSpawned >= plan.budget / 2) {
     state.stageEliteDone = true;
     const type = state.rng.pick(['urchin', 'jelly', 'eel', 'starfish']);
@@ -79,7 +79,7 @@ export function updateSpawner(state, dt, fx, audio) {
   if (plan.boss && !state.bossSpawned && state.stageSpawned >= plan.budget / 2) {
     spawnBoss(state, fx, audio);
   }
-  // A summoning heron calls gulls while it lives (not in the budget).
+  // A summoning boss calls gulls.
   // Called gulls fly in from the edges — never pop by the boss.
   if (state.boss && state.boss.summonN > 0) {
     state.boss.summonT -= dt;
@@ -124,9 +124,9 @@ export function updateEnemies(state, dt) {
         const strafe = want === 0 ? Math.sin(e.wob * 0.7) * 0.8 : 0;
         e.x += (nx * want - ny * strafe) * sp * dt; e.y += (ny * want + nx * strafe) * sp * dt;
       }
-    } else if (e.type === 'gull' || e.type.endsWith('heron')) { // swoopers circle, then dive
+    } else if (e.type === 'gull' || e.boss) { // swoopers circle, then dive
       e.diveT -= dt;
-      const boss = e.type.endsWith('heron');
+      const boss = !!e.boss;
       if (e.state === 'approach' && d < 200) { e.state = 'circle'; e.diveT = boss ? 0.8 : 1.1; }
       if (e.state === 'circle') {
         const t = e.wob * 1.4;

@@ -1,5 +1,5 @@
 // Title overlays: HOW TO PLAY, ACHIEVEMENTS, HISTORY, SETTINGS.
-import { ARMOR_PER_BOSS, AWARD_KIND, AWARD_TIERS, BOSSES, CREATURE_NAMES, CREATURE_ORDER, DIFFICULTIES, DIFF_ORDER, ENEMIES, FEATS, PAL, VIEW_W } from '../config.js';
+import { ARMOR_PER_BOSS, AWARD_KIND, AWARD_TIERS, BOSSES, CREATURE_NAMES, CREATURE_ORDER, DIFFICULTIES, DIFF_ORDER, ENEMIES, PAL, VIEW_W } from '../config.js';
 import { bestTitle } from '../meta.js';
 import { drawEnemy } from './creatures.js';
 import { drawAwardIcon } from './icons.js';
@@ -9,7 +9,7 @@ const BIG = { x: 140, y: 60, w: 1000, h: 580 }; // the help panel
 const BIG_CLOSE = { x: 560, y: 576, w: 160, h: 44 };
 const HIST_PANEL = { x: 140, y: 60, w: 1000, h: 360 }; // history: 3 short tables
 const HIST_CLOSE = { x: 560, y: 356, w: 160, h: 44 };
-const FEAT_PANEL = { x: 140, y: 60, w: 1000, h: 580 }; // feats + awards: two columns
+const FEAT_PANEL = { x: 140, y: 60, w: 1000, h: 580 }; // awards only, centred
 const FEAT_CLOSE = { x: 560, y: 576, w: 160, h: 44 };
 const SET_PANEL = { x: 440, y: 240, w: 400, h: 240 };
 const SET_CLOSE = { x: 560, y: 420, w: 160, h: 44 };
@@ -78,9 +78,9 @@ export function drawHelp(ctx, state) {
     txt(ctx, BEHAVIOUR[type], cx, 328, PAL.dim);
     ctx.textAlign = 'left';
   }
-  // Herons: name + stage + HP.
+  // Sea beasts.
   ctx.font = 'bold 15px sans-serif';
-  txt(ctx, 'HERONS — ONE EVERY 5 STAGES', 180, 356, PAL.gold);
+  txt(ctx, 'SEA BEASTS — ONE EVERY 5 STAGES', 180, 356, PAL.gold);
   for (let i = 0; i < BOSSES.length; i += 1) {
     const b = BOSSES[i];
     const hx = 180 + i * 158;
@@ -104,45 +104,30 @@ export function drawHelp(ctx, state) {
 }
 
 export function drawAchievements(ctx, state) {
-  const meta = state.meta || { feats: [], wins: {} };
-  const unlocked = new Set(meta.feats || []);
+  const meta = state.meta || { wins: {} };
   const wins = meta.wins || {};
   ctx.fillStyle = 'rgba(6,42,51,0.6)'; ctx.fillRect(0, 0, 1280, 720);
   panel(ctx, FEAT_PANEL);
   ctx.textAlign = 'center';
   ctx.font = 'bold 28px sans-serif';
   txt(ctx, 'ACHIEVEMENTS', VIEW_W / 2, 100, PAL.gold);
-  // Left column: the 7 feats, as before.
-  ctx.textAlign = 'left';
-  ctx.font = 'bold 15px sans-serif';
-  txt(ctx, `FEATS — ${unlocked.size} of ${FEATS.length}`, 180, 132, PAL.gold);
-  for (let i = 0; i < FEATS.length; i += 1) {
-    const f = FEATS[i];
-    const got = unlocked.has(f.id);
-    const y = 164 + i * 52;
-    ctx.font = 'bold 17px sans-serif';
-    txt(ctx, `${got ? '★' : '☆'} ${f.name}`, 180, y, got ? PAL.gold : PAL.dim);
-    ctx.font = '13px sans-serif';
-    txt(ctx, f.desc, 180, y + 19, PAL.dim);
-  }
-  // Right column: 9 awards — 3 rows (difficulty) x 3 tiers.
-  ctx.font = 'bold 15px sans-serif';
-  txt(ctx, 'COMPLETION AWARDS', 620, 132, PAL.gold);
   const title = bestTitle(wins);
   if (title) {
     ctx.font = 'bold 15px sans-serif';
-    txt(ctx, `YOUR TITLE: ${title}`, 620, 158, PAL.gold);
+    txt(ctx, `YOUR TITLE: ${title}`, VIEW_W / 2, 140, PAL.gold);
   }
+  // 9 awards, centred.
   for (let d = 0; d < DIFF_ORDER.length; d += 1) {
     const diff = DIFF_ORDER[d];
     const w = wins[diff] || 0;
     const y = 196 + d * 128;
+    ctx.textAlign = 'left';
     ctx.font = 'bold 14px sans-serif';
-    txt(ctx, `${DIFFICULTIES[diff].label} — ${w} WIN${w === 1 ? '' : 'S'}`, 620, y, PAL.text);
+    txt(ctx, `${DIFFICULTIES[diff].label} — ${w} WIN${w === 1 ? '' : 'S'}`, 440, y, PAL.text);
     for (let t = 0; t < AWARD_TIERS.length; t += 1) {
       const tier = AWARD_TIERS[t];
       const got = w >= tier.wins;
-      const cx = 660 + t * 160;
+      const cx = 480 + t * 160;
       drawAwardIcon(ctx, AWARD_KIND[diff], cx, y + 40, 44, tier.color, !got);
       ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
       txt(ctx, `${tier.metal} ${AWARD_KIND[diff]}`, cx, y + 74, got ? tier.color : PAL.dim);
@@ -163,7 +148,7 @@ export function drawHistory(ctx, state) {
   ctx.textAlign = 'center';
   ctx.font = 'bold 28px sans-serif';
   txt(ctx, 'HISTORY', VIEW_W / 2, 100, PAL.gold);
-  // One table per difficulty: best score + 3 most recent runs.
+  // One table per difficulty.
   for (let i = 0; i < DIFF_ORDER.length; i += 1) {
     const d = DIFF_ORDER[i];
     const x = 180 + i * 320;
@@ -181,7 +166,7 @@ export function drawHistory(ctx, state) {
       mine.forEach((r, j) => {
         const mins = Math.floor((r.time || 0) / 60), secs = Math.floor((r.time || 0) % 60);
         ctx.font = 'bold 13px sans-serif';
-        txt(ctx, `${r.won ? 'WON ' : 'LOST'} · ${r.stage}/30 · ${r.score}`, x, 196 + j * 44, r.won ? '#7fe0c3' : '#ff8fa0');
+        txt(ctx, `${r.stage}/30 · ${r.score}`, x, 196 + j * 44, PAL.text);
         ctx.font = '12px sans-serif';
         txt(ctx, `${mins}:${String(secs).padStart(2, '0')}`, x, 214 + j * 44, PAL.dim);
       });

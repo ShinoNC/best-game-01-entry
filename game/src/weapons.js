@@ -1,7 +1,7 @@
-// Seven weapons, all firing at once at the nearest creature in range.
+// Seven weapons.
 import { WEAPON_MAX } from './config.js';
 
-// Weapon table: five levels each — more projectiles, faster fire and
+// Weapon table.
 // more damage per level.
 export const WEAPONS = {
   claw: { name: 'CLAW', icon: '✂',
@@ -62,7 +62,7 @@ export const WEAPONS = {
     ] },
 };
 
-// Effective stats of ONE weapon: its level table, multiplied by the
+// Effective stats.
 // crab's upgrade tracks. Sim and HUD both use it, so they agree.
 export function weaponStatsFor(state, id) {
   const lv = state.weapons[id];

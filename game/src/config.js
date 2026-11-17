@@ -1,4 +1,4 @@
-// All balance numbers in one place. Win = clear 30 stages; lose = 0 HP.
+// Balance numbers.
 export const STAGE_COUNT = 30; // a full run is ~20–25 minutes
 export const ARMOR_PER_BOSS = 30; // boss-clear reward: absorbs damage before HP, never heals
 export const VIEW_W = 1280;
@@ -43,12 +43,12 @@ export const ENEMIES = {
 export const SPIT = { speed: 240, r: 6, cd: 3.0, range: 420, aim: 0.35, life: 2.5 }; // archerfish water jet
 export const ELITE = { hpMul: 3.6, dmgMul: 1.5, sizeMul: 1.55, score: 150, coins: 5 };
 export const BOSSES = [
-  { stage: 5, type: 'heron', name: 'THE GREAT HERON', hp: 1600, speed: 118, dmg: 18, r: 46, score: 500, coins: 25, color: '#e8e4d8', dark: '#8a8578', dive: 2.1, summon: 0, summonEvery: 7 },
-  { stage: 10, type: 'stormheron', name: 'THE STORM HERON', hp: 2600, speed: 132, dmg: 22, r: 52, score: 1000, coins: 50, color: '#8a93b8', dark: '#4a5178', dive: 2.6, summon: 2, summonEvery: 7 },
-  { stage: 15, type: 'duskheron', name: 'THE DUSK HERON', hp: 4500, speed: 140, dmg: 26, r: 54, score: 1500, coins: 75, color: '#b08ac0', dark: '#6b4a78', dive: 2.8, summon: 2, summonEvery: 6 },
-  { stage: 20, type: 'tidalheron', name: 'THE TIDAL HERON', hp: 12000, speed: 128, dmg: 30, r: 58, score: 2000, coins: 100, color: '#5fb8a8', dark: '#2f6e64', dive: 2.4, summon: 3, summonEvery: 7 },
-  { stage: 25, type: 'abyssheron', name: 'THE ABYSS HERON', hp: 19000, speed: 148, dmg: 34, r: 60, score: 2500, coins: 125, color: '#5a6fd6', dark: '#2e3a7a', dive: 3.0, summon: 3, summonEvery: 6 },
-  { stage: 30, type: 'kingheron', name: 'THE HERON KING', hp: 27000, speed: 140, dmg: 38, r: 66, score: 4000, coins: 200, color: '#e8b64c', dark: '#8a6a1e', dive: 2.8, summon: 3, summonEvery: 5 },
+  { stage: 5, type: 'turtle', name: 'THE ANCIENT TURTLE', hp: 1600, speed: 118, dmg: 18, r: 46, score: 500, coins: 25, color: '#8ab86a', dark: '#4a7a3e', dive: 2.1, summon: 0, summonEvery: 7 },
+  { stage: 10, type: 'octopus', name: 'THE EMERALD OCTOPUS', hp: 2600, speed: 132, dmg: 22, r: 52, score: 1000, coins: 50, color: '#c08497', dark: '#7a4a5e', dive: 2.6, summon: 2, summonEvery: 7 },
+  { stage: 15, type: 'hammerhead', name: 'THE HAMMERHEAD', hp: 4500, speed: 140, dmg: 26, r: 54, score: 1500, coins: 75, color: '#7a9bb8', dark: '#4a6a8a', dive: 2.8, summon: 2, summonEvery: 6 },
+  { stage: 20, type: 'angler', name: 'THE ANGLER', hp: 12000, speed: 128, dmg: 30, r: 58, score: 2000, coins: 100, color: '#6a5a9a', dark: '#3a2d5e', dive: 2.4, summon: 3, summonEvery: 7 },
+  { stage: 25, type: 'stingray', name: 'THE CRIMSON STINGRAY', hp: 19000, speed: 148, dmg: 34, r: 60, score: 2500, coins: 125, color: '#c05a5a', dark: '#7a2e2e', dive: 3.0, summon: 3, summonEvery: 6 },
+  { stage: 30, type: 'kraken', name: 'THE KRAKEN', hp: 27000, speed: 140, dmg: 38, r: 66, score: 4000, coins: 200, color: '#9a4a6a', dark: '#5a2438', dive: 2.8, summon: 3, summonEvery: 5 },
 ];
 export function bossForStage(stage) { return BOSSES.find((b) => b.stage === stage) || null; }
 
@@ -115,14 +115,14 @@ export const DIFF_ORDER = ['easy', 'normal', 'hard'];
 export const FEATS = [
   { id: 'firstblood', name: 'FIRST BLOOD', desc: 'Slay your first creature' },
   { id: 'arsenal', name: 'FULL ARSENAL', desc: 'Own all 7 weapons in one run' },
-  { id: 'heron', name: 'HERON SLAYER', desc: 'Drive off a heron' },
-  { id: 'king', name: 'KINGSLAYER', desc: 'Beat the Heron King' },
+  { id: 'beast', name: 'BEAST SLAYER', desc: 'Drive off a sea beast' },
+  { id: 'king', name: 'KINGSLAYER', desc: 'Beat the Kraken' },
   { id: 'untouched', name: 'UNTOUCHED', desc: 'Clear a stage without a scratch' },
   { id: 'rich', name: 'RICH CRAB', desc: 'Hold 500+ coins at once' },
   { id: 'combo', name: 'COMBO ×8', desc: 'Reach combo ×8' },
 ];
 
-// Awards: 3/10/20 clears per difficulty — medals on EASY, cups on
+// Awards: 3/10/20 clears.
 // NORMAL, crowns + a title on HARD.
 export const AWARD_TIERS = [
   { wins: 3, metal: 'BRONZE', color: '#cd7f32' },
@@ -130,7 +130,7 @@ export const AWARD_TIERS = [
   { wins: 20, metal: 'GOLD', color: '#ffd700' },
 ];
 export const AWARD_KIND = { easy: 'MEDAL', normal: 'CUP', hard: 'CROWN' };
-export const AWARD_TITLES = ['Tide Guardian', 'Heron Bane', 'Tidekeeper Legend'];
+export const AWARD_TITLES = ['Tide Guardian', 'Kraken Slayer', 'Tidekeeper Legend'];
 
 export const CREATURE_NAMES = {
   guppy: 'GUPPY', jelly: 'JELLY', urchin: 'URCHIN',

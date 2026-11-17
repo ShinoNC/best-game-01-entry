@@ -68,7 +68,7 @@ if (shot) {
     if (state.phase === 'stageclear' && state.menuMsgT > 0) state.menuMsgT -= dt;
     if (state.phase === 'play') {
       acc += dt;
-// The harness fast-forwards the world itself; the loop must not step too.
+// The harness fast-forwards the world.
       if (!window.__ffActive) {
         let steps = 0;
         while (acc >= STEP && steps < 4) { stepWorld(state, input, STEP, fx, audio); acc -= STEP; steps += 1; if (state.phase !== 'play') break; }
@@ -137,10 +137,10 @@ function startRun() {
   writeLastDiff(state.difficulty);
   state.phase = 'play';
   state.banner = 'STAGE 1 — SLAY THEM ALL'; state.bannerT = 3;
-  status.textContent = 'Clear 30 stages. A heron waits at every fifth stage!';
+  status.textContent = 'Clear 30 stages. A sea beast waits at every fifth stage!';
 }
 
-// Title menu: START opens difficulty select; the rest open overlays.
+// Title menu.
 function activateMenu(item) {
   if (item === 'start') { state.phase = 'difficulty'; status.textContent = 'Choose your tide'; }
   else state.overlay = item;
@@ -267,5 +267,5 @@ function restart() {
 
 function toTitle() {
   freshState('title');
-  status.textContent = 'TIDEKEEPER — clear 30 stages, beat the herons!';
+  status.textContent = 'TIDEKEEPER — clear 30 stages, beat the sea beasts!';
 }

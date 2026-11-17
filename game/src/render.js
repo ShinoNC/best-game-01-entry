@@ -15,7 +15,7 @@ export { MENU_ITEMS, SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE, difficultyLayout, o
 
 export function createRenderer(canvas) {
   const ctx = canvas.getContext('2d');
-  // DPR-aware sizing (capped 2x): crisp on HiDPI, letterboxes, never crops.
+  // DPR-aware sizing (capped 2x).
   let cssW = 0, cssH = 0, dpr = 1;
   function resize() {
     cssW = window.innerWidth; cssH = window.innerHeight;
@@ -42,17 +42,17 @@ export function createRenderer(canvas) {
       const oxd = ox * dpr, oyd = oy * dpr;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = PAL.deep; ctx.fillRect(0, 0, canvas.width, canvas.height);
-      // L0–L20: the world, with screen shake and interpolated positions.
+      // L0–L20: the world.
       const a = Math.max(0, Math.min(1, alpha));
       const lerp = (prev, cur) => prev + (cur - prev) * a;
       ctx.setTransform(s, 0, 0, s, oxd + fx.shakeX * s, oyd + fx.shakeY * s);
-      // Background life runs on the render clock, not sim time
-      // keeps moving on the title and while paused.
+      // Background life runs on the render clock.
+
       const rt = state.shotMode ? t : performance.now() / 1000;
       drawPool(ctx, state, rt);
-      // Dive telegraph: dashed line to the crab, ring on the crab, "!" over the bird.
+      // Dive telegraph: dashed line, ring, "!".
       for (const e of state.enemies) {
-        if ((e.type === 'gull' || e.type.endsWith('heron')) && e.state === 'circle' && e.diveT < 0.6) {
+        if ((e.type === 'gull' || e.boss) && e.state === 'circle' && e.diveT < 0.6) {
           const ix = lerp(e.px ?? e.x, e.x), iy = lerp(e.py ?? e.y, e.y);
           const jx = lerp(state.player.px ?? state.player.x, state.player.x);
           const jy = lerp(state.player.py ?? state.player.y, state.player.y);
@@ -147,7 +147,7 @@ export function createRenderer(canvas) {
         vg.addColorStop(1, `rgba(255,45,85,${state.player.flash * 1.6})`);
         ctx.fillStyle = vg; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
       }
-      // L30–L70: the HUD and the screens, on the CLEAN transform — no shake,
+      // L30–L70: HUD and screens.
       // so nothing the player reads ever jumps.
       ctx.setTransform(s, 0, 0, s, oxd, oyd);
       if (state.phase === 'play' || state.phase === 'paused') drawHud(ctx, state, t);

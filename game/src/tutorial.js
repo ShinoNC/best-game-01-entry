@@ -20,8 +20,8 @@ export function updateHints(state, dt) {
   }
   // A banner owns the screen; a new hint waits its turn.
   if (state.bannerT > 0) return;
-  // Hints fire in order; one whose moment never comes is skipped after 8s,
-  // so a stuck hint never blocks the rest. The LAST is never skipped.
+  // Hints fire in order; missed ones skip after 8s,
+
   const def = HINTS[h.idx];
   if (def && def.cond(state)) { h.cur = def; h.t = def.show; h.wait = 0; return; }
   h.wait += dt;

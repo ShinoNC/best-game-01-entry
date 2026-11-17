@@ -10,7 +10,7 @@ export const REPAIR_HEAL = 40;
 
 function shopEntry(wid) { return SHOP.find((s) => s.id === wid); }
 
-// One stats line per card, from the real numbers. Damage EFFECTIVE
+// One stats line per card.
 // (1.14x base × SHARPER CLAWS) — what the buyer gets.
 export function cardStats(card, state) {
   if (card.kind === 'repair') return `+${REPAIR_HEAL} HP`;
@@ -123,7 +123,7 @@ export function rerollHand(state) {
   return true;
 }
 
-// Autopilot shopper: new weapons first, then level-ups, skills, repair.
+// Autopilot shopper.
 const SKILL_ORDER = ['claws', 'tempo', 'shell', 'reach', 'bubbles', 'legs', 'magnet'];
 function cardScore(card) {
   if (card.kind === 'weapon') return 1000 - card.price;

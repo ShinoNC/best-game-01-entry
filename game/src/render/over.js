@@ -26,7 +26,7 @@ export function drawOver(ctx, state) {
   // Stage/time line: big and bright.
   ctx.font = 'bold 26px sans-serif';
   txt(ctx, `STAGE ${state.stage}/${STAGE_COUNT} · ${mins}:${String(secs).padStart(2, '0')}`, VIEW_W / 2, 348, PAL.text, 3);
-  // A win hitting 3/10/20 clears on its difficulty earns an award — one
+  // A win at 3/10/20 clears earns an award.
   // gold line, only on that win.
   if (won && state.awardEarned) {
     ctx.font = 'bold 20px sans-serif';
