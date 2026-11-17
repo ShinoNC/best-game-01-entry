@@ -1,4 +1,5 @@
 import { PAL, POOL, VIEW_H, VIEW_W, envForStage } from './config.js';
+import { imgFor } from './sprites.js';
 import { weaponStatsFor } from './weapons.js';
 import { drawCrab, drawEnemy } from './render/creatures.js';
 import { drawPool } from './render/pool.js';
@@ -47,6 +48,24 @@ export function createRenderer(canvas) {
       const a = Math.max(0, Math.min(1, alpha));
       const lerp = (prev, cur) => prev + (cur - prev) * a;
       ctx.setTransform(s, 0, 0, s, oxd + fx.shakeX * s, oyd + fx.shakeY * s);
+
+      // Fill the letterbox strips (visible area outside the 1280x720 view)
+      // with the same background as the current screen, so no flat color bars show.
+      const vx0 = -ox / scale, vy0 = -oy / scale, vw = cssW / scale, vh = cssH / scale;
+      if (state.phase === 'stageclear' || state.phase === 'over') {
+        ctx.fillStyle = '#072a35';
+        ctx.fillRect(vx0, vy0, vw, vh);
+      } else {
+        const wimg = imgFor('water-tile');
+        if (wimg) {
+          ctx.fillStyle = ctx.createPattern(wimg, 'repeat');
+          ctx.fillRect(vx0, vy0, vw, vh);
+          ctx.globalAlpha = 0.45;
+          ctx.fillStyle = envForStage(state.stage, state.envs).water;
+          ctx.fillRect(vx0, vy0, vw, vh);
+          ctx.globalAlpha = 1;
+        }
+      }
 
       const rt = state.shotMode ? t : performance.now() / 1000;
       drawPool(ctx, state, rt);

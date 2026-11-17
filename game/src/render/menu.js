@@ -59,13 +59,11 @@ export function drawStageMenu(ctx, state, hover) {
   const c0 = clusterOf(state.stage) * 5 + 1, c1 = c0 + 4;
   ctx.font = px(9);
   txt(ctx, `EFFECT (STAGES ${c0}–${c1}): ${mod.n} — ${mod.d}`, VIEW_W / 2, 100, PAL.xp);
-  ctx.font = px(9);
-  txt(ctx, `LEVEL ${state.level} · ${state.xp}/${state.xpNext} XP`, VIEW_W / 2, 122, PAL.gold);
   ctx.font = px(17);
   const ct = `${state.coins} COINS`;
   const cw = ctx.measureText(ct).width;
-  drawCoin(ctx, VIEW_W / 2 - cw / 2 - 18, 146, 12);
-  txt(ctx, ct, VIEW_W / 2 + 10, 154, PAL.gold);
+  drawCoin(ctx, VIEW_W / 2 - cw / 2 - 18, 126, 12);
+  txt(ctx, ct, VIEW_W / 2 + 10, 134, PAL.gold);
   if (bossForStage(state.stage)) {
     ctx.font = px(12);
     txt(ctx, `+${ARMOR_PER_BOSS} ARMOR`, VIEW_W / 2, 180, PAL.armor, 3);
