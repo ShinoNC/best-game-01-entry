@@ -104,9 +104,8 @@ export function drawHud(ctx, state, t) {
     txt(ctx, lv > 0 ? SABBR[d.id] + lv : SABBR[d.id], bx + 26, by + 47, lv > 0 ? PAL.text : PAL.dim, 1);
   }
   ctx.textAlign = 'right';
-  ctx.fillStyle = 'rgba(6,42,51,0.85)'; ctx.fillRect(1092, 606, 160, 30);
   ctx.font = 'bold 15px sans-serif';
-  txt(ctx, p.dashCd <= 0 ? 'DASH READY' : `DASH ${p.dashCd.toFixed(1)}s`, 1240, 627, PAL.text);
+  txt(ctx, p.dashCd <= 0 ? 'DASH READY' : `DASH ${p.dashCd.toFixed(1)}s`, 1240, 627, PAL.text, 3);
   if (state.bannerT > 0) {
     ctx.textAlign = 'center'; ctx.globalAlpha = Math.min(1, state.bannerT);
     ctx.font = 'bold 30px sans-serif';

@@ -50,7 +50,7 @@ export function drawTitle(ctx, state) {
   const tagParts = [
     { t: '★ CLEAR ', f: 'bold 24px sans-serif' },
     { t: '30 STAGES', f: '900 30px sans-serif' },
-    { t: ' — DEFEND THE REEF, WIN THE POOL ★', f: 'bold 24px sans-serif' },
+    { t: ' — DEFEND THE REEF, KEEP THE TIDE ★', f: 'bold 24px sans-serif' },
   ];
   let tagW = 0;
   for (const p of tagParts) { ctx.font = p.f; tagW += ctx.measureText(p.t).width; }

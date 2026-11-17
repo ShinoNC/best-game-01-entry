@@ -11,40 +11,15 @@ export const ENV_BANDS = [
   { rays: 0.15, rain: 0, glow: 0 }, { rays: 0, rain: 0, glow: 0 }, { rays: 0, rain: 1, glow: 1 },
 ];
 export const ENV_PALETTES = [
-  [['SHALLOWS', '#35b8dc', '#8fe8f8', '#c9a86a', '#2f8f6b', '#4fae7d'],
-   ['SUNLIT LAGOON', '#2ec4d8', '#a5f0e8', '#d8c08a', '#3a9a6a', '#5fc48a'],
-   ['TURQUOISE BAY', '#1fb6c9', '#7fe8f0', '#cbb27a', '#2a8a7a', '#4fb89a'],
-   ['PALE REEF', '#4fc8e0', '#b8f0f8', '#d8c89a', '#4a9a7a', '#6fc49a'],
-   ['SEA MIST', '#5ec8d8', '#c0ecf0', '#d0c090', '#3f8f7a', '#5fb89a']],
-  [['EMERALD LAGOON', '#0e7a4e', '#3fc98a', '#b0a05e', '#0a5a36', '#1f7a4a'],
-   ['JADE WATERS', '#0a7a5e', '#2ec98a', '#a8a05e', '#085a3e', '#1a7a55'],
-   ['TEAL GARDEN', '#0a6a6a', '#2eb8a8', '#a89a5e', '#0a4a4a', '#1a7a6a'],
-   ['KELP FOREST', '#1a6a3a', '#4ab86a', '#9a8a4e', '#0a4a26', '#2a7a3a'],
-   ['MINT SHOALS', '#1a8a6a', '#5ed8a8', '#b8a86a', '#0a5a44', '#2a8a5a']],
-  [['OPEN SEA', '#1a2f7e', '#3563d8', '#8a7a5a', '#b04a7a', '#d97aa8'],
-   ['ROYAL DEEP', '#1a2470', '#3a58c8', '#7a6a4a', '#9a4a6a', '#c06a98'],
-   ['STEEL BLUE', '#24406a', '#4a74b8', '#8a7a5a', '#6a5a8a', '#8a7aa8'],
-   ['SAPPHIRE TIDE', '#16286e', '#2a4ec0', '#7a6a5a', '#a03a7a', '#c85a98'],
-   ['SLATE WATERS', '#2a3a5e', '#4a6a98', '#8a7a6a', '#5a4a7a', '#7a6a98']],
-  [['TWILIGHT DEEP', '#2a1a5e', '#4d33a0', '#6a5a7a', '#5a3a8a', '#7a55a8'],
-   ['VIOLET ABYSS', '#2a1650', '#4a2a90', '#5a4a6a', '#4a2a7a', '#6a44a0'],
-   ['DUSK PLUM', '#331a4e', '#5a3088', '#6a5a6a', '#5a2a6a', '#7a44a0'],
-   ['MAGENTA DEEP', '#3a1650', '#6a2a80', '#6a4a6a', '#6a2a7a', '#8a44a0'],
-   ['INDIGO DUSK', '#1e1a58', '#3a3088', '#5a5a7a', '#4a3a8a', '#6a55a0']],
-  [['RED TIDE', '#5e1220', '#8f2a3d', '#7a5a4a', '#5a2230', '#7a3040'],
-   ['CRIMSON DEEP', '#6a1226', '#9a2a44', '#7a4a4a', '#5a1a2a', '#8a2a40'],
-   ['MAROON ABYSS', '#4e1220', '#7a2436', '#6a4a4a', '#4a1a28', '#6a2836'],
-   ['BLOOD REEF', '#6e1a1a', '#a03030', '#8a5a4a', '#5a2222', '#7a3232'],
-   ['EMBER TIDE', '#5e2010', '#8f3a20', '#8a6a4a', '#5a2a1a', '#7a3a28']],
-  [['STORM TIDE', '#0a0f24', '#1a2547', '#4a5060', '#1a2a4a', '#2a3a5a'],
-   ['ABYSSAL DARK', '#060a1e', '#141c38', '#3a4050', '#101c38', '#1e2a48'],
-   ['MIDNIGHT DEEP', '#0a0a22', '#1e1e4a', '#3a3a50', '#141428', '#242448'],
-   ['BLACK WATER', '#050810', '#101828', '#30343e', '#0c1424', '#1a2438'],
-   ['VOID TIDE', '#0d0818', '#241838', '#3e3448', '#180f2e', '#2a1e48']],
+  ['AZURE SEA', '#1a6ec8', '#4a9ae8', '#c9a86a', '#2f8f6b', '#4fae7d'],
+  ['EMERALD SEA', '#1a8a4a', '#4ac87a', '#c9a86a', '#2f8f6b', '#4fae7d'],
+  ['VIOLET DEEP', '#5a2a8a', '#8a4ac8', '#c9a86a', '#2f8f6b', '#4fae7d'],
+  ['CRIMSON TIDE', '#8a2a2a', '#c84a4a', '#c9a86a', '#2f8f6b', '#4fae7d'],
+  ['GOLDEN SHOALS', '#b8860b', '#e8b84a', '#c9a86a', '#2f8f6b', '#4fae7d'],
 ];
 export function envForStage(stage, envs) {
   const band = Math.min(5, Math.floor((stage - 1) / 5));
-  const p = (envs && envs[band]) || ENV_PALETTES[band][0];
+  const p = (envs && envs[band]) || ENV_PALETTES[0];
   const fx = ENV_BANDS[band];
   return { name: p[0], water: p[1], water2: p[2], sand: p[3], weed: p[4], weed2: p[5], rays: fx.rays, rain: fx.rain, glow: fx.glow };
 }

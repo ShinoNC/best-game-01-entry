@@ -2,10 +2,11 @@
 import { ENV_PALETTES, PAL, PLAYER, POOL } from './config.js';
 
 export function createState(rng, seed, difficulty = 'normal') {
-  const theme = rng.pick(['rocky', 'weedy', 'shelly']);
-  const kinds = theme === 'rocky' ? ['rock', 'rock', 'rock', 'weed', 'shell', 'star']
-    : theme === 'weedy' ? ['weed', 'weed', 'weed', 'rock', 'shell', 'star']
-    : ['shell', 'shell', 'star', 'star', 'weed', 'rock'];
+  const theme = rng.pick(['rocky', 'weedy', 'shelly', 'coral']);
+  const kinds = theme === 'rocky' ? ['rock', 'rock', 'rock', 'rock', 'rock', 'rock', 'rock', 'rock', 'weed', 'shell']
+    : theme === 'weedy' ? ['weed', 'weed', 'weed', 'weed', 'weed', 'weed', 'weed', 'weed', 'rock', 'shell']
+    : theme === 'coral' ? ['coral', 'coral', 'coral', 'coral', 'coral', 'coral', 'coral', 'coral', 'rock', 'weed']
+    : ['shell', 'shell', 'shell', 'shell', 'star', 'star', 'star', 'star', 'rock', 'weed'];
   const decor = [];
   const nDecor = 45 + Math.floor(rng.next() * 31);
   for (let i = 0; i < nDecor; i += 1) {
@@ -28,14 +29,14 @@ export function createState(rng, seed, difficulty = 'normal') {
   }
   const mix = {};
   for (const k of ['guppy', 'jelly', 'urchin', 'starfish', 'eel', 'squid', 'archer']) mix[k] = rng.range(0.85, 1.2);
-  const envs = ENV_PALETTES.map((list) => rng.pick(list)); // one palette per brightness band, per run
+  const envs = Array.from({ length: 6 }, () => rng.pick(ENV_PALETTES)); // one of 5 bold colors per band, per run
   const bossOrder = ['turtle', 'octopus', 'hammerhead', 'angler', 'stingray'];
   for (let i = bossOrder.length - 1; i > 0; i -= 1) { // Fisher-Yates on the run seed
     const j = Math.floor(rng.next() * (i + 1));
     [bossOrder[i], bossOrder[j]] = [bossOrder[j], bossOrder[i]];
   }
   return {
-    rng, seed, decor, theme, mix, envs, bossOrder, time: 0, phase: 'title', menuSel: 0,
+    rng, seed, decor, theme, mix, envs, bossOrder, sandCorner: ['tl', 'tr', 'bl', 'br'][((seed % 4) + 4) % 4], time: 0, phase: 'title', menuSel: 0,
     difficulty,
     combo: 0, comboT: 0,
     player: {

@@ -35,6 +35,20 @@ function drawWeed(ctx, d, env, t, swA, swS) {
 // Water gradient cached per environment.
 let poolGrad = null, gradEnv = '';
 
+// Sandy beach corner: a soft curved shore at one pool corner, picked per run.
+function drawSandCorner(ctx, x0, y0, pw, ph, corner) {
+  const c = corner || 'bl';
+  const sx = c[1] === 'r' ? x0 + pw : x0, sy = c[0] === 'b' ? y0 + ph : y0;
+  const dx = c[1] === 'r' ? -1 : 1, dy = c[0] === 'b' ? -1 : 1;
+  ctx.fillStyle = 'rgba(224,196,143,0.9)';
+  ctx.beginPath();
+  ctx.moveTo(sx, sy + dy * 360);
+  ctx.quadraticCurveTo(sx + dx * 140, sy + dy * 340, sx + dx * 300, sy + dy * 210);
+  ctx.quadraticCurveTo(sx + dx * 420, sy + dy * 130, sx + dx * 540, sy);
+  ctx.lineTo(sx, sy);
+  ctx.closePath(); ctx.fill();
+}
+
 export function drawPool(ctx, state, t) {
   const env = envForStage(state.stage, state.envs);
   // Menu screens: open water, no frame.
@@ -50,6 +64,7 @@ export function drawPool(ctx, state, t) {
   ctx.fillStyle = poolGrad; ctx.fillRect(x0, y0, pw, ph);
   ctx.save();
   ctx.beginPath(); ctx.rect(x0, y0, pw, ph); ctx.clip();
+  drawSandCorner(ctx, x0, y0, pw, ph, state.sandCorner);
   if (env.rays > 0) {
     for (let i = 0; i < 4; i += 1) {
       const rx = 200 + i * 260 + Math.sin(t * 0.25 + i * 1.7) * 24;
@@ -114,10 +129,26 @@ export function drawPool(ctx, state, t) {
       ctx.fillStyle = 'rgba(255,255,255,0.14)';
       ctx.beginPath(); ctx.ellipse(-4 * d.s, -3 * d.s, 7 * d.s, 4 * d.s, 0, 0, Math.PI * 2); ctx.fill();
     } else if (d.kind === 'shell') {
-      // Pale lavender — gold would read as a coin.
-      ctx.fillStyle = '#d8cfe8'; ctx.beginPath(); ctx.arc(0, 0, 7 * d.s, Math.PI, 0); ctx.fill();
-      ctx.strokeStyle = '#a894c4'; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.arc(0, 0, 4 * d.s, Math.PI, 0); ctx.stroke();
+      if (d.rot > Math.PI) {
+        // White spiral snail: concentric arcs, pops against the water.
+        ctx.strokeStyle = '#f0f0e8'; ctx.lineWidth = 2 * d.s;
+        for (let r = 2; r <= 6; r += 2) {
+          ctx.beginPath(); ctx.arc(0, 0, r * d.s, 0, Math.PI * 1.5); ctx.stroke();
+        }
+      } else {
+        // Pale lavender fan shell — gold would read as a coin.
+        ctx.fillStyle = '#d8cfe8'; ctx.beginPath(); ctx.arc(0, 0, 7 * d.s, Math.PI, 0); ctx.fill();
+        ctx.strokeStyle = '#a894c4'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(0, 0, 4 * d.s, Math.PI, 0); ctx.stroke();
+      }
+    } else if (d.kind === 'coral') {
+      // Branching coral: pink stems, orange tips.
+      ctx.strokeStyle = '#ff8a7a'; ctx.lineWidth = 4 * d.s; ctx.lineCap = 'round';
+      for (const [dx, dy] of [[0, -10], [-8, -6], [8, -6]]) {
+        ctx.beginPath(); ctx.moveTo(0, 6 * d.s); ctx.lineTo(dx * d.s, dy * d.s); ctx.stroke();
+        ctx.fillStyle = '#ff9a5c';
+        ctx.beginPath(); ctx.arc(dx * d.s, dy * d.s, 3 * d.s, 0, Math.PI * 2); ctx.fill();
+      }
     } else {
       ctx.fillStyle = 'rgba(224,196,143,0.8)';
       ctx.beginPath(); ctx.arc(0, 0, 8 * d.s, 0, Math.PI * 2); ctx.fill();

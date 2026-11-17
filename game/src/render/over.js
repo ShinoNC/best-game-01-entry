@@ -18,7 +18,7 @@ export function drawOver(ctx, state) {
       '#ff8fa0', '#e8354f', '#3a0a12', 3);
   }
   ctx.font = 'bold 22px sans-serif';
-  txt(ctx, won ? 'You held the rockpool. The crab keeps its shell.' : 'The creatures feast tonight. Try again, little crab.', VIEW_W / 2, 180, PAL.text);
+  txt(ctx, won ? 'You held the reef. The crab keeps its shell.' : 'The creatures feast tonight. Try again, little crab.', VIEW_W / 2, 180, PAL.text);
   ctx.font = 'bold 48px sans-serif';
   txt(ctx, `SCORE ${state.score}`, VIEW_W / 2, 300, PAL.gold, 3);
   // Stage/time line: big and bright.

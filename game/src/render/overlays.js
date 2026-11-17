@@ -62,7 +62,7 @@ export function drawHelp(ctx, state) {
   left.forEach((s, i) => txt(ctx, s, 180, 156 + i * 22, PAL.text));
   right.forEach((s, i) => txt(ctx, s, 700, 156 + i * 22, PAL.text));
   ctx.font = 'bold 15px sans-serif';
-  txt(ctx, 'THE POOL — 7 CREATURES', 180, 252, PAL.gold);
+  txt(ctx, 'THE REEF — 7 CREATURES', 180, 252, PAL.gold);
   for (let i = 0; i < CREATURE_ORDER.length; i += 1) {
     const type = CREATURE_ORDER[i];
     const def = ENEMIES[type];
