@@ -30,8 +30,11 @@ function dropCoins(state, e) {
       life: 25, bob: state.rng.angle(),
     });
   }
-  // Elites also drop a heal; a boss drops a bomb.
-  if (e.elite) state.pickups.push({ x: e.x, y: e.y, kind: 'heal', life: 20 });
+  // Elites always drop a heal; any other creature drops one 4% of the time
+  // (a boss drops a bomb instead). Heals stay scarce — the menu's SHELL
+  // REPAIR card is the reliable heal — but a run needs more than one heal
+  // per stage, so the swarm feeds the crab too.
+  if (e.elite || (!e.boss && state.rng.chance(0.04))) state.pickups.push({ x: e.x, y: e.y, kind: 'heal', life: 20 });
   if (e.boss) state.pickups.push({ x: e.x, y: e.y, kind: 'bomb', life: 20 });
 }
 

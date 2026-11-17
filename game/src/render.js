@@ -52,11 +52,18 @@ function star(ctx, x, y, r, rot, color) {
   ctx.closePath(); ctx.fill();
 }
 
-// Drawn weapon icons — pictures, not letters. Each weapon has its own shape,
-// drawn in a 40-unit box centred on (x, y) at size s: a pincer (claw), a bow
-// with an arrow (bow), a burst of ink (blaster), a spiral shell (shell), a
-// whirlpool arrow (spin), a gun with a beam (laser). Unowned weapons draw
-// dimmed. Used in the HUD arsenal row, the cards, the shop and the end screen.
+// Health is a HEART: the HUD + SHELL REPAIR card use ♥, so the pickup must
+// match — a star reads as score, not health. Two bezier lobes + a point.
+function heart(ctx, x, y, r, c) {
+  ctx.fillStyle = c; ctx.beginPath();
+  ctx.moveTo(x, y + r * 0.85);
+  ctx.bezierCurveTo(x - r * 1.25, y, x - r * 0.6, y - r, x, y - r * 0.3);
+  ctx.bezierCurveTo(x + r * 0.6, y - r, x + r * 1.25, y, x, y + r * 0.85);
+  ctx.closePath(); ctx.fill();
+}
+
+// Drawn weapon icons (40-unit box, centred on x,y): pincer, bow+arrow,
+// ink burst, spiral shell, whirlpool arrow, gun+beam. Unowned = dimmed.
 function drawWeaponIcon(ctx, id, x, y, s, owned) {
   ctx.save(); ctx.translate(x, y); ctx.scale(s / 40, s / 40);
   if (!owned) ctx.globalAlpha = 0.35;
@@ -361,11 +368,12 @@ export function createRenderer(canvas) {
   let poolGrad = null;
 
   function drawPool(state, t) {
-    // Layered sand: a beach ellipse under the water, darker at the edges.
+    // Layered sand: a wide beach ellipse under the water, darker at the
+    // edges — the pool must read as water on a beach, not a dark hole.
     ctx.fillStyle = '#8a6f4d';
-    ctx.beginPath(); ctx.ellipse(POOL.cx, POOL.cy, POOL.rx + 74, POOL.ry + 58, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(POOL.cx, POOL.cy, POOL.rx + 88, POOL.ry + 70, 0, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = PAL.sand;
-    ctx.beginPath(); ctx.ellipse(POOL.cx, POOL.cy, POOL.rx + 46, POOL.ry + 34, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(POOL.cx, POOL.cy, POOL.rx + 58, POOL.ry + 44, 0, 0, Math.PI * 2); ctx.fill();
     // Water gradient + sandy rim + foam ring: the arena reads as a rockpool.
     if (!poolGrad) {
       poolGrad = ctx.createRadialGradient(POOL.cx, POOL.cy, 60, POOL.cx, POOL.cy, POOL.rx);
@@ -378,7 +386,7 @@ export function createRenderer(canvas) {
     ctx.strokeStyle = `rgba(191,232,224,${0.35 + 0.15 * Math.sin(t * 1.4)})`; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.ellipse(POOL.cx, POOL.cy, POOL.rx - 8, POOL.ry - 8, 0, 0, Math.PI * 2); ctx.stroke();
     // Ripples: concentric rings breathing slowly inside the pool.
-    ctx.strokeStyle = 'rgba(191,232,224,0.10)'; ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(191,232,224,0.16)'; ctx.lineWidth = 2;
     for (let i = 0; i < 3; i += 1) {
       const rr = 0.35 + i * 0.28 + Math.sin(t * 0.5 + i * 2) * 0.02;
       ctx.beginPath(); ctx.ellipse(POOL.cx, POOL.cy, POOL.rx * rr, POOL.ry * rr, 0, 0, Math.PI * 2); ctx.stroke();
@@ -388,7 +396,7 @@ export function createRenderer(canvas) {
     ctx.beginPath(); ctx.ellipse(POOL.cx, POOL.cy, POOL.rx, POOL.ry, 0, 0, Math.PI * 2); ctx.clip();
     for (let i = 0; i < 4; i += 1) {
       const x0 = 200 + i * 260 + Math.sin(t * 0.25 + i * 1.7) * 24;
-      ctx.fillStyle = 'rgba(220,255,245,0.05)';
+      ctx.fillStyle = 'rgba(220,255,245,0.09)';
       ctx.beginPath();
       ctx.moveTo(x0, POOL.cy - POOL.ry - 10); ctx.lineTo(x0 + 70, POOL.cy - POOL.ry - 10);
       ctx.lineTo(x0 + 170, POOL.cy + POOL.ry + 10); ctx.lineTo(x0 + 60, POOL.cy + POOL.ry + 10);
@@ -398,8 +406,15 @@ export function createRenderer(canvas) {
     for (let i = 0; i < 2; i += 1) {
       const cx = POOL.cx + Math.sin(t * 0.11 + i * 2.4) * 260;
       const cy = POOL.cy + Math.cos(t * 0.09 + i * 1.3) * 130;
-      ctx.fillStyle = 'rgba(200,255,240,0.05)';
+      ctx.fillStyle = 'rgba(200,255,240,0.09)';
       ctx.beginPath(); ctx.ellipse(cx, cy, 150, 70, 0.3 * i, 0, Math.PI * 2); ctx.fill();
+    }
+    // Sun glints: white sparkles twinkling on the surface.
+    for (let i = 0; i < 10; i += 1) {
+      const gx = POOL.cx + Math.sin(i * 13) * POOL.rx * 0.8;
+      const gy = POOL.cy + Math.cos(i * 8) * POOL.ry * 0.8;
+      ctx.fillStyle = `rgba(255,255,255,${0.12 + 0.1 * Math.sin(t * 2 + i * 2)})`;
+      ctx.beginPath(); ctx.arc(gx, gy, 2, 0, Math.PI * 2); ctx.fill();
     }
     // Ambient bubbles rising from the sand.
     ctx.strokeStyle = 'rgba(191,232,224,0.35)'; ctx.lineWidth = 1.5;
@@ -1072,7 +1087,7 @@ export function createRenderer(canvas) {
         ctx.beginPath(); ctx.arc(pe.x, pe.y + bobY, 2.5, 0, Math.PI * 2); ctx.fill();
       }
       for (const pk of state.pickups) {
-        if (pk.kind === 'heal') star(ctx, pk.x, pk.y, 14, t, '#ff8fb0');
+        if (pk.kind === 'heal') heart(ctx, pk.x, pk.y + Math.sin(t * 3) * 2, 13, PAL.hp);
         else if (pk.kind === 'bomb') {
           ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(pk.x, pk.y, 13, 0, Math.PI * 2); ctx.fill();
           ctx.fillStyle = '#062a33'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center';

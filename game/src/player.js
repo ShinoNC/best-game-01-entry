@@ -238,7 +238,17 @@ export function hurtPlayer(state, dmg, fx, audio) {
   p.hp -= real; p.iframes = PLAYER.iframes; p.flash = 0.25;
   state.stats.taken += real;
   state.stageTaken += real; // any damage this stage voids UNTOUCHED for it
-  fx.shake(0.35); fx.text(p.x, p.y - 30, `-${real}`, PAL.hp, true);
+  // A hit shoves nearby creatures back a little — breathing room, so the
+  // crab is not instantly re-bitten by the same swarm. The shake is light
+  // (0.15): a heavy shake on every hit made steering feel lost.
+  for (const e of state.enemies) {
+    const d = Math.hypot(e.x - p.x, e.y - p.y);
+    if (d < 60 + e.r) {
+      const ka = Math.atan2(e.y - p.y, e.x - p.x);
+      e.x += Math.cos(ka) * 20; e.y += Math.sin(ka) * 20;
+    }
+  }
+  fx.shake(0.15); fx.text(p.x, p.y - 30, `-${real}`, PAL.hp, true);
   fx.burst(p.x, p.y, PAL.hp, 8, 160);
   audio.hurt();
   if (p.hp <= 0) { p.hp = 0; state.phase = 'over'; state.result = 'lost'; audio.lose(); }

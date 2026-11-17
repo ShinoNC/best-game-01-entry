@@ -12,7 +12,7 @@ export const BEST_KEY = 'tidekeeper-best';
 
 // Palette: deep teal water, warm sand, orange crab — one identity, readable at a glance.
 export const PAL = {
-  deep: '#062a33', water: '#0b3d4a', water2: '#0e5566', sand: '#c9a86a',
+  deep: '#062a33', water: '#12708a', water2: '#1d8aa6', sand: '#c9a86a',
   sand2: '#e0c48f', foam: '#bfe8e0', crab: '#ff7a3c', crabDark: '#d94f1e',
   shell0: '#8a6f4d', shell1: '#b08954', shell2: '#4fa8a0', shell3: '#e8b64c',
   gold: '#ffd166', coral: '#ff5d73', ink: '#7b5cff',
@@ -51,19 +51,17 @@ export const BOSSES = [
 ];
 export function bossForStage(stage) { return BOSSES.find((b) => b.stage === stage) || null; }
 
-// Per-stage spawn plan, generated: budget grows 34 → 144, spawn interval
-// shrinks 1.30 → 0.45 s, batch grows 1 → 5, one elite per stage from stage 2
-// (at half the budget), and a boss at every fifth stage, also at half the
-// budget. Boss stages run a 30% smaller budget, because the boss IS the
-// stage's second half. Each stage is ~30–45 s of combat, so 30 stages fill
-// a ~20–25 minute session.
+// Per-stage spawn plan: budget 34 → 144, interval 0.90 → 0.45 s (fast from
+// stage 1 — early stages felt empty), batch 2 → 5, one elite per stage from
+// stage 2, a boss every fifth stage (boss stages: 30% smaller budget). The
+// same enemies arrive faster, so stages feel denser, not longer.
 export const STAGES = Array.from({ length: STAGE_COUNT }, (_, i) => {
   const stage = i + 1;
   const boss = stage % 5 === 0;
   return {
     budget: Math.round((34 + (stage - 1) * 3.8) * (boss ? 0.7 : 1)),
-    interval: Math.max(0.45, 1.30 - (stage - 1) * 0.030),
-    batch: 1 + Math.floor((stage - 1) / 6),
+    interval: Math.max(0.45, 0.90 - (stage - 1) * 0.032),
+    batch: Math.min(5, 2 + Math.floor((stage - 1) / 6)),
     elite: stage >= 2, boss,
   };
 });
@@ -95,12 +93,9 @@ export function dmgScale(stage) {
 }
 export function speedScale(stage) { return 1 + (stage - 1) * 0.032; } // stage 30: 1.93x enemy speed
 
-// Weapons: six tools, six feels — ALL AUTOMATIC, all firing at once, each
-// aimed at the nearest creature in ITS range (the laser fires fixed horizontal
-// beams). A new weapon is ADDED to the arsenal, never replaces one. Level
-// steps are small, so no weapon maxes out early; the claw swings faster and
-// harder, the bow/blaster fire MORE shots per volley, the laser's beams grow
-// longer and stronger (TWO beams at Lv5).
+// Weapons: six tools, ALL AUTOMATIC, all firing at once, each aimed at the
+// nearest creature in ITS range (laser = fixed horizontal beams). A new
+// weapon is ADDED, never replaces one. Lv5 laser = TWO beams.
 export const WEAPONS = {
   claw: { name: 'CLAW', icon: '✂', desc: 'Slow heavy cleave, wide arc',
     levels: [
