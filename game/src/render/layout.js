@@ -29,11 +29,11 @@ export const MENU_ITEMS = ['start', 'help', 'feats', 'history', 'settings'];
 export function titleLayout() {
   const x = VIEW_W / 2 - MENU_BTN_W / 2;
   return {
-    start: { x, y: 272, w: MENU_BTN_W, h: 66 },
-    help: { x, y: 354, w: MENU_BTN_W, h: MENU_BTN_H },
-    feats: { x, y: 418, w: MENU_BTN_W, h: MENU_BTN_H },
-    history: { x, y: 482, w: MENU_BTN_W, h: MENU_BTN_H },
-    settings: { x, y: 546, w: MENU_BTN_W, h: MENU_BTN_H },
+    start: { x, y: 248, w: MENU_BTN_W, h: 66 },
+    help: { x, y: 330, w: MENU_BTN_W, h: MENU_BTN_H },
+    feats: { x, y: 394, w: MENU_BTN_W, h: MENU_BTN_H },
+    history: { x, y: 458, w: MENU_BTN_W, h: MENU_BTN_H },
+    settings: { x, y: 522, w: MENU_BTN_W, h: MENU_BTN_H },
   };
 }
 

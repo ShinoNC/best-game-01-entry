@@ -69,10 +69,6 @@ export function drawTitle(ctx, state) {
     ctx.font = 'bold 17px sans-serif';
     txt(ctx, `✦ ${title.toUpperCase()} ✦`, VIEW_W / 2, 202, PAL.gold);
   }
-  if (state.modifier) {
-    ctx.font = 'bold 15px sans-serif';
-    txt(ctx, `EFFECT: ${state.modifier.n} — ${state.modifier.d}`, VIEW_W / 2, 226, PAL.xp);
-  }
   const TL = titleLayout();
   const items = [['start', 'START GAME'], ['help', 'HOW TO PLAY  ?'], ['feats', 'ACHIEVEMENTS'],
     ['history', 'HISTORY'], ['settings', 'SETTINGS']];
@@ -98,6 +94,10 @@ export function drawTitle(ctx, state) {
       txt(ctx, label, b.x + b.w / 2, ty, PAL.text);
     }
   }
+  ctx.textAlign = 'right';
+  ctx.font = '11px sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.fillText('v1.0', VIEW_W - 12, 708);
 }
 
 export function drawDifficulty(ctx, state) {
