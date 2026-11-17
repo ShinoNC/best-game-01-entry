@@ -21,11 +21,11 @@ export function drawOver(ctx, state) {
   if (save) {
     bevel(ctx, L.cont.x, L.cont.y, L.cont.w, L.cont.h, 10, '#7fe0c3', '#2f8f6b', PAL.gold, 2);
     ctx.font = px(14);
-    txt(ctx, `CONTINUE · STAGE ${save.stage}`, VIEW_W / 2, L.cont.y + 37, '#062a33');
+    txt(ctx, `RETRY · STAGE ${save.stage}`, VIEW_W / 2, L.cont.y + 37, '#062a33');
   } else {
     bevel(ctx, L.cont.x, L.cont.y, L.cont.w, L.cont.h, 10, '#2a4a52', '#16282e', 'rgba(255,255,255,0.25)', 2);
     ctx.font = px(14);
-    txt(ctx, 'CONTINUE', VIEW_W / 2, L.cont.y + 37, PAL.dim);
+    txt(ctx, 'RETRY', VIEW_W / 2, L.cont.y + 37, PAL.dim);
   }
   bevel(ctx, L.menu.x, L.menu.y, L.menu.w, L.menu.h, 10, '#11566b', '#062a33', PAL.foam, 2);
   ctx.font = px(14);
