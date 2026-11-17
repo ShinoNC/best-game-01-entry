@@ -30,7 +30,7 @@ function noteCoins(state) {
 }
 
 function dropCoins(state, e) {
-  const n = Math.round(e.coins * 1.5 * modOf(state, 'coin'));
+  const n = Math.round(e.coins * 1.5 * modOf(state, 'coin') * (1 + 0.15 * (state.ups.gold || 0)));
   for (let i = 0; i < n; i += 1) {
     if (!state.rng.chance(0.85)) continue;
     state.drops.push({

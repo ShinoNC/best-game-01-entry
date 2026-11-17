@@ -230,6 +230,20 @@ const SKILLS = {
     '............',
     '............',
   ] },
+  gold: { p: { a: '#ffd166', b: '#fff3c4', c: '#c9962e' }, rows: [
+    '....kkkk....',
+    '...kaaaak...',
+    '..kabbbbak..',
+    '..kabccak..',
+    '..kacccck..',
+    '..kabccak..',
+    '..kabbbbak..',
+    '...kaaaak...',
+    '....kkkk....',
+    '............',
+    '............',
+    '............',
+  ] },
 };
 
 export function drawWeaponIcon(ctx, id, x, y, s, owned) {
