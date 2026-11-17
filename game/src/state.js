@@ -29,7 +29,7 @@ export function createState(rng, seed, difficulty = 'normal') {
   }
   const mix = {};
   for (const k of ['guppy', 'jelly', 'urchin', 'starfish', 'eel', 'squid', 'archer']) mix[k] = rng.range(0.85, 1.2);
-  const envs = Array.from({ length: 6 }, () => rng.pick(ENV_PALETTES)); // one of 5 bold colors per band, per run
+  const envs = Array.from({ length: 30 }, () => rng.pick(ENV_PALETTES)); // one of 5 bold colors per stage, per run
   const bossOrder = ['turtle', 'octopus', 'hammerhead', 'angler', 'stingray'];
   for (let i = bossOrder.length - 1; i > 0; i -= 1) { // Fisher-Yates on the run seed
     const j = Math.floor(rng.next() * (i + 1));

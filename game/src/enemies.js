@@ -1,4 +1,4 @@
-import { DIFFICULTIES, ELITE, ENEMIES, POOL, SPIT, STAGES, bossForStage, dmgScale, hpScale, spawnWeights, speedScale } from './config.js';
+import { DIFFICULTIES, ELITE, ENEMIES, POOL, SPIT, STAGES, bossForStage, dmgScale, hpScale, sandRect, spawnWeights, speedScale } from './config.js';
 
 let nextId = 1;
 
@@ -11,9 +11,16 @@ export function hurtEnemy(state, e, dmg) {
 export function spawnEnemy(state, type, elite, fx) {
   const def = ENEMIES[type];
   const diff = DIFFICULTIES[state.difficulty || 'normal'];
-  const s = Math.floor(state.rng.next() * 4), f = state.rng.next(); // one of the four edges, just outside it
-  const x = s === 1 ? POOL.x1 + 14 : s === 3 ? POOL.x0 - 14 : POOL.x0 + f * (POOL.x1 - POOL.x0);
-  const y = s === 0 ? POOL.y0 - 14 : s === 2 ? POOL.y1 + 14 : POOL.y0 + f * (POOL.y1 - POOL.y0);
+  const sand = sandRect(state.sandCorner), M = 20; // no spawn whose entry point lands on sand
+  let x, y;
+  for (let tries = 0; tries < 6; tries += 1) { // fish don't swim out of sand
+    const s = Math.floor(state.rng.next() * 4), f = state.rng.next(); // one of the four edges, just outside it
+    x = s === 1 ? POOL.x1 + 14 : s === 3 ? POOL.x0 - 14 : POOL.x0 + f * (POOL.x1 - POOL.x0);
+    y = s === 0 ? POOL.y0 - 14 : s === 2 ? POOL.y1 + 14 : POOL.y0 + f * (POOL.y1 - POOL.y0);
+    const cx = Math.max(POOL.x0 + 8, Math.min(POOL.x1 - 8, x)), cy = Math.max(POOL.y0 + 8, Math.min(POOL.y1 - 8, y));
+    if (cx < sand.x0 - M || cx > sand.x1 + M || cy < sand.y0 - M || cy > sand.y1 + M) break;
+    if (tries === 5) { x = POOL.cx; y = POOL.y1 + 14; } // last resort: bottom centre, always water
+  }
   if (fx && fx.ring) fx.ring(Math.max(POOL.x0 + 8, Math.min(POOL.x1 - 8, x)), Math.max(POOL.y0 + 8, Math.min(POOL.y1 - 8, y)));
   const hp = Math.round(def.hp * hpScale(state.stage) * diff.hp * (elite ? ELITE.hpMul : 1));
   const e = {

@@ -58,10 +58,8 @@ export function nextStage(state, audio) {
   if (boss) {
     state.banner = `⚠ STAGE ${state.stage} — ${boss.name}! ⚠`; state.bannerT = 3;
     if (audio) audio.elite();
-  } else if (state.stage % 5 === 1 && state.stage > 1) {
-    state.banner = `THE TIDE TURNS — ${envForStage(state.stage, state.envs).name}`; state.bannerT = 3;
   } else {
-    state.banner = `STAGE ${state.stage} — THE TIDE RISES`; state.bannerT = 2.5;
+    state.banner = `THE TIDE TURNS — ${envForStage(state.stage, state.envs).name}`; state.bannerT = 3;
   }
 }
 

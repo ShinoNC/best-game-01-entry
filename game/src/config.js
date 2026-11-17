@@ -19,9 +19,17 @@ export const ENV_PALETTES = [
 ];
 export function envForStage(stage, envs) {
   const band = Math.min(5, Math.floor((stage - 1) / 5));
-  const p = (envs && envs[band]) || ENV_PALETTES[0];
+  const p = (envs && envs[stage - 1]) || ENV_PALETTES[0]; // color is per stage, effects per band
   const fx = ENV_BANDS[band];
   return { name: p[0], water: p[1], water2: p[2], sand: p[3], weed: p[4], weed2: p[5], rays: fx.rays, rain: fx.rain, glow: fx.glow };
+}
+
+export const SAND_W = 400, SAND_H = 250;
+export function sandRect(corner) {
+  const c = corner || 'bl';
+  const x0 = c[1] === 'r' ? POOL.x1 - SAND_W : POOL.x0;
+  const y0 = c[0] === 'b' ? POOL.y1 - SAND_H : POOL.y0;
+  return { x0, y0, x1: x0 + SAND_W, y1: y0 + SAND_H };
 }
 
 export const PAL = {
