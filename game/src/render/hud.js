@@ -120,7 +120,7 @@ export function drawHud(ctx, state, t) {
     ctx.font = 'bold 19px sans-serif';
     const tw = ctx.measureText(hint.text).width;
     const w = tw + 44 + 30;
-    const y = VIEW_H - 132;
+    const y = 105;
     ctx.globalAlpha = alpha;
     ctx.fillStyle = 'rgba(6,42,51,0.88)'; ctx.fillRect(VIEW_W / 2 - w / 2, y - 24, w, 44);
     ctx.strokeStyle = PAL.gold; ctx.lineWidth = 2; ctx.strokeRect(VIEW_W / 2 - w / 2, y - 24, w, 44);
