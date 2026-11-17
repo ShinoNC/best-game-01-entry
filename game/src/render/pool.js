@@ -1,4 +1,4 @@
-import { SAND_H, SAND_W, envForStage, POOL } from '../config.js';
+import { envForStage, POOL } from '../config.js';
 
 function table(n, seed) {
   const a = []; let s = seed;
@@ -38,7 +38,7 @@ function drawSandCorner(ctx, x0, y0, pw, ph, corner) {
   const c = corner || 'bl';
   const sx = c[1] === 'r' ? x0 + pw : x0, sy = c[0] === 'b' ? y0 + ph : y0;
   const dx = c[1] === 'r' ? -1 : 1, dy = c[0] === 'b' ? -1 : 1;
-  const w = Math.min(SAND_W, pw), h = Math.min(SAND_H, ph);
+  const w = Math.min(400, pw), h = Math.min(250, ph);
   ctx.fillStyle = 'rgba(224,196,143,0.9)';
   ctx.beginPath();
   ctx.moveTo(sx, sy + dy * h);

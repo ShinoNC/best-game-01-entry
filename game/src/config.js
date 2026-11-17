@@ -24,33 +24,30 @@ export const ENV_BANDS = [
   { rays: 0.15, rain: 0, glow: 0 }, { rays: 0, rain: 0, glow: 0 }, { rays: 0, rain: 1, glow: 1 },
 ];
 export const ENV_PALETTES = [
-  ['AZURE SEA', '#1a6ec8', '#4a9ae8', '#c9a86a', '#2f8f6b', '#4fae7d'],
-  ['EMERALD SEA', '#1a8a4a', '#4ac87a', '#c9a86a', '#2f8f6b', '#4fae7d'],
-  ['VIOLET DEEP', '#5a2a8a', '#8a4ac8', '#c9a86a', '#2f8f6b', '#4fae7d'],
-  ['CRIMSON TIDE', '#8a2a2a', '#c84a4a', '#c9a86a', '#2f8f6b', '#4fae7d'],
-  ['GOLDEN SHOALS', '#b8860b', '#e8b84a', '#c9a86a', '#2f8f6b', '#4fae7d'],
+  ['AZURE SEA', '#1a6ec8', '#4a9ae8'],
+  ['EMERALD SEA', '#1a8a4a', '#4ac87a'],
+  ['VIOLET DEEP', '#5a2a8a', '#8a4ac8'],
+  ['CRIMSON TIDE', '#8a2a2a', '#c84a4a'],
+  ['GOLDEN SHOALS', '#b8860b', '#e8b84a'],
 ];
 export function envForStage(stage, envs) {
   const band = Math.min(5, Math.floor((stage - 1) / 5));
   const p = (envs && envs[stage - 1]) || ENV_PALETTES[0];
   const fx = ENV_BANDS[band];
-  return { name: p[0], water: p[1], water2: p[2], sand: p[3], weed: p[4], weed2: p[5], rays: fx.rays, rain: fx.rain, glow: fx.glow };
+  return { name: p[0], water: p[1], water2: p[2], sand: '#c9a86a', weed: '#2f8f6b', weed2: '#4fae7d', rays: fx.rays, rain: fx.rain, glow: fx.glow };
 }
 
-export const SAND_W = 400, SAND_H = 250;
 export function sandRect(corner) {
   const c = corner || 'bl';
-  const x0 = c[1] === 'r' ? POOL.x1 - SAND_W : POOL.x0;
-  const y0 = c[0] === 'b' ? POOL.y1 - SAND_H : POOL.y0;
-  return { x0, y0, x1: x0 + SAND_W, y1: y0 + SAND_H };
+  const x0 = c[1] === 'r' ? POOL.x1 - 400 : POOL.x0;
+  const y0 = c[0] === 'b' ? POOL.y1 - 250 : POOL.y0;
+  return { x0, y0, x1: x0 + 400, y1: y0 + 250 };
 }
 
 export const PAL = {
-  deep: '#062a33', water: '#12708a', water2: '#1d8aa6', sand: '#c9a86a',
-  sand2: '#e0c48f', foam: '#bfe8e0', crab: '#ff7a3c', crabDark: '#d94f1e',
+  deep: '#062a33', foam: '#bfe8e0', crab: '#ff7a3c', crabDark: '#d94f1e',
   shell0: '#8a6f4d', shell1: '#b08954', shell2: '#4fa8a0', shell3: '#e8b64c',
-  gold: '#ffd166', coral: '#ff5d73', ink: '#7b5cff',
-  hp: '#ff5d73', xp: '#7fe0c3', text: '#f4f9ff', dim: '#9fc4bd', armor: '#8fb8c9',
+  gold: '#ffd166', hp: '#ff5d73', xp: '#7fe0c3', text: '#f4f9ff', dim: '#9fc4bd', armor: '#8fb8c9',
 };
 
 export const PLAYER = {
@@ -85,11 +82,10 @@ export const BOSS_TYPES = {
   stingray: { name: 'THE CRIMSON STINGRAY', speed: 148, r: 60, color: '#c05a5a', dark: '#7a2e2e', dive: 3.0, atk: 'barbs', atkEvery: 7 },
   kraken: { name: 'THE KRAKEN', speed: 140, r: 66, color: '#9a4a6a', dark: '#5a2438', dive: 2.8, atk: 'slam', atkEvery: 12 },
 };
-export const BOSS_ORDER_DEFAULT = ['turtle', 'octopus', 'hammerhead', 'angler', 'stingray'];
 export function bossForStage(stage, order) {
   const st = BOSS_STAGES.find((b) => b.stage === stage);
   if (!st) return null;
-  const type = stage === 30 ? 'kraken' : (order || BOSS_ORDER_DEFAULT)[stage / 5 - 1];
+  const type = stage === 30 ? 'kraken' : (order || ['turtle', 'octopus', 'hammerhead', 'angler', 'stingray'])[stage / 5 - 1];
   return { stage, type, ...st, ...BOSS_TYPES[type] };
 }
 
@@ -118,8 +114,32 @@ export function spawnWeights(stage) {
   if (stage >= 26) w.archer = 1;
   return w;
 }
-export function nextTypes(stage) {
+export function genStageMix(rng, stage) {
   const w = spawnWeights(stage);
+  const bag = Object.keys(w).filter((k) => w[k] > 0);
+  let sw = 0, sh = 0;
+  for (const k of bag) { sw += w[k]; sh += w[k] * ENEMIES[k].hp; }
+  const base = sh / sw;
+  for (let a = 0; a < 8; a += 1) {
+    const mix = {}, pool = [...bag];
+    if (pool.includes('guppy')) { mix.guppy = w.guppy * rng.range(0.5, 0.9); pool.splice(pool.indexOf('guppy'), 1); }
+    const n = Math.min(pool.length, 1 + Math.floor(rng.next() * 3));
+    for (let i = 0; i < n; i += 1) {
+      let t = 0; for (const k of pool) t += w[k];
+      let r = rng.next() * t, pick = pool[pool.length - 1];
+      for (const k of pool) { r -= w[k]; if (r <= 0) { pick = k; break; } }
+      mix[pick] = w[pick] * rng.range(0.8, 1.4);
+      pool.splice(pool.indexOf(pick), 1);
+    }
+    let mw = 0, mh = 0;
+    for (const k in mix) { mw += mix[k]; mh += mix[k] * ENEMIES[k].hp; }
+    const ratio = mh / mw / base;
+    if (ratio >= 0.8 && ratio <= 1.2) return mix;
+  }
+  return { ...w };
+}
+export function nextTypes(stage, stageMix) {
+  const w = (stageMix && stageMix[stage - 1]) || spawnWeights(stage);
   return Object.keys(w).filter((k) => w[k] > 0)
     .sort((a, b) => w[b] - w[a]).slice(0, 2);
 }
@@ -153,15 +173,7 @@ export const DIFFICULTIES = {
 };
 export const DIFF_ORDER = ['easy', 'normal', 'hard'];
 
-export const FEATS = [
-  { id: 'firstblood', name: 'FIRST BLOOD', desc: 'Slay your first creature' },
-  { id: 'arsenal', name: 'FULL ARSENAL', desc: 'Own all 7 weapons in one run' },
-  { id: 'beast', name: 'BEAST SLAYER', desc: 'Drive off a sea beast' },
-  { id: 'king', name: 'KINGSLAYER', desc: 'Beat the Kraken' },
-  { id: 'untouched', name: 'UNTOUCHED', desc: 'Clear a stage without a scratch' },
-  { id: 'rich', name: 'RICH CRAB', desc: 'Hold 500+ coins at once' },
-  { id: 'combo', name: 'COMBO ×8', desc: 'Reach combo ×8' },
-];
+export const FEAT_IDS = ['firstblood', 'arsenal', 'beast', 'king', 'untouched', 'rich', 'combo'];
 
 export const AWARD_TIERS = [
   { wins: 3, metal: 'BRONZE', color: '#cd7f32' },

@@ -1,4 +1,4 @@
-import { ENV_PALETTES, MODIFIERS, PAL, PLAYER, POOL } from './config.js';
+import { ENV_PALETTES, MODIFIERS, PAL, PLAYER, POOL, genStageMix } from './config.js';
 
 export function createState(rng, seed, difficulty = 'normal') {
   const theme = rng.pick(['rocky', 'weedy', 'shelly', 'coral']);
@@ -26,8 +26,6 @@ export function createState(rng, seed, difficulty = 'normal') {
       d.y = POOL.y1 - 10 - rng.next() * 20;
     }
   }
-  const mix = {};
-  for (const k of ['guppy', 'jelly', 'urchin', 'starfish', 'eel', 'squid', 'archer']) mix[k] = rng.range(0.85, 1.2);
   const envs = Array.from({ length: 30 }, () => rng.pick(ENV_PALETTES));
   const bossOrder = ['turtle', 'octopus', 'hammerhead', 'angler', 'stingray'];
   for (let i = bossOrder.length - 1; i > 0; i -= 1) {
@@ -43,10 +41,12 @@ export function createState(rng, seed, difficulty = 'normal') {
     }
     stageMap.push(...four, b * 5 + 5);
   }
+  const stageMix = [];
+  for (let s = 1; s <= 30; s += 1) stageMix.push(s % 5 === 0 ? null : genStageMix(rng, s));
   const modifier = rng.pick(MODIFIERS);
   const hp0 = Math.round(PLAYER.hp * (modifier.hpMul || 1));
   return {
-    rng, seed, decor, theme, mix, envs, bossOrder, stageMap, modifier, sandCorner: ['tl', 'tr', 'bl', 'br'][((seed % 4) + 4) % 4], time: 0, phase: 'title', menuSel: 0,
+    rng, seed, decor, theme, stageMix, envs, bossOrder, stageMap, modifier, sandCorner: ['tl', 'tr', 'bl', 'br'][((seed % 4) + 4) % 4], time: 0, phase: 'title', menuSel: 0,
     difficulty,
     combo: 0, comboT: 0,
     player: {

@@ -43,10 +43,6 @@ function killEnemy(state, e, fx, audio) {
   dropCoins(state, e);
 }
 
-export function stageRemaining(state) {
-  return (STAGES[contentStage(state) - 1].budget - state.stageSpawned) + state.enemies.length;
-}
-
 export function nextStage(state, audio) {
   state.stage += 1;
   state.stageSpawned = 0; state.stageEliteDone = false;

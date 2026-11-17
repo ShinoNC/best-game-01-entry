@@ -1,4 +1,4 @@
-import { AWARD_TIERS, AWARD_TITLES, DIFF_ORDER, FEATS } from './config.js';
+import { AWARD_TIERS, AWARD_TITLES, DIFF_ORDER, FEAT_IDS } from './config.js';
 
 const BESTS_KEY = 'tidekeeper-bests';
 const FEATS_KEY = 'tidekeeper-feats';
@@ -31,7 +31,7 @@ export function readMeta() {
   for (const d of DIFF_ORDER) if (typeof wins[d] !== 'number') wins[d] = 0;
   return {
     bests,
-    feats: Array.isArray(feats) ? feats.filter((id) => FEATS.some((f) => f.id === id)) : [],
+    feats: Array.isArray(feats) ? feats.filter((id) => FEAT_IDS.includes(id)) : [],
     runs: Array.isArray(runs) ? runs.slice(0, 9) : [],
     wins,
   };

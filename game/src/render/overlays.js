@@ -89,11 +89,12 @@ export function drawHelp(ctx, state) {
   ctx.font = 'bold 15px sans-serif';
   txt(ctx, 'TIPS', 180, 384, PAL.gold);
   ctx.font = '14px sans-serif';
-  txt(ctx, 'Weapons fire on their own — dodge and position.', 180, 406, PAL.text);
-  txt(ctx, 'Coins buy cards after every stage. A new weapon beats a small upgrade.', 180, 426, PAL.text);
-  txt(ctx, 'Each stage clear grants 1 SKILL POINT — click a skill to raise it (6 skills, 10 levels, 30 points total).', 180, 446, PAL.text);
-  txt(ctx, 'Archers shoot from stage 12 — never stand still.', 180, 466, PAL.text);
-  txt(ctx, `ARMOR absorbs damage before HP. Clear a boss to gain +${ARMOR_PER_BOSS} ARMOR. Armor does not heal.`, 180, 486, PAL.text);
+  txt(ctx, 'Weapons fire on their own — dodge and position.', 180, 402, PAL.text);
+  txt(ctx, 'Coins buy cards after every stage. A new weapon beats a small upgrade.', 180, 419, PAL.text);
+  txt(ctx, 'Each stage clear grants 1 SKILL POINT — click a skill to raise it (6 skills, 10 levels, 30 points total).', 180, 436, PAL.text);
+  txt(ctx, 'Archers shoot from stage 12 — never stand still.', 180, 453, PAL.text);
+  txt(ctx, `ARMOR absorbs damage before HP. Clear a boss to gain +${ARMOR_PER_BOSS} ARMOR. Armor does not heal.`, 180, 470, PAL.text);
+  txt(ctx, 'Each stage is generated fresh every run.', 180, 487, PAL.text);
   ctx.font = 'bold 15px sans-serif';
   txt(ctx, 'EFFECTS — ONE PER RUN', 180, 508, PAL.gold);
   ctx.font = '11px sans-serif';

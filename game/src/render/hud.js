@@ -19,7 +19,7 @@ export function drawHud(ctx, state, t) {
   const nextBoss = nx <= STAGE_COUNT ? bossForStage(nx, state.bossOrder) : null;
   const nextBit = nextBoss ? `⚠ ${nextBoss.name}`
     : nx > STAGE_COUNT ? 'FINAL STAGE'
-    : nextTypes(contentStage(state, nx)).map((k) => CREATURE_NAMES[k]).join(' + ');
+    : nextTypes(contentStage(state, nx), state.stageMix).map((k) => CREATURE_NAMES[k]).join(' + ');
   ctx.font = 'bold 22px sans-serif';
   txt(ctx, `STAGE ${state.stage} / ${STAGE_COUNT} · ${diffLabel}`, 28, 28, PAL.text);
   ctx.font = 'bold 13px sans-serif';

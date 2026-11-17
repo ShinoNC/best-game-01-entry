@@ -38,10 +38,10 @@ export function spawnEnemy(state, type, elite, fx) {
 }
 
 function pickType(state) {
-  const w = spawnWeights(contentStage(state));
-  const mix = state.mix || {};
+  const cs = contentStage(state);
+  const w = { ...((state.stageMix && state.stageMix[cs - 1]) || spawnWeights(cs)) };
   let total = 0;
-  for (const k in w) { w[k] *= mix[k] || 1; total += w[k]; }
+  for (const k in w) total += w[k];
   let roll = state.rng.next() * total;
   for (const k in w) { roll -= w[k]; if (roll <= 0) return k; }
   return 'guppy';
