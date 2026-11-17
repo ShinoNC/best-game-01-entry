@@ -1,17 +1,18 @@
 import { CREATURE_NAMES, PAL, STAGES, VIEW_H, VIEW_W, WEAPON_ORDER, bossForStage, clusterMod, clusterOf, contentStage, nextTypes } from '../config.js';
 import { UPGRADE_DEFS } from '../upgrades.js';
 import { comboMult } from '../world.js';
-import { drawCoin, drawSkillIcon, drawWeaponIcon, heart } from './icons.js';
+import { drawCoin, drawPotion, drawSkillIcon, drawWeaponIcon, heart } from './icons.js';
+import { POTION_BOX } from './layout.js';
 import {dither, pxBar, pxFrame, pxPanel, txt, px, vt} from './polish.js';
 
 export function drawHud(ctx, state, t) {
   const p = state.player;
   ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-  // Strips: high-contrast dither so the checkerboard is VISIBLE, not a flat wash.
+  // Top/bottom strips: high-contrast dither.
   ctx.fillStyle = dither(ctx, 'rgba(13,74,92,0.95)', 'rgba(4,26,32,0.95)');
   ctx.fillRect(0, 0, VIEW_W, 72);
   ctx.fillRect(0, VIEW_H - 72, VIEW_W, 72);
-  // Chunky pixel divider: alternating gold / dark blocks, 4px tall.
+  // Pixel divider: alternating gold / dark blocks.
   for (let x = 0; x < VIEW_W; x += 16) {
     ctx.fillStyle = (x / 16) % 2 === 0 ? 'rgba(255,209,102,0.75)' : 'rgba(4,26,32,0.95)';
     ctx.fillRect(x, 69, 16, 4);
@@ -88,6 +89,17 @@ export function drawHud(ctx, state, t) {
     ctx.textAlign = 'left';
     txt(ctx, num, x0 + 16, 670, PAL.armor, 3);
   }
+  // Potion box: flask icon + count, click or E to drink (+25 HP).
+  const nPot = state.potions || 0;
+  pxFrame(ctx, POTION_BOX.x - 2, POTION_BOX.y - 2, 60, 60, nPot > 0 ? '#ff5d73' : 'rgba(255,255,255,0.25)', 2);
+  ctx.fillStyle = dither(ctx, nPot > 0 ? 'rgba(255,93,115,0.22)' : 'rgba(255,255,255,0.08)', 'rgba(0,0,0,0.25)');
+  ctx.fillRect(POTION_BOX.x, POTION_BOX.y, 56, 56);
+  ctx.save();
+  if (!nPot) ctx.globalAlpha = 0.35;
+  drawPotion(ctx, POTION_BOX.x + 28, POTION_BOX.y + 22, 30);
+  ctx.restore();
+  ctx.font = vt(15); ctx.textAlign = 'center';
+  txt(ctx, nPot > 0 ? `×${nPot} [E]` : '[E]', POTION_BOX.x + 28, POTION_BOX.y + 49, nPot > 0 ? PAL.text : PAL.dim, 1);
   for (let i = 0; i < UPGRADE_DEFS.length; i += 1) {
     const d = UPGRADE_DEFS[i];
     const lv = state.ups[d.id];
@@ -123,7 +135,7 @@ export function drawHud(ctx, state, t) {
     const y = 105;
     ctx.globalAlpha = alpha;
     pxPanel(ctx, VIEW_W / 2 - w / 2, y - 24, w, 44, 'rgba(6,42,51,0.88)', 'rgba(4,26,32,0.88)', PAL.gold);
-    // Pixel diamond marker (drawn rects, never a Unicode glyph).
+    // Pixel diamond marker.
     const dx = VIEW_W / 2 - w / 2 + 24, dy = y - 3;
     ctx.fillStyle = PAL.gold;
     ctx.fillRect(dx - 2, dy - 8, 4, 4); ctx.fillRect(dx - 6, dy - 4, 12, 4);

@@ -1,10 +1,10 @@
 import { ARMOR_PER_BOSS, PAL, VIEW_H, VIEW_W, bossForStage, clusterMod, clusterOf, envForStage } from '../config.js';
 import { REROLL_COST, cardStats } from '../cards.js';
-import { drawCoin, drawPips, drawSkillIcon, drawWeaponIcon, heart } from './icons.js';
+import { drawCoin, drawPips, drawPotion, drawSkillIcon, drawWeaponIcon, heart } from './icons.js';
 import { stageMenuLayout } from './layout.js';
 import {bevel, pxFrame, pxPanel, txt, px, vt} from './polish.js';
 
-const KIND_COLOR = { skill: '#7fe0c3', wup: '#ffd166', weapon: '#c9a7ff', repair: '#ff8fb0' };
+const KIND_COLOR = { skill: '#7fe0c3', wup: '#ffd166', weapon: '#c9a7ff', repair: '#ff8fb0', potion: '#ff5d73' };
 
 function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   const poor = !card.bought && state.coins < card.price;
@@ -26,6 +26,7 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   txt(ctx, `[${i + 1}]`, x + w - 24, y + 22, PAL.dim);
   if (card.kind === 'weapon' || card.kind === 'wup') drawWeaponIcon(ctx, card.wid, x + w / 2, y + 62, 48, true);
   else if (card.kind === 'repair') heart(ctx, x + w / 2, y + 62, 20, '#ff8fb0');
+  else if (card.kind === 'potion') drawPotion(ctx, x + w / 2, y + 62, 48);
   else drawSkillIcon(ctx, card.track, x + w / 2, y + 62, 48, true);
   ctx.font = px(11);
   if (ctx.measureText(card.name).width > w - 20) ctx.font = px(9);
@@ -34,7 +35,7 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   ctx.font = px(8);
   if (ctx.measureText(st).width > w - 16) ctx.font = px(8);
   txt(ctx, st, x + w / 2, y + 134, PAL.foam);
-  if (card.kind !== 'repair') drawPips(ctx, x + w / 2, y + 158, card.lv, !card.bought);
+  if (card.kind !== 'repair' && card.kind !== 'potion') drawPips(ctx, x + w / 2, y + 158, card.lv, !card.bought);
   if (card.bought) {
     ctx.font = px(11);
     txt(ctx, '✓ BOUGHT', x + w / 2, y + 198, '#7fe0c3');
@@ -99,7 +100,7 @@ export function drawStageMenu(ctx, state, hover) {
   const nHover = hover && hover.x >= n.x && hover.x <= n.x + n.w && hover.y >= n.y && hover.y <= n.y + n.h;
   bevel(ctx, n.x, n.y, n.w, n.h, 8, nHover ? '#ffe08a' : '#ffd97a', '#f0b23e', PAL.gold, 2);
   ctx.font = px(12);
-  txt(ctx, `NEXT STAGE ${state.stage + 1} →  [Enter]`, n.x + n.w / 2, n.y + 33, '#062a33');
+  txt(ctx, `NEXT STAGE ${state.stage + 1} →  [Enter]`, n.x + n.w / 2, n.y + 33, '#fff');
   if (state.menuMsgT > 0 && state.menuMsg) {
     ctx.font = px(10);
     txt(ctx, state.menuMsg, VIEW_W / 2, 570, '#ff8fa0');

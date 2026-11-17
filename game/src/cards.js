@@ -3,15 +3,17 @@ import { WEAPONS, weaponLevelDef } from './weapons.js';
 import { UPGRADE_DEFS, applyUpgrade } from './upgrades.js';
 import { checkFeats, featBanner } from './meta.js';
 
-export const REROLL_COST = 10;
+export const REROLL_COST = 5;
 export const HAND_SIZE = 5;
 export const REPAIR_PRICE = 25;
 export const REPAIR_HEAL = 40;
+export const POTION_PRICE = 50;
+export const POTION_HEAL = 25;
+export const POTION_MAX = 5;
 
 function shopEntry(wid) { return SHOP.find((s) => s.id === wid); }
 
-// Upgrade price from current level lv (to lv+1): defined prices up to Lv5,
-// then the Lv5 price scaled ×1.3 per level beyond, rounded to the nearest 5.
+// Upgrade price: defined to Lv5, then Lv5 price ×1.3/level (round to 5).
 function upPrice(entry, lv) {
   const ups = entry.up;
   if (lv <= ups.length) return ups[lv - 1];
@@ -20,6 +22,7 @@ function upPrice(entry, lv) {
 
 export function cardStats(card, state) {
   if (card.kind === 'repair') return `+${REPAIR_HEAL} HP`;
+  if (card.kind === 'potion') return `+${POTION_HEAL} HP · USE [E]`;
   if (card.kind === 'skill') {
     const d = UPGRADE_DEFS.find((u) => u.id === card.track);
     return d ? d.stat : '';
@@ -46,13 +49,19 @@ export function cardStats(card, state) {
 export function cardPool(state) {
   const pr = (p) => Math.round(p * modOf(state, 'price'));
   const pool = [];
+  const owned = WEAPON_ORDER.filter((w) => state.weapons[w] > 0).length;
   for (const wid of WEAPON_ORDER) {
     if (wid === 'claw') continue;
     if (state.weapons[wid] === 0) {
       pool.push({ id: `weapon:${wid}`, kind: 'weapon', wid, lv: 0, toLevel: 1,
         price: pr(shopEntry(wid).price), name: WEAPONS[wid].name,
-        tag: 'NEW WEAPON', weight: 3, bought: false });
+        tag: 'NEW WEAPON', weight: owned < 4 ? 5 : 3, bought: false });
     }
+  }
+  if ((state.potions || 0) < POTION_MAX) {
+    pool.push({ id: 'potion', kind: 'potion', lv: 0, toLevel: 0,
+      price: pr(POTION_PRICE), name: 'HEALTH POTION', tag: 'CONSUMABLE',
+      weight: 2, bought: false });
   }
   for (const wid of WEAPON_ORDER) {
     const lv = state.weapons[wid];
@@ -103,6 +112,8 @@ export function buyCard(state, card) {
     applyUpgrade(state, card.track);
   } else if (card.kind === 'repair') {
     state.player.hp = Math.min(state.player.maxHp, state.player.hp + REPAIR_HEAL);
+  } else if (card.kind === 'potion') {
+    state.potions = Math.min(POTION_MAX, (state.potions || 0) + 1);
   }
   featBanner(state, checkFeats(state));
   card.bought = true;
@@ -124,6 +135,7 @@ function cardScore(card) {
   if (card.kind === 'weapon') return 1000 - card.price;
   if (card.kind === 'wup') return (card.wid === 'claw' ? 900 : 800) - card.price;
   if (card.kind === 'skill') return 300 - SKILL_ORDER.indexOf(card.track) * 10;
+  if (card.kind === 'potion') return 150;
   return 100;
 }
 export function autoBuy(state) {

@@ -1,7 +1,7 @@
 import { ARMOR_PER_BOSS, BOSS_XP, COMBO_MAX, COMBO_WINDOW, ENEMIES, POOL, STAGES, bossForStage, contentStage, envForStage, modOf } from './config.js';
 import { hurtEnemy, onEnemyKilled, updateEnemies, updateSpawner } from './enemies.js';
 import { hurtPlayer, nearestEnemy, updatePlayer } from './player.js';
-import { drawHand } from './cards.js';
+import { POTION_HEAL, drawHand } from './cards.js';
 import { updateHints } from './tutorial.js';
 import { gainXp, rollLevelChoices } from './level.js';
 import { saveRun } from './save.js';
@@ -14,12 +14,23 @@ export function comboMultFor(chain) {
 }
 export function comboMult(state) { return comboMultFor(state.combo); }
 
+// Drink a potion: +25 HP (capped). No-op at full HP or 0 potions.
+export function usePotion(state, fx, audio) {
+  const p = state.player;
+  if (!state.potions || p.hp >= p.maxHp) return false;
+  state.potions -= 1;
+  p.hp = Math.min(p.maxHp, p.hp + POTION_HEAL);
+  fx.text(p.x, p.y - 34, `+${POTION_HEAL}`, '#7fe0c3');
+  if (audio.heal) audio.heal();
+  return true;
+}
+
 function noteCoins(state) {
   if (state.coins > state.stats.maxCoins) state.stats.maxCoins = state.coins;
 }
 
 function dropCoins(state, e) {
-  const n = Math.round(e.coins * modOf(state, 'coin'));
+  const n = Math.round(e.coins * 1.5 * modOf(state, 'coin'));
   for (let i = 0; i < n; i += 1) {
     if (!state.rng.chance(0.85)) continue;
     state.drops.push({

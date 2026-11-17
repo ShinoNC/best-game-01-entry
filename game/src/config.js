@@ -65,7 +65,7 @@ export const PAL = {
 
 export const PLAYER = {
   radius: 30, speed: 245, hp: 100,
-  dashCd: 3.0, dashSpeed: 640, dashTime: 0.18, magnet: 75, iframes: 0.5,
+  dashCd: 2.0, dashSpeed: 640, dashTime: 0.18, magnet: 75, iframes: 0.5,
 };
 export const ENEMIES = {
   guppy:    { hp: 10, speed: 102, dmg: 4,  r: 10, score: 10, coins: 1, xp: 1, color: '#ffd166', dark: '#c9962e' },
@@ -114,8 +114,8 @@ export const STAGES = Array.from({ length: STAGE_COUNT }, (_, i) => {
   const boss = stage % 5 === 0;
   return {
     budget: Math.round((34 + (stage - 1) * 3.8) * (boss ? 0.7 : 1)),
-    interval: Math.max(0.35, 0.75 - (stage - 1) * 0.030),
-    batch: Math.min(6, 3 + Math.floor((stage - 1) / 5)),
+    interval: Math.max(0.45, 0.75 - (stage - 1) * 0.025),
+    batch: Math.min(4, 3 + Math.floor((stage - 1) / 8)),
     elite: stage >= 2, boss,
   };
 });
@@ -174,7 +174,7 @@ export function dmgScale(stage) {
   const base = t <= 15 ? 1 + (t - 1) * 0.14 : 1 + 14 * 0.14 + (t - 15) * 0.24;
   return base * (1.2 ** loopOf(stage));
 }
-export function speedScale(stage) { return 1 + (templateStage(stage) - 1) * 0.032; }
+export function speedScale(stage) { return 1 + (templateStage(stage) - 1) * 0.025; }
 
 export const WEAPON_ORDER = ['claw', 'bow', 'blaster', 'shell', 'spin', 'laser', 'trident'];
 

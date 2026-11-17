@@ -5,8 +5,8 @@ import {txt, px, vt} from './polish.js';
 const SIDE = { guppy: 1, eel: 1, archer: 1, angler: 1 };
 const DRAW = {
   guppy: 3.0, jelly: 3.4, eel: 3.0, squid: 3.0, archer: 3.2, starfish: 2.8,
-  urchin: 2.8, mini: 2.8, turtle: 2.8, octopus: 2.8, hammerhead: 2.8,
-  angler: 3.0, stingray: 2.8, kraken: 2.8,
+  urchin: 2.8, mini: 2.8, turtle: 3.2, octopus: 3.2, hammerhead: 3.2,
+  angler: 3.4, stingray: 3.2, kraken: 3.2,
 };
 
 function drawSprite(ctx, img, x, y, w, h, rot, alpha) {
@@ -84,12 +84,12 @@ export function drawCrab(ctx, p, t, clawStats, spinStats) {
       for (let d = 0; d < p.laserLen; d += 26) {
         const seg = Math.min(22, p.laserLen - d);
         const x0 = dir > 0 ? p.x + d : p.x - d - seg;
-        ctx.fillStyle = `rgba(255,46,136,${a * 0.28})`;
-        ctx.fillRect(x0, p.y - 8, seg, 16);
+        ctx.fillStyle = `rgba(255,46,136,${a * 0.35})`;
+        ctx.fillRect(x0, p.y - 16, seg, 32);
         ctx.fillStyle = `rgba(255,46,136,${a})`;
-        ctx.fillRect(x0, p.y - 5, seg, 10);
+        ctx.fillRect(x0, p.y - 10, seg, 20);
         ctx.fillStyle = `rgba(255,255,255,${a})`;
-        ctx.fillRect(x0, p.y - 1, seg, 2);
+        ctx.fillRect(x0, p.y - 2, seg, 4);
       }
     }
     ctx.restore();
@@ -149,8 +149,8 @@ export function drawEnemy(ctx, e, t, ang) {
   }
   if (e.hp < e.maxHp) {
     const big = e.elite || e.boss;
-    const w = big ? e.r * 2 : 22, h = big ? 5 : 3;
-    const y = e.y - e.r - (big ? 10 : 8);
+    const w = e.boss ? e.r * 2.6 : big ? e.r * 2 : 22, h = e.boss ? 8 : big ? 5 : 3;
+    const y = e.y - e.r - (e.boss ? 14 : big ? 10 : 8);
     ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(e.x - w / 2, y, w, h);
     ctx.fillStyle = '#ff5d73'; ctx.fillRect(e.x - w / 2, y, w * (e.hp / e.maxHp), h);
   }

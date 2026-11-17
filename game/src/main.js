@@ -3,8 +3,8 @@ import { createState } from './state.js';
 import { createInput } from './input.js';
 import { createAudio } from './audio.js';
 import { createParticles } from './particles.js';
-import { MENU_ITEMS, createRenderer, levelupLayout, overLayout, stageMenuLayout, titleLayout } from './render.js';
-import { STEP, nextStage, stepWorld } from './world.js';
+import { MENU_ITEMS, POTION_BOX, createRenderer, levelupLayout, overLayout, stageMenuLayout, titleLayout } from './render.js';
+import { STEP, nextStage, stepWorld, usePotion } from './world.js';
 import { REROLL_COST, autoBuy, buyCard, rerollHand } from './cards.js';
 import { applyLevelChoice, rollLevelChoices, xpNeed } from './level.js';
 import { SLOT_COUNT, clearSlot, hasSlotSave, loadSlot } from './save.js';
@@ -20,8 +20,7 @@ const seed = Number.isInteger(seedParam) ? seedParam : Math.floor(Math.random() 
 
 const canvas = document.getElementById('game');
 const status = document.getElementById('status');
-// Pixel fonts (Press Start 2P + VT323, embedded woff2): warm them up so the
-// canvas draws with them from the first frame instead of the monospace fallback.
+// Warm up the pixel fonts so the first frame uses them, not the fallback.
 function loadPixelFonts() {
   try {
     return Promise.race([
@@ -182,8 +181,7 @@ function rebindTide() {
     autoBuy: () => autoBuy(state) };
 }
 
-// Resume the saved run in a slot: rebuild the run from its seed, restore
-// progression, and retry the stage the player lost on (or the shop they left).
+// Resume a saved run: rebuild from its seed, restore progression.
 function continueRun(slot, s) {
   s = s || loadSlot(slot);
   if (!s) return;
@@ -195,13 +193,11 @@ function continueRun(slot, s) {
   state.slot = slot;
   state.stage = s.stage;
   state.level = s.level; state.xp = s.xp;
-  // Recompute the XP bar from the CURRENT curve: a save written by an older
-  // build carries a stale xpNext, which would level the player far too fast.
+  // Recompute xpNext from the CURRENT curve (old saves carry stale values).
   state.xpNext = xpNeed(s.level);
-  state.coins = s.coins; state.coinsEarned = s.coinsEarned;
+  state.coins = s.coins; state.coinsEarned = s.coinsEarned; state.potions = s.potions || 0;
   state.score = s.score; state.kills = s.kills; state.time = s.time || 0;
-  // Every load is a fresh attempt at the current stage: full HP, so a run
-  // saved at low HP can never death-spiral. The stored HP is untouched.
+  // Every load is a fresh attempt: full HP (stored HP untouched).
   Object.assign(state.player, { hp: s.maxHp, maxHp: s.maxHp, armor: s.armor || 0,
     speed: s.speed, magnet: s.magnet, shellTier: s.shellTier || 0 });
   state.weapons = { ...state.weapons, ...s.weapons };
@@ -271,6 +267,11 @@ function handleMenus() {
   }
   if (state.phase === 'play') {
     if (input.pausePressed()) { state.phase = 'paused'; status.textContent = 'Paused'; return; }
+    if (input.wasPressed('e') && usePotion(state, fx, audio)) { status.textContent = 'Potion used: +25 HP!'; return; }
+    if (input.click()) {
+      const m = toLogical(input.mouse().x, input.mouse().y);
+      if (inBox(m, POTION_BOX) && usePotion(state, fx, audio)) status.textContent = 'Potion used: +25 HP!';
+    }
     menuPhase = 'play';
     return;
   }

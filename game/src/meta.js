@@ -31,7 +31,7 @@ export function readMeta() {
   };
 }
 
-// Progress value per family, merging lifetime meta with the current run.
+// Progress per family: lifetime meta + current run.
 export function featProgress(state) {
   const meta = state.meta || {};
   const weapons = WEAPON_ORDER.filter((w) => state.weapons[w] > 0).length;
@@ -56,8 +56,7 @@ export function featTier(id, value) {
   return t;
 }
 
-// Fold a kill (when passed) + run maxima into lifetime progress, persist on
-// change, return newly completed tiers as [{ id, tier }]. Safe without meta.
+// Fold a kill + run maxima into lifetime progress; return new tiers.
 export function checkFeats(state, killed) {
   const meta = state.meta;
   if (!meta) return [];

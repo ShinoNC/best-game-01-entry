@@ -1,7 +1,7 @@
 import { UPGRADE_DEFS, applyUpgrade } from './upgrades.js';
 
 export function xpNeed(level) {
-  return 48 + level * 32 + level * level * 4;
+  return 40 + level * 28 + level * level * 3;
 }
 
 const CHOICE_POOL = [

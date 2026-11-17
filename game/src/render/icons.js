@@ -1,6 +1,6 @@
 import { px } from './polish.js';
 
-// Pixel heart from a 7x6 bitmap, drawn with flat rects only.
+// Pixel heart (7x6 bitmap).
 const HEART_ROWS = ['.XX.XX.', 'XXXXXXX', 'XXXXXXX', '.XXXXX.', '..XXX..', '...X...'];
 export function heart(ctx, x, y, r, c) {
   const cell = (r * 2) / 7;
@@ -16,8 +16,7 @@ export function heart(ctx, x, y, r, c) {
   ctx.fillRect(x - r + cell, y - r + cell, cell, cell);
 }
 
-// Bitmap icon renderer: 12x12 grid, one char per pixel.
-// 'k' = dark outline, 'w' = white, 'a' = main, 'b' = light, 'c' = shade.
+// Bitmap icons: 12x12 grid. 'k' = outline, 'w' = white, 'a'/'b'/'c' = palette.
 function bitmap(ctx, rows, pal, x, y, s) {
   const n = rows.length;
   const cell = s / n;
@@ -252,20 +251,47 @@ export function drawSkillIcon(ctx, id, x, y, s, owned) {
   ctx.restore();
 }
 
+// Round pixel coin (stepped circle + $).
+const COIN_ROWS = [
+  '....kkkk....',
+  '..kkaaaakk..',
+  '.kaabbbbaak.',
+  '.kabbbbbbak.',
+  '.kabbbwbbak.',
+  '.kabbbbbbak.',
+  '.kabbbbbbak.',
+  '.kabbbwbbak.',
+  '.kaabbbbaak.',
+  '..kkaaaakk..',
+  '....kkkk....',
+  '............',
+];
 export function drawCoin(ctx, x, y, r) {
   ctx.save();
-  ctx.fillStyle = '#7a5a17';
-  ctx.fillRect(x - r - 1, y - r - 1, r * 2 + 2, r * 2 + 2);
-  ctx.fillStyle = '#c9962e';
-  ctx.fillRect(x - r, y - r, r * 2, r * 2);
-  ctx.fillStyle = '#ffd166';
-  ctx.fillRect(x - r * 0.7, y - r * 0.7, r * 1.4, r * 1.4);
-  ctx.fillStyle = '#fff3c4';
-  ctx.fillRect(x - r * 0.7, y - r * 0.7, r * 0.5, r * 0.5);
+  bitmap(ctx, COIN_ROWS, { a: '#c9962e', b: '#ffd166' }, x - r, y - r, r * 2);
   ctx.fillStyle = '#7a5a17'; ctx.font = px(Math.max(8, Math.round(r * 0.72)));
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText('$', x, y + r * 0.08);
   ctx.restore();
+}
+
+// Health potion flask.
+const POTION_ROWS = [
+  '.....kk.....',
+  '.....kk.....',
+  '....kaak....',
+  '....kaak....',
+  '...kbbbbk...',
+  '..kbbbbbbk..',
+  '..kbwwbbbk..',
+  '..kbbbbbbk..',
+  '..kbbbbbbk..',
+  '..kbbbbbbk..',
+  '...kbbbbk...',
+  '....kkkk....',
+];
+export function drawPotion(ctx, x, y, s) {
+  bitmap(ctx, POTION_ROWS, { a: '#bfe8e0', b: '#ff5d73' }, x - s / 2, y - s / 2, s);
 }
 
 export function drawPips(ctx, cx, y, lv, next) {

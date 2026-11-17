@@ -1,4 +1,4 @@
-import { PAL, POOL, VIEW_H, VIEW_W } from './config.js';
+import { PAL, POOL, VIEW_H, VIEW_W, envForStage } from './config.js';
 import { weaponStatsFor } from './weapons.js';
 import { drawCrab, drawEnemy } from './render/creatures.js';
 import { drawPool } from './render/pool.js';
@@ -8,10 +8,10 @@ import { drawAchievements, drawHelp, drawSettings, drawSlots } from './render/ov
 import { drawStageMenu } from './render/menu.js';
 import { drawLevelUp } from './render/levelup.js';
 import { drawOver } from './render/over.js';
-import { heart } from './render/icons.js';
+import { drawCoin, heart } from './render/icons.js';
 import {txt, px, vt} from './render/polish.js';
 
-export { MENU_ITEMS, SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE, levelupLayout, overLayout, stageMenuLayout, titleLayout } from './render/layout.js';
+export { MENU_ITEMS, POTION_BOX, SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE, levelupLayout, overLayout, stageMenuLayout, titleLayout } from './render/layout.js';
 
 export function createRenderer(canvas) {
   const ctx = canvas.getContext('2d');
@@ -27,7 +27,7 @@ export function createRenderer(canvas) {
   resize();
 
   function viewTransform() {
-    const scale = Math.min((cssW - 8) / VIEW_W, (cssH - 8) / VIEW_H);
+    const scale = Math.min(cssW / VIEW_W, cssH / VIEW_H);
     return { scale, ox: (cssW - VIEW_W * scale) / 2, oy: (cssH - VIEW_H * scale) / 2, cssW, cssH, dpr };
   }
 
@@ -38,11 +38,12 @@ export function createRenderer(canvas) {
       const { scale, ox, oy } = viewTransform();
       const s = scale * dpr;
       const oxd = ox * dpr, oyd = oy * dpr;
-      // Re-assert every frame: resizing the canvas resets ALL context state,
-      // including imageSmoothingEnabled (sprites would silently go blurry).
+      // Re-assert every frame: canvas resize resets all context state.
       ctx.imageSmoothingEnabled = false;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.fillStyle = PAL.deep; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // Fill the whole window with stage water: no dark letterbox bars.
+      ctx.fillStyle = envForStage(state.stage, state.envs).water;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
       const a = Math.max(0, Math.min(1, alpha));
       const lerp = (prev, cur) => prev + (cur - prev) * a;
       ctx.setTransform(s, 0, 0, s, oxd + fx.shakeX * s, oyd + fx.shakeY * s);
@@ -94,26 +95,18 @@ export function createRenderer(canvas) {
         }
       }
       for (const pe of state.drops) {
-        const bobY = Math.sin(pe.bob) * 3;
-        ctx.fillStyle = '#c9962e';
-        ctx.fillRect(pe.x - 7, pe.y + bobY - 7, 14, 14);
-        ctx.fillStyle = PAL.gold;
-        ctx.fillRect(pe.x - 5, pe.y + bobY - 5, 10, 10);
-        ctx.fillStyle = '#c9962e';
-        ctx.fillRect(pe.x - 2, pe.y + bobY - 2, 4, 4);
+        drawCoin(ctx, pe.x, pe.y + Math.sin(pe.bob) * 3, 8);
       }
       for (const pk of state.pickups) {
         if (pk.kind === 'heal') heart(ctx, pk.x, pk.y + Math.sin(t * 3) * 2, 13, PAL.hp);
         else if (pk.kind === 'bomb') {
           ctx.fillStyle = '#ffd166';
           ctx.fillRect(pk.x - 13, pk.y - 13, 26, 26);
-          // Pixel starburst: 4 dark arms from the centre.
           ctx.fillStyle = '#062a33';
           ctx.fillRect(pk.x - 2, pk.y - 9, 4, 18); ctx.fillRect(pk.x - 9, pk.y - 2, 18, 4);
           ctx.fillRect(pk.x - 7, pk.y - 7, 4, 4); ctx.fillRect(pk.x + 3, pk.y - 7, 4, 4);
           ctx.fillRect(pk.x - 7, pk.y + 3, 4, 4); ctx.fillRect(pk.x + 3, pk.y + 3, 4, 4);
         } else {
-          // Magnet pickup: concentric pixel squares, teal.
           ctx.fillStyle = '#7fe0c3';
           ctx.fillRect(pk.x - 12, pk.y - 12, 24, 4); ctx.fillRect(pk.x - 12, pk.y + 8, 24, 4);
           ctx.fillRect(pk.x - 12, pk.y - 8, 4, 16); ctx.fillRect(pk.x + 8, pk.y - 8, 4, 16);

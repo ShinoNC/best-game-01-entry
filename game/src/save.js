@@ -1,9 +1,5 @@
-// Run saves for the 3-slot system. Each slot has its own localStorage key.
-// The run is saved at every stage clear (shop state) and on every NEXT STAGE
-// (post-purchase state), so picking a slot always resumes from the last
-// cleared stage — retrying the stage the player lost on. The save is never
-// deleted on death; only starting a fresh run in a slot (via pause-restart)
-// or the slot's DELETE button clears it. Never written in shot mode or Node.
+// 3-slot run saves (localStorage). Saved at every stage clear + NEXT STAGE;
+// never deleted on death, only by pause-restart or the slot DELETE button.
 const SLOT_KEYS = ['tidekeeper_slot_0', 'tidekeeper_slot_1', 'tidekeeper_slot_2'];
 export const SLOT_COUNT = 3;
 
@@ -24,7 +20,7 @@ export function saveRun(state) {
     ls.setItem(SLOT_KEYS[state.slot], JSON.stringify({
       v: 1, slot: state.slot, seed: state.seed, stage: state.stage, phase: state.phase,
       level: state.level, xp: state.xp, xpNext: state.xpNext,
-      coins: state.coins, coinsEarned: state.coinsEarned,
+      coins: state.coins, coinsEarned: state.coinsEarned, potions: state.potions || 0,
       score: state.score, kills: state.kills, time: state.time,
       hp: p.hp, maxHp: p.maxHp, armor: p.armor, speed: p.speed,
       magnet: p.magnet, shellTier: p.shellTier,

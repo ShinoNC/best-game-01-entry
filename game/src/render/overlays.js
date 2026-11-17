@@ -29,7 +29,7 @@ function panel(ctx, p) {
 function closeButton(ctx, b) {
   bevel(ctx, b.x, b.y, b.w, b.h, 8, '#ffe08a', '#f0b23e', PAL.gold, 2);
   ctx.font = px(11); ctx.textAlign = 'center';
-  txt(ctx, 'CLOSE', b.x + b.w / 2, b.y + 29, '#062a33');
+  txt(ctx, 'CLOSE', b.x + b.w / 2, b.y + 29, '#062a33', 2, 0);
 }
 
 function dimHint(ctx, y) {
@@ -54,7 +54,7 @@ export function drawHelp(ctx, state) {
   txt(ctx, 'CONTROLS', 180, 128, PAL.gold);
   ctx.font = vt(19);
   const left = ['WASD / ARROWS — move', 'SPACE — dash', '↑ ↓ — menu · ENTER — choose', 'P / ESC — pause'];
-  const right = ['1–5 — buy a card', 'R — reroll the hand', 'ENTER — continue', 'M — mute · H — help'];
+  const right = ['1–5 — buy a card', 'R — reroll the hand', 'ENTER — continue', 'M — mute · H — help · E — potion'];
   left.forEach((s, i) => txt(ctx, s, 180, 150 + i * 20, PAL.text));
   right.forEach((s, i) => txt(ctx, s, 700, 150 + i * 20, PAL.text));
   ctx.font = px(9);
@@ -79,7 +79,7 @@ export function drawHelp(ctx, state) {
     ctx.fillStyle = b.color;
     ctx.fillRect(hx, 339, 10, 10);
     ctx.font = px(8);
-    txt(ctx, b.name, hx + 16, 348, PAL.text);
+    txt(ctx, b.name.replace(/^THE /, ''), hx + 16, 348, PAL.text);
     ctx.font = vt(16);
     txt(ctx, `STAGE ${b.stage} · ${b.hp} HP`, hx + 16, 364, PAL.dim);
   }

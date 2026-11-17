@@ -1,15 +1,17 @@
 export function createAudio() {
-  let ctx = null, muted = false;
+  let ctx = null, master = null, musicGain = null, muted = false;
   const CHORDS = [[131, 165, 196], [110, 131, 165]];
   let musicOn = false, musicStep = 0;
+  // ONE master gain for all sound: mute sets it to 0 instantly, silencing
+  // even the 7s pad already in flight (old mute only blocked NEW pads).
   function pad(freqs) {
     if (muted) return; const c = ensure(); if (!c) return;
     const g = c.createGain(), t0 = c.currentTime;
     g.gain.setValueAtTime(0.0001, t0);
-    g.gain.linearRampToValueAtTime(0.022, t0 + 1.5);
-    g.gain.setValueAtTime(0.022, t0 + 5);
+    g.gain.linearRampToValueAtTime(0.012, t0 + 1.5);
+    g.gain.setValueAtTime(0.012, t0 + 5);
     g.gain.linearRampToValueAtTime(0.0001, t0 + 7);
-    g.connect(c.destination);
+    g.connect(musicGain);
     for (const f of freqs) {
       const o = c.createOscillator(); o.type = 'sine'; o.frequency.value = f;
       o.connect(g); o.start(t0); o.stop(t0 + 7);
@@ -21,9 +23,13 @@ export function createAudio() {
     musicStep += 1;
     setTimeout(musicTick, 6000);
   }
-  function startMusic() { if (musicOn) return; musicOn = true; musicTick(); }
+  function startMusic() { if (musicOn) return; musicOn = true; if (musicGain) musicGain.gain.value = 1; musicTick(); }
   function ensure() {
-    if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch { return null; } }
+    if (!ctx) {
+      try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch { return null; }
+      master = ctx.createGain(); master.gain.value = muted ? 0 : 1; master.connect(ctx.destination);
+      musicGain = ctx.createGain(); musicGain.gain.value = musicOn ? 1 : 0; musicGain.connect(master);
+    }
     if (ctx && ctx.state === 'suspended') ctx.resume();
     return ctx;
   }
@@ -34,7 +40,7 @@ export function createAudio() {
     if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, c.currentTime + dur);
     g.gain.setValueAtTime(vol, c.currentTime);
     g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + dur);
-    o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime + dur);
+    o.connect(g).connect(master); o.start(); o.stop(c.currentTime + dur);
   }
   function noise(dur, vol, low) {
     if (muted) return; const c = ensure(); if (!c) return;
@@ -45,13 +51,13 @@ export function createAudio() {
     const src = c.createBufferSource(); src.buffer = buf;
     const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = low || 1200;
     const g = c.createGain(); g.gain.value = vol;
-    src.connect(f).connect(g).connect(c.destination); src.start();
+    src.connect(f).connect(g).connect(master); src.start();
   }
   return {
     unlock() { ensure(); startMusic(); },
-    toggleMute() { muted = !muted; return muted; },
+    toggleMute() { muted = !muted; if (master) master.gain.value = muted ? 0 : 1; return muted; },
     get muted() { return muted; },
-    toggleMusic() { musicOn = !musicOn; if (musicOn) musicTick(); return musicOn; },
+    toggleMusic() { musicOn = !musicOn; if (musicGain) musicGain.gain.value = musicOn ? 1 : 0; if (musicOn) musicTick(); return musicOn; },
     get music() { return musicOn; },
     pop() { tone(880, 0.09, 'sine', 0.12, 1400); },
     coin() { tone(1320, 0.07, 'sine', 0.10, 1760); },
