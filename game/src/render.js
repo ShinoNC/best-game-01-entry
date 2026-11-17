@@ -114,7 +114,7 @@ export function createRenderer(canvas) {
         }
       }
       for (const pe of state.drops) {
-        drawCoin(ctx, pe.x, pe.y + Math.sin(pe.bob) * 3, 8);
+        drawCoin(ctx, pe.x, pe.y + Math.sin(pe.bob) * 3, 12);
       }
       for (const pk of state.pickups) {
         if (pk.kind === 'heal') heart(ctx, pk.x, pk.y + Math.sin(t * 3) * 2, 13, PAL.hp);
