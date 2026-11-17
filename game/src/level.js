@@ -11,7 +11,6 @@ const CHOICE_POOL = [
   { id: 'legs', name: 'SWIFT LEGS', desc: 'SPEED +6%' },
   { id: 'bubbles', name: 'BUBBLE BURST', desc: '+4 BURST DMG' },
   { id: 'magnet', name: 'COIN MAGNET', desc: 'PICKUP +22%' },
-  { id: 'shell', name: 'ENHANCE', desc: '+15 MAX HP' },
   { id: 'heal', name: 'SHELL MEND', desc: 'HEAL +30 HP NOW' },
 ];
 
@@ -44,6 +43,8 @@ export function gainXp(state, amount) {
     state.xp -= state.xpNext;
     state.level += 1;
     state.xpNext = xpNeed(state.level);
+    state.player.maxHp += 5;
+    state.player.hp = Math.min(state.player.maxHp, state.player.hp + 5);
     gained += 1;
   }
   return gained;

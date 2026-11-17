@@ -5,6 +5,7 @@ import { drawHand } from './cards.js';
 import { updateHints } from './tutorial.js';
 import { gainXp, rollLevelChoices } from './level.js';
 import { saveRun } from './save.js';
+import { checkFeats, featBanner } from './meta.js';
 
 export const STEP = 1 / 60;
 
@@ -45,7 +46,9 @@ function killEnemy(state, e, fx, audio) {
   dropCoins(state, e);
   const xp = e.boss ? BOSS_XP : (ENEMIES[e.type] ? ENEMIES[e.type].xp : 1);
   const lvls = gainXp(state, xp);
+  featBanner(state, checkFeats(state, e));
   if (lvls > 0) {
+    fx.text(state.player.x, state.player.y - 34, `+${lvls * 5} MAX HP`, '#7fe0c3');
     state.pendingLevels = (state.pendingLevels || 0) + lvls;
     if (state.phase === 'play') {
       state.levelChoices = rollLevelChoices(state);
@@ -96,6 +99,7 @@ export function stepWorld(state, input, dt, fx, audio) {
       state.rerolls = 0; state.menuMsg = ''; state.menuMsgT = 0;
       state.phase = 'stageclear';
       audio.clear();
+      featBanner(state, checkFeats(state));
       saveRun(state);
     }
     return;

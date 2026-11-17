@@ -144,9 +144,6 @@ export function drawEnemy(ctx, e, t, ang) {
     ctx.fillRect(e.x + Math.cos(face) * e.r * 1.85 - wr, e.y + Math.sin(face) * e.r * 1.85 - wr, wr * 2, wr * 2);
   }
   if (e.elite) {
-    ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3;
-    const er = e.r + 7;
-    ctx.strokeRect(e.x - er, e.y - er, er * 2, er * 2);
     ctx.font = px(10); ctx.textAlign = 'center';
     txt(ctx, '★', e.x, e.y - e.r - 26, '#ffd166');
   }

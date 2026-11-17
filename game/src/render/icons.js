@@ -1,4 +1,3 @@
-import { WEAPON_MAX } from '../config.js';
 import { px } from './polish.js';
 
 // Pixel heart from a 7x6 bitmap, drawn with flat rects only.
@@ -270,10 +269,10 @@ export function drawCoin(ctx, x, y, r) {
 }
 
 export function drawPips(ctx, cx, y, lv, next) {
-  for (let i = 0; i < WEAPON_MAX; i += 1) {
-    ctx.fillStyle = '#101820';
-    ctx.fillRect(cx - 28 + i * 12, y - 6, 12, 12);
-    ctx.fillStyle = i < lv ? '#7fe0c3' : (next && i === lv ? '#ffd166' : 'rgba(255,255,255,0.25)');
-    ctx.fillRect(cx - 26 + i * 12, y - 4, 8, 8);
-  }
+  ctx.save();
+  ctx.font = px(11);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#7fe0c3';
+  ctx.fillText(next ? (lv === 0 ? 'Lv1' : `Lv${lv} > Lv${lv + 1}`) : `Lv${lv}`, cx, y);
+  ctx.restore();
 }

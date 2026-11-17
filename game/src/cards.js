@@ -1,6 +1,7 @@
-import { SHOP, WEAPON_MAX, WEAPON_ORDER, modOf } from './config.js';
-import { WEAPONS } from './weapons.js';
-import { SKILL_PRICES, UPGRADE_DEFS, applyUpgrade } from './upgrades.js';
+import { SHOP, WEAPON_ORDER, modOf } from './config.js';
+import { WEAPONS, weaponLevelDef } from './weapons.js';
+import { UPGRADE_DEFS, applyUpgrade } from './upgrades.js';
+import { checkFeats, featBanner } from './meta.js';
 
 export const REROLL_COST = 10;
 export const HAND_SIZE = 5;
@@ -8,6 +9,14 @@ export const REPAIR_PRICE = 25;
 export const REPAIR_HEAL = 40;
 
 function shopEntry(wid) { return SHOP.find((s) => s.id === wid); }
+
+// Upgrade price from current level lv (to lv+1): defined prices up to Lv5,
+// then the Lv5 price scaled ×1.3 per level beyond, rounded to the nearest 5.
+function upPrice(entry, lv) {
+  const ups = entry.up;
+  if (lv <= ups.length) return ups[lv - 1];
+  return Math.round((ups[ups.length - 1] * (1.3 ** (lv - ups.length - 1))) / 5) * 5;
+}
 
 export function cardStats(card, state) {
   if (card.kind === 'repair') return `+${REPAIR_HEAL} HP`;
@@ -17,7 +26,7 @@ export function cardStats(card, state) {
   }
   const W = WEAPONS[card.wid];
   const mult = 1.14 * (1.05 ** state.ups.claws);
-  const dmgAt = (lv) => Math.round(W.levels[lv - 1].dmg * mult);
+  const dmgAt = (lv) => Math.round(weaponLevelDef(card.wid, lv).dmg * mult);
   if (card.kind === 'weapon') {
     const L = W.levels[0];
     const sig = L.harpoons ? `×${L.harpoons}` : L.beams ? `${L.beams} BEAM`
@@ -26,7 +35,7 @@ export function cardStats(card, state) {
     return `${dmgAt(1)} DMG · ${sig}`;
   }
   let s = `DMG ${dmgAt(card.lv)}→${dmgAt(card.toLevel)}`;
-  const a = W.levels[card.lv - 1], b = W.levels[card.toLevel - 1];
+  const a = weaponLevelDef(card.wid, card.lv), b = weaponLevelDef(card.wid, card.toLevel);
   for (const [k, label] of [['arrows', 'ARROW'], ['pellets', 'PELLET'], ['harpoons', 'HARPOON'],
     ['beams', 'BEAM'], ['hits', 'HIT'], ['pierce', 'PIERCE']]) {
     if ((b[k] || 0) > (a[k] || 0)) s += ` · +${b[k] - a[k]} ${label}`;
@@ -47,18 +56,11 @@ export function cardPool(state) {
   }
   for (const wid of WEAPON_ORDER) {
     const lv = state.weapons[wid];
-    if (lv > 0 && lv < WEAPON_MAX) {
+    if (lv > 0) {
       pool.push({ id: `wup:${wid}:${lv + 1}`, kind: 'wup', wid, lv, toLevel: lv + 1,
-        price: pr(shopEntry(wid).up[lv - 1]), name: `${WEAPONS[wid].name} Lv${lv + 1}`,
+        price: pr(upPrice(shopEntry(wid), lv)), name: `${WEAPONS[wid].name} Lv${lv + 1}`,
         tag: 'LEVEL UP', weight: 2, bought: false });
     }
-  }
-  const d = UPGRADE_DEFS.find((u) => u.id === 'shell');
-  const lv = state.ups.shell;
-  if (lv < d.max) {
-    pool.push({ id: `skill:shell:${lv + 1}`, kind: 'skill', track: 'shell', lv, toLevel: lv + 1,
-      price: pr(SKILL_PRICES[lv]), name: d.name,
-      tag: 'SKILL', weight: 1, bought: false });
   }
   return pool;
 }
@@ -102,6 +104,7 @@ export function buyCard(state, card) {
   } else if (card.kind === 'repair') {
     state.player.hp = Math.min(state.player.maxHp, state.player.hp + REPAIR_HEAL);
   }
+  featBanner(state, checkFeats(state));
   card.bought = true;
   return 'ok';
 }

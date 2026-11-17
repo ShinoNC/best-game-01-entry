@@ -1,4 +1,3 @@
-import { BEST_KEY } from './config.js';
 import { createRandom } from './random.js';
 import { createState } from './state.js';
 import { createInput } from './input.js';
@@ -11,7 +10,7 @@ import { applyLevelChoice, rollLevelChoices, xpNeed } from './level.js';
 import { SLOT_COUNT, clearSlot, hasSlotSave, loadSlot } from './save.js';
 import { stageShot } from './shots.js';
 import { overlayLayout } from './render/overlays.js';
-import { featsEarnedThisRun, readMeta, recordRun } from './meta.js';
+import { readMeta } from './meta.js';
 import { loadSprites } from './sprites.js';
 
 const params = new URLSearchParams(window.location.search);
@@ -39,13 +38,8 @@ const input = createInput(canvas);
 const audio = createAudio();
 const fx = createParticles();
 
-function readBest() {
-  try { return Number.parseInt(window.localStorage.getItem(BEST_KEY) ?? '0', 10) || 0; } catch { return 0; }
-}
-
 function attachMeta(s) {
   s.meta = readMeta();
-  s.best = Math.max(s.meta.best || 0, readBest());
   s.audio = audio;
   return s;
 }
@@ -66,7 +60,6 @@ if (shot) {
     await loadPixelFonts();
     state = stageShot(shot, seed, fx, audio);
     attachMeta(state);
-    if (state.phase === 'over') state.featsEarned = featsEarnedThisRun(state, state.meta.feats);
     state.shotMode = true;
     renderer.render(state, fx, state.time);
     renderer.render(state, fx, state.time);
@@ -91,13 +84,6 @@ if (shot) {
         while (acc >= STEP && steps < 4) { stepWorld(state, input, STEP, fx, audio); acc -= STEP; steps += 1; if (state.phase !== 'play') break; }
       }
       if (acc >= STEP) acc = 0;
-      if (state.phase === 'over' && !state.recorded) {
-        state.recorded = true;
-        const res = recordRun(state, state.meta || readMeta());
-        state.meta = res.meta;
-        state.featsEarned = res.earned;
-        state.best = Math.max(state.best, res.meta.best);
-      }
     }
     fx.update(dt);
     const alpha = state.phase === 'play' ? Math.min(1, acc / STEP) : 1;
@@ -202,10 +188,8 @@ function continueRun(slot, s) {
   s = s || loadSlot(slot);
   if (!s) return;
   audio.unlock();
-  const best = state.best;
   const meta = state.meta;
   state = createState(createRandom(s.seed), s.seed);
-  state.best = best;
   state.meta = meta;
   state.audio = audio;
   state.slot = slot;
@@ -216,7 +200,9 @@ function continueRun(slot, s) {
   state.xpNext = xpNeed(s.level);
   state.coins = s.coins; state.coinsEarned = s.coinsEarned;
   state.score = s.score; state.kills = s.kills; state.time = s.time || 0;
-  Object.assign(state.player, { hp: s.hp, maxHp: s.maxHp, armor: s.armor || 0,
+  // Every load is a fresh attempt at the current stage: full HP, so a run
+  // saved at low HP can never death-spiral. The stored HP is untouched.
+  Object.assign(state.player, { hp: s.maxHp, maxHp: s.maxHp, armor: s.armor || 0,
     speed: s.speed, magnet: s.magnet, shellTier: s.shellTier || 0 });
   state.weapons = { ...state.weapons, ...s.weapons };
   state.ups = { ...state.ups, ...s.ups };
@@ -335,11 +321,9 @@ function handleMenus() {
 }
 
 function freshState(phase) {
-  const best = state.best;
   const meta = state.meta;
   const fresh = Math.floor(Math.random() * 4294967296);
   state = createState(createRandom(fresh), fresh);
-  state.best = best;
   state.meta = meta;
   state.audio = audio;
   state.phase = phase;

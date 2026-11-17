@@ -19,22 +19,21 @@ export function stageMenuLayout(state) {
 }
 
 export const MENU_BTN_W = 340, MENU_BTN_H = 48, MENU_BTN_GAP = 16;
-export const MENU_ITEMS = ['play', 'help', 'feats', 'history', 'settings'];
+export const MENU_ITEMS = ['play', 'help', 'feats', 'settings'];
 export function titleLayout() {
   const x = VIEW_W / 2 - MENU_BTN_W / 2;
   return {
     play: { x, y: 248, w: MENU_BTN_W, h: 66 },
     help: { x, y: 330, w: MENU_BTN_W, h: MENU_BTN_H },
     feats: { x, y: 394, w: MENU_BTN_W, h: MENU_BTN_H },
-    history: { x, y: 458, w: MENU_BTN_W, h: MENU_BTN_H },
-    settings: { x, y: 522, w: MENU_BTN_W, h: MENU_BTN_H },
+    settings: { x, y: 458, w: MENU_BTN_W, h: MENU_BTN_H },
   };
 }
 
 export function overLayout() {
   return {
     cont: { x: VIEW_W / 2 - 150, y: 440, w: 300, h: 56 },
-    menu: { x: VIEW_W / 2 - 100, y: 516, w: 200, h: 44 },
+    menu: { x: VIEW_W / 2 - 150, y: 516, w: 300, h: 56 },
   };
 }
 

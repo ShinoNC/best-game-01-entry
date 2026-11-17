@@ -91,7 +91,7 @@ export function drawHud(ctx, state, t) {
   for (let i = 0; i < UPGRADE_DEFS.length; i += 1) {
     const d = UPGRADE_DEFS[i];
     const lv = state.ups[d.id];
-    const bx = 864 + i * 56, by = 658;
+    const bx = 1200 - (UPGRADE_DEFS.length - 1 - i) * 56, by = 658;
     pxFrame(ctx, bx - 2, by - 2, 56, 56, lv > 0 ? '#7fe0c3' : 'rgba(255,255,255,0.25)', 2);
     ctx.fillStyle = dither(ctx, lv > 0 ? 'rgba(127,224,195,0.22)' : 'rgba(255,255,255,0.08)',
       'rgba(0,0,0,0.25)');

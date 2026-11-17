@@ -4,7 +4,7 @@ import { drawCrab, drawEnemy } from './render/creatures.js';
 import { drawPool } from './render/pool.js';
 import { drawHud, drawPaused } from './render/hud.js';
 import { drawTitle } from './render/title.js';
-import { drawAchievements, drawHelp, drawHistory, drawSettings, drawSlots } from './render/overlays.js';
+import { drawAchievements, drawHelp, drawSettings, drawSlots } from './render/overlays.js';
 import { drawStageMenu } from './render/menu.js';
 import { drawLevelUp } from './render/levelup.js';
 import { drawOver } from './render/over.js';
@@ -205,7 +205,6 @@ export function createRenderer(canvas) {
       if (state.phase === 'over') drawOver(ctx, state);
       if (state.overlay === 'help') drawHelp(ctx, state);
       else if (state.overlay === 'feats') drawAchievements(ctx, state);
-      else if (state.overlay === 'history') drawHistory(ctx, state);
       else if (state.overlay === 'settings') drawSettings(ctx, state);
       else if (state.overlay === 'slots') drawSlots(ctx, state);
       ctx.setTransform(1, 0, 0, 1, 0, 0);

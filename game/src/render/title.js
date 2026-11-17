@@ -61,7 +61,7 @@ export function drawTitle(ctx, state) {
   ctx.textAlign = 'center';
   const TL = titleLayout();
   const labels = { play: 'PLAY',
-    help: 'HOW TO PLAY  ?', feats: 'ACHIEVEMENTS', history: 'HISTORY', settings: 'SETTINGS' };
+    help: 'HOW TO PLAY  ?', feats: 'ACHIEVEMENTS', settings: 'SETTINGS' };
   const items = MENU_ITEMS;
   for (let i = 0; i < items.length; i += 1) {
     const key = items[i];
@@ -89,6 +89,6 @@ export function drawTitle(ctx, state) {
   ctx.textAlign = 'right';
   ctx.font = px(10);
   ctx.fillStyle = 'rgba(255,255,255,0.7)';
-  ctx.fillText('v1.0', VIEW_W - 12, 708);
+  ctx.fillText('v1.1', VIEW_W - 12, 708);
 }
 

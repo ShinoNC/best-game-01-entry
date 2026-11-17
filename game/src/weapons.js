@@ -1,4 +1,4 @@
-import { WEAPON_MAX, modOf } from './config.js';
+import { modOf } from './config.js';
 
 export const WEAPONS = {
   claw: { name: 'CLAW',
@@ -59,13 +59,25 @@ export const WEAPONS = {
     ] },
 };
 
+// Level def for any level: defined entries up to Lv5, then scaled from Lv5
+// (weapons have no max level). Extra stats stay at their Lv5 values.
+export function weaponLevelDef(id, lv) {
+  const levels = WEAPONS[id].levels;
+  const base = levels[Math.min(levels.length, lv) - 1];
+  const extra = Math.max(0, lv - levels.length);
+  if (extra === 0) return base;
+  return { ...base,
+    dmg: base.dmg * (1.1 ** extra),
+    rate: base.rate * (0.97 ** extra),
+    range: base.range * (1.02 ** extra) };
+}
+
 export function weaponStatsFor(state, id) {
-  const lv = state.weapons[id];
-  const def = WEAPONS[id].levels[Math.max(0, Math.min(WEAPON_MAX, lv) - 1)];
+  const def = weaponLevelDef(id, state.weapons[id]);
   return {
     dmg: def.dmg * 1.14 * (1.05 ** state.ups.claws) * modOf(state, 'dmg'),
-    rate: def.rate * (0.95 ** state.ups.tempo) * modOf(state, 'rate'),
-    range: def.range * (1.1 ** state.ups.reach),
+    rate: def.rate * (0.5 + 0.5 * (0.95 ** state.ups.tempo)) * modOf(state, 'rate'),
+    range: def.range * (1 + 1.5 * (1 - 0.9 ** state.ups.reach)),
     arc: def.arc ?? 0, pierce: def.pierce ?? 0, pellets: def.pellets ?? 1,
     hits: def.hits ?? 1, turn: def.turn ?? 0, speed: def.speed ?? 0,
     arrows: def.arrows ?? 1, beams: def.beams ?? 0,

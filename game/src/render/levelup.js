@@ -11,6 +11,8 @@ export function drawLevelUp(ctx, state, hover) {
   txt(ctx, '★ LEVEL UP! ★', VIEW_W / 2, 150, PAL.gold, 3);
   ctx.font = px(14);
   txt(ctx, `YOU ARE NOW LEVEL ${state.level} — CHOOSE AN UPGRADE`, VIEW_W / 2, 196, PAL.text, 3);
+  ctx.font = px(12);
+  txt(ctx, '+5 MAX HP', VIEW_W / 2, 228, PAL.hp, 3);
   const choices = state.levelChoices || [];
   for (let i = 0; i < L.cards.length; i += 1) {
     const b = L.cards[i];

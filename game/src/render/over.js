@@ -27,7 +27,7 @@ export function drawOver(ctx, state) {
     ctx.font = px(14);
     txt(ctx, 'CONTINUE', VIEW_W / 2, L.cont.y + 37, PAL.dim);
   }
-  bevel(ctx, L.menu.x, L.menu.y, L.menu.w, L.menu.h, 8, '#11566b', '#062a33', PAL.foam, 2);
-  ctx.font = px(11);
-  txt(ctx, 'MENU', VIEW_W / 2, L.menu.y + 29, PAL.text);
+  bevel(ctx, L.menu.x, L.menu.y, L.menu.w, L.menu.h, 10, '#11566b', '#062a33', PAL.foam, 2);
+  ctx.font = px(14);
+  txt(ctx, 'MENU', VIEW_W / 2, L.menu.y + 37, PAL.text);
 }

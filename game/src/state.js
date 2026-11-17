@@ -62,7 +62,7 @@ export function createState(rng, seed) {
     stage: 1, stageSpawned: 0, stageEliteDone: false, stageClearT: 0,
     enemies: [], bolts: [], spits: [], drops: [], pickups: [],
     kills: 0, score: 0, spawnT: 0.8, bossSpawned: false,
-    boss: null, banner: '', bannerT: 0, bubbleT: 6, result: null, best: 0, slot: null,
+    boss: null, banner: '', bannerT: 0, bubbleT: 6, result: null, slot: null,
     hand: [], rerolls: 0, clearBonus: 0, menuMsg: '', menuMsgT: 0,
     stats: { damage: 0, taken: 0, dashes: 0, spent: 0, rerolls: 0,
       bossesDown: 0, bestCombo: 0, maxCoins: 0, cleanStage: false },

@@ -30,7 +30,6 @@ export function contentStage(state, pos) {
 export const VIEW_W = 1280;
 export const VIEW_H = 720;
 export const POOL = { x0: 0, y0: 72, x1: 1280, y1: 648, cx: 640, cy: 360, rx: 640, ry: 288 };
-export const BEST_KEY = 'tidekeeper-best';
 
 export const ENV_BANDS = [
   { rays: 1, rain: 0, glow: 0 }, { rays: 0.8, rain: 0, glow: 0 }, { rays: 0.4, rain: 0, glow: 0 },
@@ -178,7 +177,6 @@ export function dmgScale(stage) {
 export function speedScale(stage) { return 1 + (templateStage(stage) - 1) * 0.032; }
 
 export const WEAPON_ORDER = ['claw', 'bow', 'blaster', 'shell', 'spin', 'laser', 'trident'];
-export const WEAPON_MAX = 5;
 
 export const SHOP = [
   { id: 'bow', kind: 'weapon', price: 50, up: [100, 150, 210, 280], name: 'BUBBLE BOW' },
@@ -190,15 +188,27 @@ export const SHOP = [
   { id: 'claw', kind: 'weapon', price: 0, up: [60, 95, 140, 200], name: 'SHARPEN CLAWS' },
 ];
 
-export const FEAT_IDS = ['firstblood', 'arsenal', 'beast', 'untouched', 'rich', 'combo'];
+export const FEAT_IDS = ['slayer', 'beastslayer', 'veteran', 'deepdiver', 'bosscollector', 'arsenal', 'skillmaster', 'weaponmaster', 'skillexpert'];
 export const FEAT_NAMES = {
-  firstblood: 'FIRST BLOOD', arsenal: 'FULL ARSENAL', beast: 'BEAST DRIVER',
-  untouched: 'UNTOUCHED', rich: 'RICH CRAB', combo: 'COMBO MASTER',
+  slayer: 'SLAYER', beastslayer: 'BEAST SLAYER', veteran: 'VETERAN', deepdiver: 'DEEP DIVER',
+  bosscollector: 'BOSS COLLECTOR', arsenal: 'FULL ARSENAL', skillmaster: 'SKILL MASTER',
+  weaponmaster: 'WEAPON MASTER', skillexpert: 'SKILL EXPERT',
 };
-export const FEAT_DESCS = {
-  firstblood: 'Slay your first creature', arsenal: 'Own all 7 weapons',
-  beast: 'Drive off a sea beast', untouched: 'Clear a stage without taking damage',
-  rich: 'Hold 500 coins at once', combo: 'Reach an 8-chain combo',
+export const FEAT_TIERS = {
+  slayer: [100, 500, 1000, 5000, 10000],
+  beastslayer: [1, 5, 10, 25, 50],
+  veteran: [5, 10, 20, 30, 50],
+  deepdiver: [10, 30, 60, 100, 200],
+  bosscollector: [1, 3, 6],
+  arsenal: [3, 5, 7],
+  skillmaster: [2, 4, 6],
+  weaponmaster: [5, 10, 20],
+  skillexpert: [5, 10, 20],
+};
+export const FEAT_UNITS = {
+  slayer: 'kills', beastslayer: 'bosses', veteran: 'level', deepdiver: 'stage',
+  bosscollector: 'types', arsenal: 'weapons', skillmaster: 'skills',
+  weaponmaster: 'level', skillexpert: 'level',
 };
 
 export const CREATURE_NAMES = {
