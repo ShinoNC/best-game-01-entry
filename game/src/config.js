@@ -7,7 +7,7 @@ export const STAGE_COUNT = 30; // stages in one run — a full session is ~20–
 export const VIEW_W = 1280;
 export const VIEW_H = 720;
 // The rockpool: an ellipse of shallow water the crab can walk in.
-export const POOL = { cx: 640, cy: 388, rx: 556, ry: 288 };
+export const POOL = { cx: 640, cy: 360, rx: 556, ry: 288 }; // y 72–648: between the HUD bars
 export const BEST_KEY = 'tidekeeper-best';
 
 // Palette: deep teal water, warm sand, orange crab — one identity, readable at a glance.
