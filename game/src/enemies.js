@@ -219,6 +219,11 @@ export function updateEnemies(state, dt, fx) {
       } else if (e.state === 'dive') {
         const mul = e.diveMul || 2.1;
         e.x += nx * sp * mul * dt; e.y += ny * sp * mul * dt;
+        if (e.diveT <= 0) {
+          if (boss) { e.state = 'rest'; e.diveT = 1.2; }
+          else e.state = 'approach';
+        }
+      } else if (e.state === 'rest') {
         if (e.diveT <= 0) e.state = 'approach';
       } else { e.x += nx * sp * dt; e.y += ny * sp * dt; }
     } else {
