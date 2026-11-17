@@ -2,7 +2,6 @@ import { SHOP, WEAPON_ORDER, modOf } from './config.js';
 import { WEAPONS, weaponLevelDef } from './weapons.js';
 import { UPGRADE_DEFS, applyUpgrade } from './upgrades.js';
 import { checkFeats, featBanner } from './meta.js';
-
 export const REROLL_COST = 5;
 export const HAND_SIZE = 5;
 export const REPAIR_PRICE = 25;
@@ -10,15 +9,12 @@ export const REPAIR_HEAL = 40;
 export const POTION_PRICE = 50;
 export const POTION_HEAL = 25;
 export const POTION_MAX = 5;
-
 function shopEntry(wid) { return SHOP.find((s) => s.id === wid); }
-
 function upPrice(entry, lv) {
   const ups = entry.up;
   if (lv <= ups.length) return ups[lv - 1];
   return Math.round((ups[ups.length - 1] * (1.3 ** (lv - ups.length - 1))) / 5) * 5;
 }
-
 export function cardStats(card, state) {
   if (card.kind === 'repair') return `+${REPAIR_HEAL} HP`;
   if (card.kind === 'potion') return `+${POTION_HEAL} HP · USE [E]`;
@@ -44,7 +40,6 @@ export function cardStats(card, state) {
   }
   return s;
 }
-
 export function cardPool(state) {
   const pr = (p) => Math.round(p * modOf(state, 'price'));
   const pool = [];
@@ -72,13 +67,11 @@ export function cardPool(state) {
   }
   return pool;
 }
-
 function repairCard(n, state) {
   return { id: `repair:${n}`, kind: 'repair', lv: 0, toLevel: 0, price: Math.round(REPAIR_PRICE * modOf(state, 'price')),
     name: 'SHELL REPAIR', tag: 'REPAIR',
     weight: 0, bought: false };
 }
-
 export function drawHand(state) {
   const pool = cardPool(state);
   const weighted = [];
@@ -99,7 +92,6 @@ export function drawHand(state) {
   }
   return hand;
 }
-
 export function buyCard(state, card) {
   if (!card || card.bought) return 'bought';
   if (state.coins < card.price) return 'poor';
@@ -118,7 +110,6 @@ export function buyCard(state, card) {
   card.bought = true;
   return 'ok';
 }
-
 export function rerollHand(state) {
   if (state.coins < REROLL_COST) return false;
   state.coins -= REROLL_COST;
@@ -128,7 +119,6 @@ export function rerollHand(state) {
   state.hand = drawHand(state);
   return true;
 }
-
 const SKILL_ORDER = ['claws', 'tempo', 'shell', 'reach', 'bubbles', 'legs', 'magnet'];
 function cardScore(card) {
   if (card.kind === 'weapon') return 1000 - card.price;

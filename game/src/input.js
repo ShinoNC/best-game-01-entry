@@ -2,7 +2,6 @@ export const ACTION_CONFIRM = 'confirm';
 export const ACTION_PAUSE = 'pause';
 export const ACTION_MUTE = 'mute';
 export const ACTION_RESTART = 'restart';
-
 export function createInput(canvas) {
   const keys = new Set();
   const pressed = new Set();

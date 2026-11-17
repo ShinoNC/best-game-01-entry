@@ -2,7 +2,6 @@ import { POOL, PAL } from '../config.js';
 import { drawSkillIcon } from './icons.js';
 import { levelupLayout } from './layout.js';
 import {pxPanel, txt, px, vt} from './polish.js';
-
 export function drawLevelUp(ctx, state, hover) {
   const L = levelupLayout();
   ctx.fillStyle = 'rgba(6,42,51,0.78)'; ctx.fillRect(0, 0, POOL.x1, 720);

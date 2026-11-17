@@ -1,9 +1,7 @@
 import { BOSS_TYPES, FEAT_IDS, FEAT_NAMES, FEAT_TIERS, WEAPON_ORDER } from './config.js';
 import { UPGRADE_DEFS } from './upgrades.js';
-
 const META_KEY = 'tidekeeper-meta';
 export const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
-
 function readJson(key, fallback) {
   try {
     const raw = window.localStorage.getItem(key);
@@ -15,7 +13,6 @@ function readJson(key, fallback) {
 function writeJson(key, value) {
   try { window.localStorage.setItem(key, JSON.stringify(value)); } catch {}
 }
-
 export function readMeta() {
   const m = readJson(META_KEY, null) || {};
   return {
@@ -31,8 +28,6 @@ export function readMeta() {
     bestScore: m.bestScore || 0,
   };
 }
-
-// Progress per family: lifetime meta + current run.
 export function featProgress(state) {
   const meta = state.meta || {};
   const weapons = WEAPON_ORDER.filter((w) => state.weapons[w] > 0).length;
@@ -49,14 +44,12 @@ export function featProgress(state) {
     skillexpert: Math.max(meta.maxSkillLv || 0, ...UPGRADE_DEFS.map((d) => state.ups[d.id] || 0)),
   };
 }
-
 export function featTier(id, value) {
   const tiers = FEAT_TIERS[id];
   let t = 0;
   while (t < tiers.length && value >= tiers[t]) t += 1;
   return t;
 }
-
 export function checkFeats(state, killed) {
   const meta = state.meta;
   if (!meta) return [];
@@ -83,7 +76,6 @@ export function checkFeats(state, killed) {
   if (dirty) writeJson(META_KEY, meta);
   return earned;
 }
-
 export function featBanner(state, earned) {
   if (earned.length === 0) return;
   state.banner = `★ ${earned.map((e) => `${FEAT_NAMES[e.id]} ${ROMAN[e.tier]}`).join(' · ')}!`;

@@ -3,9 +3,7 @@ import { REROLL_COST, cardStats } from '../cards.js';
 import { drawCoin, drawPips, drawPotion, drawSkillIcon, drawWeaponIcon, heart } from './icons.js';
 import { stageMenuLayout } from './layout.js';
 import {bevel, pxFrame, pxPanel, txt, px, vt} from './polish.js';
-
 const KIND_COLOR = { skill: '#7fe0c3', wup: '#ffd166', weapon: '#c9a7ff', repair: '#ff8fb0', potion: '#ff5d73' };
-
 function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   const poor = !card.bought && state.coins < card.price;
   const kc = KIND_COLOR[card.kind] || PAL.dim;
@@ -48,7 +46,6 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   }
   ctx.restore();
 }
-
 export function drawStageMenu(ctx, state, hover) {
   const L = stageMenuLayout(state);
   ctx.fillStyle = '#072a35'; ctx.fillRect(0, 0, POOL.x1, VIEW_H);

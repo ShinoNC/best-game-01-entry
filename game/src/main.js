@@ -12,12 +12,10 @@ import { stageShot } from './shots.js';
 import { overlayLayout } from './render/overlays.js';
 import { readMeta } from './meta.js';
 import { loadSprites } from './sprites.js';
-
 const params = new URLSearchParams(window.location.search);
 const shot = params.get('shot');
 const seedParam = Number.parseInt(params.get('seed') ?? '', 10);
 const seed = Number.isInteger(seedParam) ? seedParam : Math.floor(Math.random() * 4294967296);
-
 const canvas = document.getElementById('game');
 const status = document.getElementById('status');
 function loadPixelFonts() {
@@ -35,13 +33,11 @@ const renderer = createRenderer(canvas);
 const input = createInput(canvas);
 const audio = createAudio();
 const fx = createParticles();
-
 function attachMeta(s) {
   s.meta = readMeta();
   s.audio = audio;
   return s;
 }
-
 function toLogical(mx, my) {
   const { scale, ox, oy } = renderer.viewTransform();
   return { x: (mx - ox) / scale, y: (my - oy) / scale };
@@ -50,7 +46,6 @@ function toScreen(lx, ly) {
   const { scale, ox, oy } = renderer.viewTransform();
   return { x: ox + lx * scale, y: oy + ly * scale };
 }
-
 let state;
 if (shot) {
   (async () => {
@@ -91,11 +86,8 @@ if (shot) {
   }
   requestAnimationFrame(frame);
 }
-
 function inBox(m, b) { return m.x >= b.x && m.x <= b.x + b.w && m.y >= b.y && m.y <= b.y + b.h; }
-
 let menuCooldown = 0, menuPhase = 'title';
-
 function buyMenuCard(i) {
   const card = (state.hand || [])[i];
   if (!card) return;
@@ -107,7 +99,6 @@ function buyMenuCard(i) {
     status.textContent = state.menuMsg;
   }
 }
-
 function doReroll() {
   if (rerollHand(state)) { audio.reroll(); status.textContent = 'New cards!'; }
   else {
@@ -116,7 +107,6 @@ function doReroll() {
     status.textContent = state.menuMsg;
   }
 }
-
 function pickLevelChoice(i) {
   const c = (state.levelChoices || [])[i];
   if (!c) return;
@@ -131,28 +121,31 @@ function pickLevelChoice(i) {
     state.phase = 'play';
   }
 }
-
 function handleOverlay() {
   if (!state.overlay) return false;
   const L = overlayLayout(state);
-  if (input.helpPressed() || input.pausePressed()) { state.overlay = null; return true; }
-  if (state.overlay === 'slots') {
+  if (input.helpPressed() || input.pausePressed()) {
+    if (state.delConfirm != null) { state.delConfirm = null; return true; }
+    state.overlay = null; return true;
+  }
+  if (state.overlay === 'slots' && state.delConfirm == null) {
     const n = input.numberPressed();
     if (n >= 1 && n <= SLOT_COUNT) { pickSlot(n - 1); return true; }
   }
   if (input.click()) {
     const m = toLogical(input.mouse().x, input.mouse().y);
     if (state.overlay === 'slots') {
-      if (inBox(m, L.close) || !inBox(m, L.panel)) { state.overlay = null; state.delArm = null; return true; }
+      if (state.delConfirm != null) {
+        if (inBox(m, L.confirmYes)) { clearSlot(state.delConfirm); state.delConfirm = null; return true; }
+        if (inBox(m, L.confirmNo) || !inBox(m, L.confirm)) { state.delConfirm = null; return true; }
+        return true;
+      }
+      if (inBox(m, L.close) || !inBox(m, L.panel)) { state.overlay = null; return true; }
       for (let i = 0; i < SLOT_COUNT; i += 1) {
-        if (L.dels[i] && inBox(m, L.dels[i]) && hasSlotSave(i)) {
-          if (state.delArm === i) { clearSlot(i); state.delArm = null; }
-          else state.delArm = i;
-          return true;
-        }
+        if (L.dels[i] && inBox(m, L.dels[i]) && hasSlotSave(i)) { state.delConfirm = i; return true; }
       }
       for (let i = 0; i < SLOT_COUNT; i += 1) {
-        if (inBox(m, L.cards[i])) { state.delArm = null; pickSlot(i); return true; }
+        if (inBox(m, L.cards[i])) { pickSlot(i); return true; }
       }
       return true;
     }
@@ -162,7 +155,6 @@ function handleOverlay() {
   }
   return true;
 }
-
 function startRun(slot) {
   audio.unlock();
   state.slot = slot;
@@ -170,21 +162,17 @@ function startRun(slot) {
   state.banner = 'STAGE 1 — SLAY THEM ALL'; state.bannerT = 3;
   status.textContent = 'Endless stages. A sea beast waits at every fifth stage!';
 }
-
 function pickSlot(i) {
   state.overlay = null;
   const s = loadSlot(i);
   if (s) continueRun(i, s);
   else startRun(i);
 }
-
 function rebindTide() {
   window.__tide = { state, fx, audio, step: (inp) => stepWorld(state, inp, STEP, fx, audio), STEP,
     menuLayout: () => stageMenuLayout(state), toScreen, toLogical, viewTransform: () => renderer.viewTransform(),
     autoBuy: () => autoBuy(state) };
 }
-
-// Resume a saved run: rebuild from its seed, restore progression.
 function continueRun(slot, s) {
   s = s || loadSlot(slot);
   if (!s) return;
@@ -199,7 +187,6 @@ function continueRun(slot, s) {
   state.xpNext = xpNeed(s.level);
   state.coins = s.coins; state.coinsEarned = s.coinsEarned; state.potions = s.potions || 0;
   state.score = s.score; state.kills = s.kills; state.time = s.time || 0;
-  // Every load is a fresh attempt: full HP (stored HP untouched).
   Object.assign(state.player, { hp: s.maxHp, maxHp: s.maxHp, armor: s.armor || 0,
     speed: s.speed, magnet: s.magnet, shellTier: s.shellTier || 0 });
   state.weapons = { ...state.weapons, ...s.weapons };
@@ -222,12 +209,10 @@ function continueRun(slot, s) {
   fx.clear();
   rebindTide();
 }
-
 function activateMenu(item) {
   if (item === 'play') state.overlay = 'slots';
   else state.overlay = item;
 }
-
 function handleMenus() {
   if (input.mutePressed()) { const m = audio.toggleMute(); status.textContent = m ? 'Muted' : 'Sound on'; }
   if (state.phase === 'title') {
@@ -322,7 +307,6 @@ function handleMenus() {
     menuPhase = 'over';
   }
 }
-
 function freshState(phase) {
   const meta = state.meta;
   const fresh = Math.floor(Math.random() * 4294967296);
@@ -333,7 +317,6 @@ function freshState(phase) {
   fx.clear();
   rebindTide();
 }
-
 function restart() {
   const slot = state.slot;
   if (slot != null) clearSlot(slot);
@@ -342,7 +325,6 @@ function restart() {
   state.banner = 'STAGE 1 — SLAY THEM ALL'; state.bannerT = 3;
   status.textContent = 'A new tide. How far can you go?';
 }
-
 function toTitle() {
   freshState('title');
   status.textContent = 'TIDEKEEPER — endless stages, sea beasts every fifth stage!';

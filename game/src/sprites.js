@@ -4,12 +4,10 @@ export const SPRITE_NAMES = ['crab', 'guppy', 'jelly', 'eel', 'squid', 'archerfi
 export const TYPE_IMG = { archer: 'archerfish', mini: 'starfish' };
 export const SPR = {};
 let readyPromise = null;
-
 export function imgFor(type) {
   const img = SPR[TYPE_IMG[type] || type];
   return img && img.complete && img.naturalWidth > 0 ? img : null;
 }
-
 export function loadSprites() {
   if (readyPromise) return readyPromise;
   if (typeof Image === 'undefined') { readyPromise = Promise.resolve(); return readyPromise; }

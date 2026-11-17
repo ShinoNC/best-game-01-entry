@@ -1,5 +1,4 @@
 import { px } from './render/polish.js';
-
 const TEXT_TOP = 200, TEXT_BOTTOM = 560, TEXT_LEFT = 40, TEXT_RIGHT = 1240;
 const TEXT_MAX = 5;
 export function createParticles() {

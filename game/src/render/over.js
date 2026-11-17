@@ -2,7 +2,6 @@ import { POOL, PAL, VIEW_H } from '../config.js';
 import { overLayout } from './layout.js';
 import {bevel, logoText, txt, px, vt} from './polish.js';
 import { loadSlot } from '../save.js';
-
 export function drawOver(ctx, state) {
   const mins = Math.floor(state.time / 60), secs = Math.floor(state.time % 60);
   ctx.fillStyle = 'rgba(6,42,51,0.72)'; ctx.fillRect(0, 0, POOL.x1, VIEW_H);

@@ -1,14 +1,12 @@
 import { PAL } from '../config.js';
 import { imgFor } from '../sprites.js';
 import {txt, px, vt} from './polish.js';
-
 const SIDE = { eel: 1, archer: 1, angler: 1 };
 const DRAW = {
   guppy: 3.0, jelly: 3.4, eel: 3.0, squid: 3.0, archer: 3.2, starfish: 2.8,
   urchin: 2.8, mini: 2.8, turtle: 3.2, octopus: 3.2, hammerhead: 3.2,
   angler: 3.4, stingray: 3.2, kraken: 3.2,
 };
-
 function drawSprite(ctx, img, x, y, w, h, rot, alpha) {
   ctx.save();
   ctx.translate(x, y);
@@ -17,14 +15,12 @@ function drawSprite(ctx, img, x, y, w, h, rot, alpha) {
   ctx.drawImage(img, -w / 2, -h / 2, w, h);
   ctx.restore();
 }
-
 function fallback(ctx, e, size) {
   ctx.fillStyle = e.color;
   ctx.fillRect(e.x - size / 2, e.y - size / 2, size, size);
   ctx.fillStyle = e.dark;
   ctx.fillRect(e.x - size / 4, e.y - size / 4, size / 2, size / 2);
 }
-
 export function drawCrab(ctx, p, t, clawStats, spinStats) {
   const img = imgFor('crab');
   const size = p.radius * 2.4;
@@ -100,7 +96,6 @@ export function drawCrab(ctx, p, t, clawStats, spinStats) {
     ctx.strokeRect(p.x - fr, p.y - fr, fr * 2, fr * 2);
   }
 }
-
 export function drawEnemy(ctx, e, t, ang) {
   const face = ang ?? 0;
   const img = imgFor(e.type);

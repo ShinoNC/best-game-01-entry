@@ -4,7 +4,6 @@ import { comboMult } from '../world.js';
 import { drawCoin, drawPotion, drawSkillIcon, drawWeaponIcon, heart } from './icons.js';
 import { POTION_BOX } from './layout.js';
 import {dither, pxBar, pxFrame, pxPanel, txt, px, vt} from './polish.js';
-
 export function drawHud(ctx, state, t) {
   const p = state.player;
   ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
@@ -142,7 +141,6 @@ export function drawHud(ctx, state, t) {
     const y = 105;
     ctx.globalAlpha = alpha;
     pxPanel(ctx, POOL.cx - w / 2, y - 24, w, 44, 'rgba(6,42,51,0.88)', 'rgba(4,26,32,0.88)', PAL.gold);
-    // Pixel diamond marker.
     const dx = POOL.cx - w / 2 + 24, dy = y - 3;
     ctx.fillStyle = PAL.gold;
     ctx.fillRect(dx - 2, dy - 8, 4, 4); ctx.fillRect(dx - 6, dy - 4, 12, 4);
@@ -152,7 +150,6 @@ export function drawHud(ctx, state, t) {
     ctx.globalAlpha = 1;
   }
 }
-
 export function drawPaused(ctx) {
   ctx.fillStyle = 'rgba(6,42,51,0.7)'; ctx.fillRect(0, 0, POOL.x1, VIEW_H);
   ctx.textAlign = 'center';

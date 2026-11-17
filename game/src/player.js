@@ -1,13 +1,11 @@
 import { PAL, PLAYER, POOL, WEAPON_ORDER, modOf } from './config.js';
 import { weaponStatsFor } from './weapons.js';
 import { hurtEnemy } from './enemies.js';
-
 function clampToPool(p) {
   const r = p.radius || 0;
   p.x = Math.max(POOL.x0 + r, Math.min(POOL.x1 - r, p.x));
   p.y = Math.max(POOL.y0 + r, Math.min(POOL.y1 - r, p.y));
 }
-
 function slideAtEdge(p, vx, vy) {
   const r = p.radius || 0, m = 6;
   if (p.x - r - POOL.x0 < m && vx < 0) vx = 0;
@@ -16,7 +14,6 @@ function slideAtEdge(p, vx, vy) {
   if (POOL.y1 - p.y - r < m && vy > 0) vy = 0;
   return { vx, vy };
 }
-
 export function nearestEnemy(state, x, y, range) {
   let best = null, bd = range * range;
   for (const e of state.enemies) {
@@ -25,7 +22,6 @@ export function nearestEnemy(state, x, y, range) {
   }
   return best;
 }
-
 function fireWeapon(state, id, aim, target, fx, audio) {
   const p = state.player, w = weaponStatsFor(state, id);
   p.weapCd[id] = w.rate;
@@ -123,7 +119,6 @@ function fireWeapon(state, id, aim, target, fx, audio) {
     audio.snap();
   }
 }
-
 function laserTarget(state, w) {
   const p = state.player;
   const dirs = w.beams >= 2 ? [1, -1] : [1];
@@ -135,7 +130,6 @@ function laserTarget(state, w) {
     });
   });
 }
-
 export function updatePlayer(state, input, dt, fx, audio) {
   const p = state.player;
   for (const id of WEAPON_ORDER) p.weapCd[id] -= dt;
@@ -173,7 +167,6 @@ export function updatePlayer(state, input, dt, fx, audio) {
     if (target) fireWeapon(state, id, Math.atan2(target.y - p.y, target.x - p.x), target, fx, audio);
   }
 }
-
 export function hurtPlayer(state, dmg, fx, audio) {
   const p = state.player;
   if (p.iframes > 0 || state.phase !== 'play') return;

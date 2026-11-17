@@ -4,7 +4,6 @@ import { drawEnemy } from './creatures.js';
 import { slotsLayout } from './layout.js';
 import {bevel, lift, pxFrame, pxPanel, txt, px, vt} from './polish.js';
 import { SLOT_COUNT, loadSlot } from '../save.js';
-
 const BIG = () => ({ x: POOL.cx - 550, y: 50, w: 1100, h: 600 });
 const BIG_CLOSE = () => ({ x: POOL.cx - 80, y: 586, w: 160, h: 44 });
 const FEAT_PANEL = () => ({ x: POOL.cx - 360, y: 60, w: 720, h: 570 });
@@ -13,7 +12,6 @@ const SET_PANEL = () => ({ x: POOL.cx - 200, y: 240, w: 400, h: 240 });
 const SET_CLOSE = () => ({ x: POOL.cx - 80, y: 420, w: 160, h: 44 });
 const SET_SOUND = () => ({ x: POOL.cx, y: 300, w: 120, h: 36 });
 const SET_MUSIC = () => ({ x: POOL.cx, y: 350, w: 120, h: 36 });
-
 export function overlayLayout(state) {
   if (state.overlay === 'help') return { close: BIG_CLOSE(), panel: BIG() };
   if (state.overlay === 'feats') return { close: FEAT_CLOSE(), panel: FEAT_PANEL() };
@@ -21,29 +19,24 @@ export function overlayLayout(state) {
   if (state.overlay === 'slots') return slotsLayout();
   return null;
 }
-
 function panel(ctx, p) {
   lift(ctx, p.x, p.y, p.w, p.h, 8);
 }
-
 function closeButton(ctx, b) {
   bevel(ctx, b.x, b.y, b.w, b.h, 8, '#ffe08a', '#f0b23e', PAL.gold, 2);
   ctx.font = px(13); ctx.textAlign = 'center';
   txt(ctx, 'CLOSE', b.x + b.w / 2, b.y + 30, '#062a33', 0, 0);
 }
-
 function dimHint(ctx, y) {
   ctx.textAlign = 'center';
   ctx.font = vt(18);
   txt(ctx, 'H / ESC / click outside also closes', POOL.cx, y, PAL.dim);
 }
-
 const BEHAVIOUR = {
   guppy: 'charges at you', jelly: 'drifts in, wobbling', urchin: 'slow and tough',
   starfish: 'splits in two', eel: 'winds up, then lunges', squid: 'circles, dives',
   archer: 'spits water jets',
 };
-
 export function drawHelp(ctx, state) {
   ctx.fillStyle = 'rgba(6,42,51,0.6)'; ctx.fillRect(0, 0, POOL.x1, 720);
   const px0 = POOL.cx - 550;
@@ -88,11 +81,11 @@ export function drawHelp(ctx, state) {
   txt(ctx, 'TIPS', px0 + 40, 384, PAL.gold);
   ctx.font = vt(19);
   txt(ctx, 'Weapons fire on their own — dodge and position.', px0 + 40, 402, PAL.text);
-  txt(ctx, 'Coins buy cards after every stage. A new weapon beats a small upgrade.', px0 + 40, 419, PAL.text);
-  txt(ctx, 'Slain creatures grant XP. Level up to choose 1 of 3 upgrades — skills have no level cap.', px0 + 40, 436, PAL.text);
+  txt(ctx, 'Coins buy cards after every stage.', px0 + 40, 419, PAL.text);
+  txt(ctx, 'Slain creatures grant XP. Level up to choose 1 of 3 upgrades.', px0 + 40, 436, PAL.text);
   txt(ctx, 'Archers shoot from stage 12 — never stand still.', px0 + 40, 453, PAL.text);
   txt(ctx, `ARMOR absorbs damage before HP. Clear a boss to gain +${ARMOR_PER_BOSS} ARMOR. Armor does not heal.`, px0 + 40, 470, PAL.text);
-  txt(ctx, 'Stages go on forever — each loop, foes grow stronger. Each stage is generated fresh every run.', px0 + 40, 487, PAL.text);
+  txt(ctx, 'Stages go on forever — each loop, foes grow stronger.', px0 + 40, 487, PAL.text);
   ctx.font = px(9);
   txt(ctx, 'EFFECTS — ONE PER 5 STAGES', px0 + 40, 508, PAL.gold);
   ctx.font = vt(15);
@@ -102,7 +95,6 @@ export function drawHelp(ctx, state) {
   closeButton(ctx, BIG_CLOSE());
   dimHint(ctx, 664);
 }
-
 export function drawAchievements(ctx, state) {
   const p = featProgress(state);
   const total = FEAT_IDS.reduce((n, id) => n + featTier(id, p[id]), 0);
@@ -133,7 +125,6 @@ export function drawAchievements(ctx, state) {
   closeButton(ctx, FEAT_CLOSE());
   dimHint(ctx, 655);
 }
-
 export function drawSlots(ctx, state) {
   const L = slotsLayout();
   ctx.fillStyle = 'rgba(6,42,51,0.6)'; ctx.fillRect(0, 0, POOL.x1, 720);
@@ -165,10 +156,9 @@ export function drawSlots(ctx, state) {
       if (s.phase === 'stageclear') txt(ctx, 'AT THE SHOP', cx, c.y + c.h - 56, '#7fe0c3');
       txt(ctx, 'TAP TO CONTINUE', cx, c.y + c.h - 28, '#7fe0c3');
       const d = L.dels[i];
-      const armed = state.delArm === i;
-      bevel(ctx, d.x, d.y, d.w, d.h, 6, armed ? '#ffd166' : '#e85d6a', armed ? '#c9962e' : '#a32c38', armed ? '#fff3c4' : '#ff8fa0', 2);
+      bevel(ctx, d.x, d.y, d.w, d.h, 6, '#e85d6a', '#a32c38', '#ff8fa0', 2);
       ctx.font = px(14);
-      txt(ctx, armed ? '?' : '×', d.x + d.w / 2, d.y + 26, armed ? '#062a33' : '#fff');
+      txt(ctx, '×', d.x + d.w / 2, d.y + 26, '#fff');
     } else {
       ctx.font = px(15);
       txt(ctx, 'EMPTY', cx, c.y + 120, PAL.dim);
@@ -178,14 +168,23 @@ export function drawSlots(ctx, state) {
       txt(ctx, 'TAP TO START', cx, c.y + c.h - 28, '#7fe0c3');
     }
   }
-  if (state.delArm != null) {
-    ctx.font = px(10); ctx.textAlign = 'center';
-    txt(ctx, `TAP ? AGAIN TO DELETE SLOT ${state.delArm + 1}`, POOL.cx, 556, '#ff8fa0');
-  }
   closeButton(ctx, L.close);
+  if (state.delConfirm != null) {
+    const c = L.confirm;
+    ctx.fillStyle = 'rgba(2,16,20,0.7)'; ctx.fillRect(0, 0, POOL.x1, 720);
+    pxPanel(ctx, c.x, c.y, c.w, c.h, '#0e5162', '#0a3d4a', PAL.gold);
+    ctx.textAlign = 'center'; ctx.font = px(14);
+    txt(ctx, `DELETE SLOT ${state.delConfirm + 1}?`, POOL.cx, c.y + 52, '#ff8fa0');
+    ctx.font = vt(20);
+    txt(ctx, 'This cannot be undone.', POOL.cx, c.y + 86, PAL.dim);
+    bevel(ctx, L.confirmYes.x, L.confirmYes.y, 170, 48, 8, '#e85d6a', '#a32c38', '#ff8fa0', 2);
+    ctx.font = px(12);
+    txt(ctx, 'DELETE', L.confirmYes.x + 85, L.confirmYes.y + 31, '#fff', 0, 0);
+    bevel(ctx, L.confirmNo.x, L.confirmNo.y, 170, 48, 8, '#11566b', '#062a33', PAL.foam, 2);
+    txt(ctx, 'CANCEL', L.confirmNo.x + 85, L.confirmNo.y + 31, PAL.text, 0, 0);
+  }
   dimHint(ctx, 664);
 }
-
 export function drawSettings(ctx, state) {
   const audio = state.audio || {};
   const soundOn = !audio.muted, musicOn = audio.music !== false;

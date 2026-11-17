@@ -12,9 +12,7 @@ import { drawLevelUp } from './render/levelup.js';
 import { drawOver } from './render/over.js';
 import { drawCoin, heart } from './render/icons.js';
 import {txt, px, vt} from './render/polish.js';
-
 export { MENU_ITEMS, POTION_BOX, SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE, levelupLayout, overLayout, stageMenuLayout, titleLayout } from './render/layout.js';
-
 export function createRenderer(canvas) {
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
@@ -27,13 +25,11 @@ export function createRenderer(canvas) {
   addEventListener('resize', resize);
   addEventListener('orientationchange', resize);
   resize();
-
   function viewTransform() {
     const scale = cssH / VIEW_H;
     const effW = Math.max(VIEW_W, cssW / scale);
     return { scale, ox: (cssW - effW * scale) / 2, oy: 0, cssW, cssH, dpr, effW };
   }
-
   return {
     viewTransform,
     render(state, fx, t, alpha = 1, hover = null) {
@@ -49,7 +45,6 @@ export function createRenderer(canvas) {
       const a = Math.max(0, Math.min(1, alpha));
       const lerp = (prev, cur) => prev + (cur - prev) * a;
       ctx.setTransform(s, 0, 0, s, oxd + fx.shakeX * s, oyd + fx.shakeY * s);
-
       const vx0 = -ox / scale, vy0 = -oy / scale, vw = cssW / scale, vh = cssH / scale;
       if (state.phase === 'stageclear' || state.phase === 'over') {
         ctx.fillStyle = '#072a35';
@@ -65,7 +60,6 @@ export function createRenderer(canvas) {
           ctx.globalAlpha = 1;
         }
       }
-
       const rt = state.shotMode ? t : performance.now() / 1000;
       drawPool(ctx, state, rt);
       const bb = state.boss;

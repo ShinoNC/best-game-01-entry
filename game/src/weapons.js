@@ -1,5 +1,4 @@
 import { modOf } from './config.js';
-
 export const WEAPONS = {
   claw: { name: 'CLAW',
     levels: [
@@ -58,7 +57,6 @@ export const WEAPONS = {
       { dmg: 32, rate: 0.66, range: 460, harpoons: 3, spread: 0.50 },
     ] },
 };
-
 export function weaponLevelDef(id, lv) {
   const levels = WEAPONS[id].levels;
   const base = levels[Math.min(levels.length, lv) - 1];
@@ -69,7 +67,6 @@ export function weaponLevelDef(id, lv) {
     rate: base.rate * (0.97 ** extra),
     range: base.range * (1.02 ** extra) };
 }
-
 export function weaponStatsFor(state, id) {
   const def = weaponLevelDef(id, state.weapons[id]);
   return {

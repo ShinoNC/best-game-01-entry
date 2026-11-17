@@ -1,9 +1,7 @@
 import { UPGRADE_DEFS, applyUpgrade } from './upgrades.js';
-
 export function xpNeed(level) {
   return 30 + level * 20 + level * level * 2;
 }
-
 const CHOICE_POOL = [
   { id: 'claws', name: 'SHARPER CLAWS', desc: 'DMG +5%' },
   { id: 'tempo', name: 'QUICK CLAWS', desc: 'FIRE RATE +5%' },
@@ -14,7 +12,6 @@ const CHOICE_POOL = [
   { id: 'gold', name: 'GOLDEN TOUCH', desc: '+15% COINS', max: 5 },
   { id: 'heal', name: 'SHELL MEND', desc: 'HEAL +30 HP NOW' },
 ];
-
 export function rollLevelChoices(state) {
   const pool = CHOICE_POOL.filter((c) => !c.max || (state.ups[c.id] || 0) < c.max);
   const out = [];
@@ -26,7 +23,6 @@ export function rollLevelChoices(state) {
   }
   return out;
 }
-
 export function applyLevelChoice(state, choice) {
   if (!choice) return;
   if (choice.id === 'heal') {
@@ -36,7 +32,6 @@ export function applyLevelChoice(state, choice) {
   }
   applyUpgrade(state, choice.id);
 }
-
 export function gainXp(state, amount) {
   state.xp += amount;
   let gained = 0;
@@ -50,5 +45,4 @@ export function gainXp(state, amount) {
   }
   return gained;
 }
-
 export { UPGRADE_DEFS };

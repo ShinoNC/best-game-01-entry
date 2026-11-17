@@ -1,9 +1,7 @@
 import { POOL } from '../config.js';
-
 export const SCREEN_TITLE = 'title';
 export const SCREEN_PLAY = 'play';
 export const SCREEN_OVER = 'over';
-
 export const MENU_CARD_W = 200, MENU_CARD_H = 240, MENU_CARD_GAP = 16, MENU_CARDS_Y = 255;
 export function stageMenuLayout(state) {
   const hand = state.hand || [];
@@ -17,7 +15,6 @@ export function stageMenuLayout(state) {
     next: { x: POOL.cx - 40, y: 540, w: 336, h: 52 },
   };
 }
-
 export const MENU_BTN_W = 340, MENU_BTN_H = 48, MENU_BTN_GAP = 16;
 export const MENU_ITEMS = ['play', 'help', 'feats', 'settings'];
 export function titleLayout() {
@@ -29,25 +26,23 @@ export function titleLayout() {
     settings: { x, y: 458, w: MENU_BTN_W, h: MENU_BTN_H },
   };
 }
-
 export function overLayout() {
   return {
     cont: { x: POOL.cx - 150, y: 440, w: 300, h: 56 },
     menu: { x: POOL.cx - 150, y: 516, w: 300, h: 56 },
   };
 }
-
 export const POTION_BOX = { x: 800, y: 656, w: 56, h: 56 };
-
-// Slot screen: 3 vertical cards in the overlay panel.
 export const SLOT_PANEL = () => ({ x: POOL.cx - 500, y: 60, w: 1000, h: 580 });
 export const SLOT_CLOSE = () => ({ x: POOL.cx - 80, y: 576, w: 160, h: 44 });
 export function slotsLayout() {
   const cards = [0, 1, 2].map((i) => ({ x: POOL.cx - 420 + i * 290, y: 150, w: 260, h: 390 }));
   const dels = cards.map((c) => ({ x: c.x + c.w - 48, y: c.y + 12, w: 36, h: 36 }));
-  return { panel: SLOT_PANEL(), close: SLOT_CLOSE(), cards, dels };
+  const confirm = { x: POOL.cx - 250, y: 250, w: 500, h: 220 };
+  const confirmYes = { x: POOL.cx - 190, y: 380, w: 170, h: 48 };
+  const confirmNo = { x: POOL.cx + 20, y: 380, w: 170, h: 48 };
+  return { panel: SLOT_PANEL(), close: SLOT_CLOSE(), cards, dels, confirm, confirmYes, confirmNo };
 }
-
 export const LV_CARD_W = 260, LV_CARD_H = 200, LV_CARD_GAP = 24, LV_CARD_Y = 280;
 export function levelupLayout() {
   const total = 3 * LV_CARD_W + 2 * LV_CARD_GAP;

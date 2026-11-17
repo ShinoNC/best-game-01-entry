@@ -6,15 +6,11 @@ import { updateHints } from './tutorial.js';
 import { gainXp, rollLevelChoices } from './level.js';
 import { saveRun } from './save.js';
 import { checkFeats, featBanner } from './meta.js';
-
 export const STEP = 1 / 60;
-
 export function comboMultFor(chain) {
   return 1 + Math.min(COMBO_MAX - 1, Math.floor(chain / 4));
 }
 export function comboMult(state) { return comboMultFor(state.combo); }
-
-// Drink a potion: +25 HP (capped). No-op at full HP or 0 potions.
 export function usePotion(state, fx, audio) {
   const p = state.player;
   if (!state.potions || p.hp >= p.maxHp) return false;
@@ -24,11 +20,9 @@ export function usePotion(state, fx, audio) {
   if (audio.heal) audio.heal();
   return true;
 }
-
 function noteCoins(state) {
   if (state.coins > state.stats.maxCoins) state.stats.maxCoins = state.coins;
 }
-
 function dropCoins(state, e) {
   const n = Math.round(e.coins * 1.5 * modOf(state, 'coin') * (1 + 0.15 * (state.ups.gold || 0)));
   for (let i = 0; i < n; i += 1) {
@@ -42,7 +36,6 @@ function dropCoins(state, e) {
   if (e.elite || (!e.boss && state.rng.chance(0.04))) state.pickups.push({ x: e.x, y: e.y, kind: 'heal', life: 20 });
   if (e.boss) state.pickups.push({ x: e.x, y: e.y, kind: 'bomb', life: 20 });
 }
-
 function killEnemy(state, e, fx, audio) {
   state.kills += 1;
   state.combo += 1; state.comboT = COMBO_WINDOW;
@@ -68,7 +61,6 @@ function killEnemy(state, e, fx, audio) {
     }
   }
 }
-
 export function nextStage(state, audio) {
   state.stage += 1;
   state.stageSpawned = 0; state.stageEliteDone = false;
@@ -87,16 +79,13 @@ export function nextStage(state, audio) {
   }
   saveRun(state);
 }
-
 export function stepWorld(state, input, dt, fx, audio) {
   if (state.phase !== 'play') return;
   state.time += dt;
   const p = state.player;
   p.px = p.x; p.py = p.y;
   for (const e of state.enemies) { e.px = e.x; e.py = e.y; }
-
   updateHints(state, dt);
-
   if (state.stageClearT > 0) {
     updatePlayer(state, input, dt, fx, audio);
     state.stageClearT -= dt;
@@ -116,16 +105,13 @@ export function stepWorld(state, input, dt, fx, audio) {
     return;
   }
   state.bannerT -= dt;
-
   if (state.comboT > 0) {
     state.comboT -= dt;
     if (state.comboT <= 0) state.combo = 0;
   }
-
   updateSpawner(state, dt, fx, audio);
   updatePlayer(state, input, dt, fx, audio);
   updateEnemies(state, dt, fx);
-
   state.bubbleT -= dt;
   if (state.ups.bubbles > 0 && state.bubbleT <= 0) {
     state.bubbleT = Math.max(3.2, 6 - state.ups.bubbles * 0.25);
@@ -141,7 +127,6 @@ export function stepWorld(state, input, dt, fx, audio) {
     }
     audio.pop();
   }
-
   for (let i = state.bolts.length - 1; i >= 0; i -= 1) {
     const b = state.bolts[i]; b.life -= dt;
     if (b.kind === 'homing') {
@@ -172,7 +157,6 @@ export function stepWorld(state, input, dt, fx, audio) {
     }
     if (dead || Math.hypot(b.x - POOL.cx, b.y - POOL.cy) > 720) state.bolts.splice(i, 1);
   }
-
   for (let i = state.spits.length - 1; i >= 0; i -= 1) {
     const s = state.spits[i]; s.life -= dt; s.x += s.vx * dt; s.y += s.vy * dt;
     let dead = s.life <= 0;
@@ -182,7 +166,6 @@ export function stepWorld(state, input, dt, fx, audio) {
     }
     if (dead || Math.hypot(s.x - POOL.cx, s.y - POOL.cy) > 720) state.spits.splice(i, 1);
   }
-
   for (const e of state.enemies) {
     if (e.hitCd > 0) continue;
     if (Math.hypot(e.x - p.x, e.y - p.y) < e.r + p.radius - 4) {
@@ -191,11 +174,9 @@ export function stepWorld(state, input, dt, fx, audio) {
       if (state.phase !== 'play') return;
     }
   }
-
   for (let i = state.enemies.length - 1; i >= 0; i -= 1) {
     if (state.enemies[i].hp <= 0) { killEnemy(state, state.enemies[i], fx, audio); state.enemies.splice(i, 1); }
   }
-
   for (let i = state.drops.length - 1; i >= 0; i -= 1) {
     const pe = state.drops[i]; pe.life -= dt; pe.bob += dt * 3;
     pe.x += pe.vx * dt; pe.y += pe.vy * dt; pe.vx *= 0.96; pe.vy *= 0.96;
@@ -208,7 +189,6 @@ export function stepWorld(state, input, dt, fx, audio) {
       audio.coin();
     } else if (pe.life <= 0) state.drops.splice(i, 1);
   }
-
   for (let i = state.pickups.length - 1; i >= 0; i -= 1) {
     const pk = state.pickups[i]; pk.life -= dt;
     if (Math.hypot(p.x - pk.x, p.y - pk.y) < p.radius + 16) {
@@ -221,7 +201,6 @@ export function stepWorld(state, input, dt, fx, audio) {
       state.pickups.splice(i, 1);
     } else if (pk.life <= 0) state.pickups.splice(i, 1);
   }
-
   if (state.stageSpawned >= STAGES[contentStage(state) - 1].budget && state.enemies.length === 0
       && state.stageClearT <= 0) {
     state.stageClearT = 1.2;

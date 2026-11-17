@@ -1,6 +1,5 @@
 const SLOT_KEYS = ['tidekeeper_slot_0', 'tidekeeper_slot_1', 'tidekeeper_slot_2'];
 export const SLOT_COUNT = 3;
-
 function storage() {
   try {
     if (typeof window === 'undefined' || !window.localStorage) return null;
@@ -8,7 +7,6 @@ function storage() {
     return window.localStorage;
   } catch { return null; }
 }
-
 export function saveRun(state) {
   if (state.slot == null || state.slot < 0 || state.slot >= SLOT_COUNT) return;
   const ls = storage();
@@ -30,7 +28,6 @@ export function saveRun(state) {
     }));
   } catch { /* storage full or blocked: run continues unsaved */ }
 }
-
 export function loadSlot(i) {
   const ls = storage();
   if (!ls || i < 0 || i >= SLOT_COUNT) return null;
@@ -41,11 +38,9 @@ export function loadSlot(i) {
     return d;
   } catch { return null; }
 }
-
 export function clearSlot(i) {
   const ls = storage();
   if (!ls || i < 0 || i >= SLOT_COUNT) return;
   try { ls.removeItem(SLOT_KEYS[i]); } catch {}
 }
-
 export function hasSlotSave(i) { return loadSlot(i) !== null; }

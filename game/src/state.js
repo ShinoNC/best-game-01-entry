@@ -1,5 +1,4 @@
 import { ENV_PALETTES, PLAYER, POOL, genStageMix } from './config.js';
-
 export function createState(rng, seed) {
   const theme = rng.pick(['rocky', 'weedy', 'shelly', 'coral']);
   const kinds = theme === 'rocky' ? ['rock', 'rock', 'rock', 'rock', 'rock', 'rock', 'rock', 'rock', 'weed', 'shell']
@@ -71,4 +70,3 @@ export function createState(rng, seed) {
     bossWarned: false,
   };
 }
-

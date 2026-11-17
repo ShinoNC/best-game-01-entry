@@ -1,5 +1,4 @@
 import { PLAYER } from './config.js';
-
 export const UPGRADE_DEFS = [
   { id: 'claws', name: 'SHARPER CLAWS', stat: 'DMG +5%' },
   { id: 'tempo', name: 'QUICK CLAWS', stat: 'FASTER FIRE' },
@@ -9,7 +8,6 @@ export const UPGRADE_DEFS = [
   { id: 'magnet', name: 'COIN MAGNET', stat: 'WIDER PICKUP' },
   { id: 'gold', name: 'GOLDEN TOUCH', stat: '+15% COINS' },
 ];
-
 export function applyUpgrade(state, id) {
   const p = state.player, u = state.ups;
   u[id] += 1;

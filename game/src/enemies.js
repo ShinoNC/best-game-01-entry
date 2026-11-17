@@ -1,13 +1,10 @@
 import { ELITE, ENEMIES, POOL, SPIT, STAGES, bossForStage, contentStage, dmgScale, hpScale, modOf, sandRect, spawnWeights, speedScale } from './config.js';
-
 let nextId = 1;
-
 export function hurtEnemy(state, e, dmg) {
   if (e.shelled) return false;
   e.hp -= dmg; e.flash = 0.12; state.stats.damage += dmg;
   return true;
 }
-
 export function spawnEnemy(state, type, elite, fx) {
   const def = ENEMIES[type];
   const sand = sandRect(state.sandCorner), M = 20;
@@ -35,7 +32,6 @@ export function spawnEnemy(state, type, elite, fx) {
   state.enemies.push(e);
   return e;
 }
-
 function pickType(state) {
   const cs = contentStage(state);
   const w = { ...((state.stageMix && state.stageMix[cs - 1]) || spawnWeights(cs)) };
@@ -45,7 +41,6 @@ function pickType(state) {
   for (const k in w) { roll -= w[k]; if (roll <= 0) return k; }
   return 'guppy';
 }
-
 function spawnBoss(state, fx, audio) {
   state.bossSpawned = true;
   const def = bossForStage(state.stage, state.bossOrder);
@@ -69,7 +64,6 @@ function spawnBoss(state, fx, audio) {
   state.bannerT = 3;
   audio.boss(); fx.shake(0.6);
 }
-
 export function updateSpawner(state, dt, fx, audio) {
   const plan = STAGES[contentStage(state) - 1];
   state.spawnT -= dt;
@@ -100,7 +94,6 @@ export function updateSpawner(state, dt, fx, audio) {
     }
   }
 }
-
 const ATK_TELE = { shell: 0.5, ink: 0.5, line: 0.8, lure: 0.6, barbs: 0.5, slam: 0.9 };
 function bossAttack(state, e, dt, nx, ny, fx) {
   if (!e.atkState) {
@@ -175,7 +168,6 @@ function bossAttack(state, e, dt, nx, ny, fx) {
   }
   return false;
 }
-
 export function updateEnemies(state, dt, fx) {
   const p = state.player;
   for (const e of state.enemies) {
@@ -243,7 +235,6 @@ export function updateEnemies(state, dt, fx) {
     }
   }
 }
-
 export function onEnemyKilled(state, e, fx) {
   if (e.type === 'starfish') {
     for (let i = 0; i < 2; i += 1) {

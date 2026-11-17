@@ -1,6 +1,5 @@
 export const STAGE_COUNT = 30;
 export const ARMOR_PER_BOSS = 30;
-
 export const MODIFIERS = [
   { n: 'SWARM TIDE', d: 'foes swarm · +50% coins', spawn: 0.8, coin: 1.5 },
   { n: 'POWER HIT', d: 'foes +10% HP · +20% damage', ehp: 1.1, dmg: 1.2 },
@@ -30,7 +29,6 @@ export function contentStage(state, pos) {
 export const VIEW_W = 1280;
 export const VIEW_H = 720;
 export const POOL = { x0: 0, y0: 72, x1: 1280, y1: 648, cx: 640, cy: 360, rx: 640, ry: 288 };
-
 export const ENV_BANDS = [
   { rays: 1, rain: 0, glow: 0 }, { rays: 0.8, rain: 0, glow: 0 }, { rays: 0.4, rain: 0, glow: 0 },
   { rays: 0.15, rain: 0, glow: 0 }, { rays: 0, rain: 0, glow: 0 }, { rays: 0, rain: 1, glow: 1 },
@@ -49,20 +47,17 @@ export function envForStage(stage, envs) {
   const fx = ENV_BANDS[band];
   return { name: p[0], water: p[1], water2: p[2], sand: '#c9a86a', weed: '#2f8f6b', weed2: '#4fae7d', rays: fx.rays, rain: fx.rain, glow: fx.glow };
 }
-
 export function sandRect(corner) {
   const c = corner || 'bl';
   const x0 = c[1] === 'r' ? POOL.x1 - 400 : POOL.x0;
   const y0 = c[0] === 'b' ? POOL.y1 - 250 : POOL.y0;
   return { x0, y0, x1: x0 + 400, y1: y0 + 250 };
 }
-
 export const PAL = {
   deep: '#062a33', foam: '#bfe8e0', crab: '#ff7a3c', crabDark: '#d94f1e',
   shell0: '#8a6f4d', shell1: '#b08954', shell2: '#4fa8a0', shell3: '#e8b64c',
   gold: '#ffd166', hp: '#ff5d73', xp: '#7fe0c3', text: '#f4f9ff', dim: '#9fc4bd', armor: '#8fb8c9',
 };
-
 export const PLAYER = {
   radius: 30, speed: 245, hp: 100,
   dashCd: 2.0, dashSpeed: 640, dashTime: 0.25, magnet: 75, iframes: 0.5,
@@ -108,7 +103,6 @@ export function bossForStage(stage, order) {
     hp: Math.round(st.hp * hpMul), dmg: Math.round(st.dmg * dmgMul),
     score: Math.round(st.score * (1 + loop)), coins: Math.round(st.coins * (1 + loop)) };
 }
-
 export const STAGES = Array.from({ length: STAGE_COUNT }, (_, i) => {
   const stage = i + 1;
   const boss = stage % 5 === 0;
@@ -119,7 +113,6 @@ export const STAGES = Array.from({ length: STAGE_COUNT }, (_, i) => {
     elite: stage >= 2, boss,
   };
 });
-
 export function spawnWeights(stage) {
   const w = { guppy: 10, jelly: 4, urchin: 2, starfish: 3, eel: 0, squid: 0, archer: 0 };
   if (stage >= 2) w.eel = 2;
@@ -175,9 +168,7 @@ export function dmgScale(stage) {
   return base * (1.2 ** loopOf(stage));
 }
 export function speedScale(stage) { return 1 + (templateStage(stage) - 1) * 0.025; }
-
 export const WEAPON_ORDER = ['claw', 'bow', 'blaster', 'shell', 'spin', 'laser', 'trident'];
-
 export const SHOP = [
   { id: 'bow', kind: 'weapon', price: 50, up: [100, 150, 210, 280], name: 'BUBBLE BOW' },
   { id: 'blaster', kind: 'weapon', price: 110, up: [220, 290, 370, 460], name: 'INK BLASTER' },
@@ -187,7 +178,6 @@ export const SHOP = [
   { id: 'trident', kind: 'weapon', price: 120, up: [190, 250, 320, 410], name: 'TRIDENT' },
   { id: 'claw', kind: 'weapon', price: 0, up: [60, 95, 140, 200], name: 'SHARPEN CLAWS' },
 ];
-
 export const FEAT_IDS = ['slayer', 'beastslayer', 'veteran', 'deepdiver', 'bosscollector', 'arsenal', 'skillmaster', 'weaponmaster', 'skillexpert'];
 export const FEAT_NAMES = {
   slayer: 'SLAYER', beastslayer: 'BEAST SLAYER', veteran: 'VETERAN', deepdiver: 'DEEP DIVER',
@@ -210,12 +200,10 @@ export const FEAT_UNITS = {
   bosscollector: 'types', arsenal: 'weapons', skillmaster: 'skills',
   weaponmaster: 'level', skillexpert: 'level',
 };
-
 export const CREATURE_NAMES = {
   guppy: 'GUPPY', jelly: 'JELLY', urchin: 'URCHIN',
   starfish: 'STARFISH', eel: 'EEL', squid: 'SQUID', archer: 'ARCHER',
 };
 export const CREATURE_ORDER = ['guppy', 'jelly', 'urchin', 'starfish', 'eel', 'squid', 'archer'];
-
 export const COMBO_WINDOW = 3.0;
 export const COMBO_MAX = 8;

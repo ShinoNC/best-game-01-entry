@@ -3,8 +3,6 @@ export function createAudio() {
   let musicOn = false, musicBuf = null, musicSrc = null;
   let musicOff = false;
   try { musicOff = localStorage.getItem('tidekeeper-music') === 'off'; } catch { /* ignore */ }
-  // ONE master gain for all sound: mute sets it to 0 instantly.
-  // Music is a looping MP3 (Pixabay "Sea and Beach") via musicGain.
   function playMusic() {
     const c = ensure(); if (!c || !musicOn || musicSrc) return;
     if (musicBuf) {

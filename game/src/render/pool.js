@@ -1,6 +1,5 @@
 import { envForStage, POOL } from '../config.js';
 import { imgFor } from '../sprites.js';
-
 function table(n, seed) {
   const a = []; let s = seed;
   for (let i = 0; i < n; i += 1) {
@@ -13,7 +12,6 @@ const ambBubbles = table(14, 1234567);
 const rainDrops = table(60, 7654321);
 const glowDots = table(24, 987654);
 const motes = table(36, 24680);
-
 function patternFor(ctx, name, cache) {
   const img = imgFor(name);
   if (!img) return null;
@@ -23,7 +21,6 @@ function patternFor(ctx, name, cache) {
   return pat;
 }
 const waterCache = {}, sandCache = {};
-
 function drawSandCorner(ctx, x0, y0, pw, ph, corner) {
   const c = corner || 'bl';
   const sx = c[1] === 'r' ? x0 + pw : x0, sy = c[0] === 'b' ? y0 + ph : y0;
@@ -44,9 +41,7 @@ function drawSandCorner(ctx, x0, y0, pw, ph, corner) {
   ctx.fillRect(sx + Math.min(0, dx * w), sy + Math.min(0, dy * h), w, h);
   ctx.restore();
 }
-
 function pxRect(ctx, x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
-
 export function drawPool(ctx, state, t) {
   const env = envForStage(state.stage, state.envs);
   const menu = state.phase === 'title';

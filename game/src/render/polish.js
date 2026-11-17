@@ -6,8 +6,6 @@ export function rr(ctx, x, y, w, h) {
   ctx.beginPath(); ctx.rect(x, y, w, h);
   ctx.closePath();
 }
-
-// Stepped-corner silhouette (cross + corner step blocks).
 export function stepFill(ctx, x, y, w, h) {
   ctx.fillRect(x + 4, y, w - 8, h);
   ctx.fillRect(x, y + 4, w, h - 8);
@@ -16,8 +14,6 @@ export function stepFill(ctx, x, y, w, h) {
   ctx.fillRect(x + 2, y + h - 4, 2, 2);
   ctx.fillRect(x + w - 4, y + h - 4, 2, 2);
 }
-
-// Stepped border ring only (3px edges + 2px step blocks).
 export function pxFrame(ctx, x, y, w, h, c, t = 3) {
   ctx.fillStyle = c;
   ctx.fillRect(x + 4, y, w - 8, t);
@@ -29,8 +25,6 @@ export function pxFrame(ctx, x, y, w, h, c, t = 3) {
   ctx.fillRect(x + 2, y + h - 4, 2, 2);
   ctx.fillRect(x + w - 4, y + h - 4, 2, 2);
 }
-
-// 4x4 dither pattern cache (base + dark, 2x2 dots).
 const _pat = new Map();
 export function dither(ctx, base, dark) {
   const key = base + '|' + dark;
@@ -47,7 +41,6 @@ export function dither(ctx, base, dark) {
   _pat.set(key, p);
   return p;
 }
-
 export function dither4(ctx, base, dark) {
   const key = 'b4|' + base + '|' + dark;
   let p = _pat.get(key);
@@ -63,7 +56,6 @@ export function dither4(ctx, base, dark) {
   _pat.set(key, p);
   return p;
 }
-
 export function pxPanel(ctx, x, y, w, h, fill, dark, border, light) {
   ctx.fillStyle = 'rgba(0,0,0,0.45)';
   ctx.fillRect(x + 4, y + 5, w, h);
@@ -75,11 +67,9 @@ export function pxPanel(ctx, x, y, w, h, fill, dark, border, light) {
   ctx.fillRect(x + 5, y + 5, w - 10, 2);
   ctx.fillRect(x + 5, y + 5, 2, h - 10);
 }
-
 export function bevel(ctx, x, y, w, h, r, top, bottom, border, bw = 2) {
   pxPanel(ctx, x, y, w, h, top, bottom, border);
 }
-
 export function logoText(ctx, text, x, y, font, top, bottom, outline, lw = 3) {
   ctx.save();
   ctx.font = font; ctx.textAlign = 'center';
@@ -91,7 +81,6 @@ export function logoText(ctx, text, x, y, font, top, bottom, outline, lw = 3) {
   ctx.strokeText(text, x, y);
   ctx.restore();
 }
-
 export function txt(ctx, text, x, y, fill, lw = 2, sh = 2) {
   ctx.save();
   if (sh) {
@@ -105,12 +94,9 @@ export function txt(ctx, text, x, y, fill, lw = 2, sh = 2) {
   ctx.fillStyle = fill; ctx.fillText(text, x, y);
   ctx.restore();
 }
-
 export function lift(ctx, x, y, w, h) {
   pxPanel(ctx, x, y, w, h, 'rgba(6,42,51,0.94)', 'rgba(4,26,32,0.94)', '#ffd166');
 }
-
-// Darken a #rrggbb color by ~40%.
 function shade(hex) {
   if (!hex || hex[0] !== '#' || hex.length !== 7) return 'rgba(0,0,0,0.35)';
   const n = parseInt(hex.slice(1), 16);
@@ -119,7 +105,6 @@ function shade(hex) {
   const b = Math.floor((n & 255) * 0.6);
   return `rgb(${r},${g},${b})`;
 }
-
 export function pxBar(ctx, x, y, w, h, frac, fill, segs, dark) {
   const n = segs || 10;
   const gap = 3;

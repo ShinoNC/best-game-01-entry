@@ -1,15 +1,9 @@
 // TIDEKEEPER — best-game-01 entry (Node 22, standard library only).
-//
-// The game lives in game/ next to this file: plain static files (game/index.html
-// plus its ES modules) that a desktop browser loads offline — no library fetched
-// from a CDN, no network request at all. This program is only the handoff: it
-// copies game/ and screenshots/ into the grader's output directory and writes
-// dossier.json, the summary the judge reads, using the vendored make.fun
-// library. The game itself is a hermit crab holding a rockpool against endless
-// stages of creatures and six sea-beast bosses, levelling up as it goes.
-//
-// Run it locally with MAKEFUN_OUTPUT_DIR standing in for /output:
-//   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
+// The game lives in game/ next to this file: plain static files a desktop
+// browser loads offline. This program copies game/ and screenshots/ into the
+// grader's output directory and writes dossier.json, the summary the judge
+// reads, using the vendored make.fun library.
+// Run locally: mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 
 import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

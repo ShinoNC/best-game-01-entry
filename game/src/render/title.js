@@ -2,7 +2,6 @@ import { POOL, CREATURE_ORDER, ENEMIES, PAL } from '../config.js';
 import { drawCrab, drawEnemy } from './creatures.js';
 import { MENU_ITEMS, titleLayout } from './layout.js';
 import {bevel, logoText, pxPanel, txt, px, vt} from './polish.js';
-
 const AMBIENT = [];
 for (let i = 0; i < 24; i += 1) {
   AMBIENT.push({ type: CREATURE_ORDER[i % CREATURE_ORDER.length],
@@ -10,7 +9,6 @@ for (let i = 0; i < 24; i += 1) {
     vx: (Math.random() - 0.5) * 24, vy: (Math.random() - 0.5) * 16, wob: Math.random() * 6.28,
     dep: 0.55 + Math.random() * 0.45 });
 }
-
 function drawAmbient(ctx, state) {
   ctx.fillStyle = 'rgba(6,42,51,0.28)'; ctx.fillRect(0, 0, POOL.x1, 720);
   const tt = state.shotMode ? 2.5 : performance.now() / 1000;
@@ -25,7 +23,6 @@ function drawAmbient(ctx, state) {
   }
   return tt;
 }
-
 function drawPatrolCrab(ctx, state, tt) {
   const span = 1280 - 2 * 90, cyc = (tt * 50) % (span * 2);
   const cx = 90 + (cyc < span ? cyc : span * 2 - cyc);
@@ -33,7 +30,6 @@ function drawPatrolCrab(ctx, state, tt) {
     angle: cyc < span ? 0 : Math.PI, moving: 1,
     iframes: 0, flash: 0, swing: 0, spin: 0 }, tt, null, null);
 }
-
 export function drawTitle(ctx, state) {
   const tt = drawAmbient(ctx, state);
   drawPatrolCrab(ctx, state, tt);
@@ -95,4 +91,3 @@ export function drawTitle(ctx, state) {
   ctx.fillStyle = 'rgba(255,255,255,0.7)';
   ctx.fillText('v1.1', POOL.x1 - 12, 708);
 }
-

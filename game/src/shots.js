@@ -5,7 +5,6 @@ import { nextStage, stepWorld } from './world.js';
 import { autoBuy } from './cards.js';
 import { applyLevelChoice, rollLevelChoices } from './level.js';
 import { spawnEnemy } from './enemies.js';
-
 function autopilotInput(state) {
   const p = state.player;
   let mx = 0, my = 0, fx = 0, fy = 0;
@@ -51,7 +50,6 @@ function autopilotInput(state) {
     wasPressed: () => false,
   };
 }
-
 function runUntil(state, pred, maxSteps, fx, audio) {
   let steps = 0;
   while (steps < maxSteps) {
@@ -74,7 +72,6 @@ function runUntil(state, pred, maxSteps, fx, audio) {
   }
   return pred(state);
 }
-
 export function stageShot(shot, seed, fx, audio) {
   audio = new Proxy({}, { get: () => () => {} });
   if (shot === 'start') {
@@ -113,7 +110,6 @@ export function stageShot(shot, seed, fx, audio) {
         b.x = 830; b.y = 280;
         b.state = 'dive'; b.diveT = 0.4;
         b.hp = Math.min(b.hp, b.maxHp * 0.7);
-
         if (shot === 'storm') {
           s.player.armor = Math.max(s.player.armor, 60);
           b.atkState = 'tele'; b.atkPhaseT = 0.9;
@@ -162,6 +158,7 @@ export function stageShot(shot, seed, fx, audio) {
     return s;
   }
   if (shot === 'stageclear') {
+    const pose = (s) => { s.player.x = 200; s.player.y = 620; s.player.angle = 0; s.coins = Math.max(s.coins, 150); fx.clear(); return s; };
     for (const wantStage of [15, 10, 3]) {
       let fallback = null;
       for (let trySeed = seed; trySeed < seed + 6; trySeed += 1) {
@@ -169,27 +166,14 @@ export function stageShot(shot, seed, fx, audio) {
         runUntil(s, (st) => st.phase === 'stageclear' && st.stage === wantStage, 60000, fx, audio);
         if (s.phase === 'stageclear' && s.stage === wantStage && s.hand && s.hand.length >= 3) {
           if (!fallback) fallback = s;
-          if (s.hand.some((c) => c.kind === 'weapon')) {
-            s.player.x = 200; s.player.y = 620; s.player.angle = 0;
-            s.coins = Math.max(s.coins, 150);
-            fx.clear();
-            return s;
-          }
+          if (s.hand.some((c) => c.kind === 'weapon')) return pose(s);
         }
       }
-      if (fallback) {
-        fallback.player.x = 200; fallback.player.y = 620; fallback.player.angle = 0;
-        fallback.coins = Math.max(fallback.coins, 150);
-        fx.clear();
-        return fallback;
-      }
+      if (fallback) return pose(fallback);
     }
     const s = createStateFromSeed(seed); s.phase = 'play';
     runUntil(s, (st) => st.phase === 'stageclear', 20000, fx, audio);
-    s.player.x = 200; s.player.y = 620; s.player.angle = 0;
-    s.coins = Math.max(s.coins, 150);
-    fx.clear();
-    return s;
+    return pose(s);
   }
   if (shot === 'levelup') {
     const s = createStateFromSeed(seed); s.phase = 'play';
@@ -220,7 +204,6 @@ export function stageShot(shot, seed, fx, audio) {
   }
   return createStateFromSeed(seed);
 }
-
 export function createStateFromSeed(seed) {
   const rng = createRandom(seed);
   return createState(rng, seed);
