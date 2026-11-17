@@ -8,8 +8,8 @@ import {dither, pxBar, pxFrame, pxPanel, txt, px, vt} from './polish.js';
 export function drawHud(ctx, state, t) {
   const p = state.player;
   ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-  // Top/bottom strips: high-contrast dither.
-  ctx.fillStyle = dither(ctx, 'rgba(13,74,92,0.95)', 'rgba(4,26,32,0.95)');
+  // Top/bottom strips: semi-transparent so the play area shows through (POOL is full-height).
+  ctx.fillStyle = dither(ctx, 'rgba(13,74,92,0.78)', 'rgba(4,26,32,0.78)');
   ctx.fillRect(0, 0, VIEW_W, 72);
   ctx.fillRect(0, VIEW_H - 72, VIEW_W, 72);
   // Pixel divider: alternating gold / dark blocks.
