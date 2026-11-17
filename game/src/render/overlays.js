@@ -1,5 +1,5 @@
-// The title overlays: HOW TO PLAY, ACHIEVEMENTS, HISTORY, SETTINGS. One shared panel style.
-import { AWARD_KIND, AWARD_TIERS, BOSSES, CREATURE_NAMES, CREATURE_ORDER, DIFFICULTIES, DIFF_ORDER, ENEMIES, FEATS, PAL, VIEW_W } from '../config.js';
+// Title overlays: HOW TO PLAY, ACHIEVEMENTS, HISTORY, SETTINGS.
+import { ARMOR_PER_BOSS, AWARD_KIND, AWARD_TIERS, BOSSES, CREATURE_NAMES, CREATURE_ORDER, DIFFICULTIES, DIFF_ORDER, ENEMIES, FEATS, PAL, VIEW_W } from '../config.js';
 import { bestTitle } from '../meta.js';
 import { drawEnemy } from './creatures.js';
 import { drawAwardIcon } from './icons.js';
@@ -42,7 +42,7 @@ function dimHint(ctx, y) {
   txt(ctx, 'H / ESC / click outside also closes', VIEW_W / 2, y, PAL.dim);
 }
 
-// One line per creature: what it does, in five words or fewer.
+// One line per creature: what it does, in ≤5 words.
 const BEHAVIOUR = {
   guppy: 'swims straight at you', jelly: 'drifts in, wobbling', urchin: 'slow and tough',
   starfish: 'splits into two minis', eel: 'winds up, then lunges', gull: 'circles, then dives',
@@ -91,13 +91,14 @@ export function drawHelp(ctx, state) {
     ctx.font = '12px sans-serif';
     txt(ctx, `STAGE ${b.stage} · ${b.hp} HP`, hx + 16, 402, PAL.dim);
   }
-  // Tips: three lines, no more.
+  // Tips: four lines, no more.
   ctx.font = 'bold 15px sans-serif';
   txt(ctx, 'TIPS', 180, 430, PAL.gold);
   ctx.font = '14px sans-serif';
   txt(ctx, 'Weapons fire on their own — dodge and position.', 180, 454, PAL.text);
   txt(ctx, 'Coins buy cards after every stage. A new weapon beats a small upgrade.', 180, 478, PAL.text);
   txt(ctx, 'Archers shoot from stage 12 — never stand still.', 180, 502, PAL.text);
+  txt(ctx, `ARMOR absorbs damage before HP. Clear a boss to gain +${ARMOR_PER_BOSS} ARMOR. Armor does not heal.`, 180, 526, PAL.text);
   closeButton(ctx, BIG_CLOSE);
   dimHint(ctx, 664);
 }
@@ -124,7 +125,7 @@ export function drawAchievements(ctx, state) {
     ctx.font = '13px sans-serif';
     txt(ctx, f.desc, 180, y + 19, PAL.dim);
   }
-  // Right column: the 9 completion awards — 3 rows (difficulty) x 3 tiers.
+  // Right column: 9 awards — 3 rows (difficulty) x 3 tiers.
   ctx.font = 'bold 15px sans-serif';
   txt(ctx, 'COMPLETION AWARDS', 620, 132, PAL.gold);
   const title = bestTitle(wins);
@@ -162,7 +163,7 @@ export function drawHistory(ctx, state) {
   ctx.textAlign = 'center';
   ctx.font = 'bold 28px sans-serif';
   txt(ctx, 'HISTORY', VIEW_W / 2, 100, PAL.gold);
-  // One table per difficulty: its best score + its 3 most recent runs.
+  // One table per difficulty: best score + 3 most recent runs.
   for (let i = 0; i < DIFF_ORDER.length; i += 1) {
     const d = DIFF_ORDER[i];
     const x = 180 + i * 320;

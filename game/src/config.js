@@ -1,12 +1,13 @@
-// TIDEKEEPER tuning: every balance number in one place. Win = clear 30 stages; lose = 0 HP.
+// All balance numbers in one place. Win = clear 30 stages; lose = 0 HP.
 export const STAGE_COUNT = 30; // a full run is ~20–25 minutes
+export const ARMOR_PER_BOSS = 30; // boss-clear reward: absorbs damage before HP, never heals
 export const VIEW_W = 1280;
 export const VIEW_H = 720;
-export const POOL = { x0: 0, y0: 72, x1: 1280, y1: 648, cx: 640, cy: 360, rx: 640, ry: 288 }; // full width between the HUD bars (top 0–72, bottom 648–720); rx/ry = half-extents
+export const POOL = { x0: 0, y0: 72, x1: 1280, y1: 648, cx: 640, cy: 360, rx: 640, ry: 288 }; // full width between the HUD bars; rx/ry = half-extents
 export const BEST_KEY = 'tidekeeper-best';
 
-// Environments: the water changes by stage band — six colours, 5 stages each.
-// Bosses sit at 5/10/15/20/25/30, the last stage of each band.
+// Environments: six water colours, 5 stages each.
+// Bosses at 5/10/15/20/25/30, the last stage of each band.
 export const ENVS = [
   { name: 'SHALLOWS', water: '#35b8dc', water2: '#8fe8f8', sand: '#c9a86a', weed: '#2f8f6b', weed2: '#4fae7d', rays: 1, rain: 0, glow: 0 },
   { name: 'EMERALD LAGOON', water: '#0e7a4e', water2: '#3fc98a', sand: '#b0a05e', weed: '#0a5a36', weed2: '#1f7a4a', rays: 0.8, rain: 0, glow: 0 },
@@ -22,7 +23,7 @@ export const PAL = {
   sand2: '#e0c48f', foam: '#bfe8e0', crab: '#ff7a3c', crabDark: '#d94f1e',
   shell0: '#8a6f4d', shell1: '#b08954', shell2: '#4fa8a0', shell3: '#e8b64c',
   gold: '#ffd166', coral: '#ff5d73', ink: '#7b5cff',
-  hp: '#ff5d73', xp: '#7fe0c3', text: '#f4f9ff', dim: '#9fc4bd',
+  hp: '#ff5d73', xp: '#7fe0c3', text: '#f4f9ff', dim: '#9fc4bd', armor: '#8fb8c9',
 };
 
 export const PLAYER = {
@@ -121,7 +122,7 @@ export const FEATS = [
   { id: 'combo', name: 'COMBO ×8', desc: 'Reach combo ×8' },
 ];
 
-// Completion awards: 3/10/20 clears per difficulty — medals on EASY, cups on
+// Awards: 3/10/20 clears per difficulty — medals on EASY, cups on
 // NORMAL, crowns + a title on HARD.
 export const AWARD_TIERS = [
   { wins: 3, metal: 'BRONZE', color: '#cd7f32' },

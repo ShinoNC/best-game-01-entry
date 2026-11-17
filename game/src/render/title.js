@@ -1,11 +1,11 @@
-// Title screens: vertical menu, then difficulty select. Bright open water behind both.
+// Title: vertical menu, then difficulty select, over bright water.
 import { CREATURE_ORDER, DIFFICULTIES, ENEMIES, PAL, VIEW_W } from '../config.js';
 import { bestTitle } from '../meta.js';
 import { drawCrab, drawEnemy } from './creatures.js';
 import { difficultyLayout, titleLayout } from './layout.js';
 import { bevel, logoText, rr, txt } from './polish.js';
 
-// Ambient life: 24 drifting creatures; positions are a pure function of time.
+// Ambient life: 24 drifting creatures.
 const AMBIENT = [];
 for (let i = 0; i < 24; i += 1) {
   AMBIENT.push({ type: CREATURE_ORDER[i % CREATURE_ORDER.length],
@@ -30,7 +30,7 @@ function drawAmbient(ctx, state) {
   return tt;
 }
 
-// The crab strolls along the bottom, turning at each edge.
+// The crab strolls along the bottom, turning at edges.
 function drawPatrolCrab(ctx, state, tt) {
   const span = 1280 - 2 * 90, cyc = (tt * 50) % (span * 2);
   const cx = 90 + (cyc < span ? cyc : span * 2 - cyc);
@@ -49,7 +49,7 @@ export function drawTitle(ctx, state) {
     '900 88px "Trebuchet MS", "Segoe UI", Verdana, sans-serif',
     '#ffb35c', '#e8590c', '#4a2408', 3);
   ctx.letterSpacing = '0px';
-  // Tagline: bigger, pill-backed, "30 STAGES" emphasized; pill 30px below the logo.
+  // Tagline: pill-backed, "30 STAGES" emphasized, 30px below the logo.
   const tagParts = [
     { t: '★ CLEAR ', f: 'bold 24px sans-serif' },
     { t: '30 STAGES', f: '900 30px sans-serif' },
@@ -70,13 +70,13 @@ export function drawTitle(ctx, state) {
     tx += ctx.measureText(p.t).width;
   }
   ctx.textAlign = 'center';
-  // An earned HARD title shows under the tagline (gold); none when not earned.
+  // An earned HARD title shows under the tagline (gold).
   const title = bestTitle((state.meta || {}).wins || {});
   if (title) {
     ctx.font = 'bold 17px sans-serif';
     txt(ctx, `✦ ${title.toUpperCase()} ✦`, VIEW_W / 2, 202, PAL.gold);
   }
-  // Vertical menu: START (gold, taller), then four dark buttons. Keyboard selection gets a gold ring.
+  // Vertical menu: gold START, then four dark buttons; keyboard gets a gold ring.
   const TL = titleLayout();
   const items = [['start', 'START GAME'], ['help', 'HOW TO PLAY  ?'], ['feats', 'ACHIEVEMENTS'],
     ['history', 'HISTORY'], ['settings', 'SETTINGS']];
@@ -93,18 +93,18 @@ export function drawTitle(ctx, state) {
     }
     const ty = b.y + (isStart ? 41 : 30);
     ctx.font = isStart ? 'bold 24px sans-serif' : 'bold 18px sans-serif';
-    if (isStart) { // dark text on gold: a light highlight above sells the bevel
+    if (isStart) { // dark text on gold: a highlight above sells the bevel
       ctx.fillStyle = 'rgba(255,255,255,0.55)';
       ctx.fillText(label, b.x + b.w / 2, ty - 1);
       ctx.fillStyle = '#062a33';
       ctx.fillText(label, b.x + b.w / 2, ty);
-    } else { // light text on dark: outlined, so it stays crisp over the water
+    } else { // light text on dark: outlined, crisp over the water
       txt(ctx, label, b.x + b.w / 2, ty, PAL.text);
     }
   }
 }
 
-// Difficulty select: three cards (name, description, best score), a BACK button.
+// Difficulty select: three cards + a BACK button.
 export function drawDifficulty(ctx, state) {
   const tt = drawAmbient(ctx, state);
   drawPatrolCrab(ctx, state, tt); // the crab keeps strolling here too

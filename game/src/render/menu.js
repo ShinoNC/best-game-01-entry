@@ -1,14 +1,14 @@
-// The stage-clear menu: the ONLY menu, shown only between stages.
-import { PAL, VIEW_H, VIEW_W, envForStage } from '../config.js';
+// The stage-clear menu: the ONLY menu, only between stages.
+import { ARMOR_PER_BOSS, PAL, VIEW_H, VIEW_W, bossForStage, envForStage } from '../config.js';
 import { REROLL_COST, cardStats } from '../cards.js';
 import { drawCoin, drawPips, drawWeaponIcon } from './icons.js';
 import { stageMenuLayout } from './layout.js';
 import { bevel, rr, txt } from './polish.js';
 
-// Card colour coding: SKILL mint, LEVEL-UP gold, NEW WEAPON purple, REPAIR pink.
+// Card colours: SKILL mint, LEVEL-UP gold, WEAPON purple, REPAIR pink.
 const KIND_COLOR = { skill: '#7fe0c3', wup: '#ffd166', weapon: '#c9a7ff', repair: '#ff8fb0' };
 
-// One menu card: tag, picture, name, stats, pips, price. Unaffordable =
+// One menu card: tag, picture, name, stats, pips, price. Unaffordable
 // red price + dimmed; bought = green border + ✓.
 function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   const poor = !card.bought && state.coins < card.price;
@@ -44,16 +44,16 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
     ctx.font = 'bold 40px sans-serif';
     txt(ctx, card.icon, x + w / 2, y + 78, card.kind === 'repair' ? '#ff8fb0' : PAL.xp);
   }
-  // The name shrinks one step if it would overflow the card.
+  // The name shrinks if it would overflow the card.
   ctx.font = 'bold 18px sans-serif';
   if (ctx.measureText(card.name).width > w - 20) ctx.font = 'bold 15px sans-serif';
   txt(ctx, card.name, x + w / 2, y + 108, PAL.text);
-  // Stats line: what the card does. Shrinks if it would overflow.
+  // Stats line: what the card does. Shrinks if overflowing.
   const st = cardStats(card, state);
   ctx.font = 'bold 13px sans-serif';
   if (ctx.measureText(st).width > w - 16) ctx.font = 'bold 12px sans-serif';
   txt(ctx, st, x + w / 2, y + 134, PAL.foam);
-  // Level pips: filled = owned, gold = the level this card adds.
+  // Level pips: filled owned, gold = the level this card adds.
   if (card.kind !== 'repair') drawPips(ctx, x + w / 2, y + 158, card.lv, !card.bought);
   // Price (coin + number) or the bought stamp.
   if (card.bought) {
@@ -83,6 +83,10 @@ export function drawStageMenu(ctx, state, hover) {
   const cw = ctx.measureText(ct).width;
   drawCoin(ctx, VIEW_W / 2 - cw / 2 - 18, 178, 12);
   txt(ctx, ct, VIEW_W / 2 + 10, 186, PAL.gold);
+  if (bossForStage(state.stage)) {
+    ctx.font = 'bold 20px sans-serif';
+    txt(ctx, `+${ARMOR_PER_BOSS} ARMOR`, VIEW_W / 2, 214, PAL.armor, 3);
+  }
   const hand = state.hand || [];
   if (hand.length === 0) {
     // Empty state: everything owned/maxed.

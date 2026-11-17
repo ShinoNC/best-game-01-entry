@@ -9,7 +9,7 @@ export function spawnEnemy(state, type, elite, fx) {
   const s = Math.floor(state.rng.next() * 4), f = state.rng.next(); // one of the four edges, just outside it
   const x = s === 1 ? POOL.x1 + 14 : s === 3 ? POOL.x0 - 14 : POOL.x0 + f * (POOL.x1 - POOL.x0);
   const y = s === 0 ? POOL.y0 - 14 : s === 2 ? POOL.y1 + 14 : POOL.y0 + f * (POOL.y1 - POOL.y0);
-  // Spawn telegraph: a ripple ring at the edge entry point, clamped inside the pool.
+  // Spawn telegraph: a ripple ring at the edge entry point.
   if (fx && fx.ring) fx.ring(Math.max(POOL.x0 + 8, Math.min(POOL.x1 - 8, x)), Math.max(POOL.y0 + 8, Math.min(POOL.y1 - 8, y)));
   const hp = Math.round(def.hp * hpScale(state.stage) * diff.hp * (elite ? ELITE.hpMul : 1));
   const e = {
@@ -27,7 +27,7 @@ export function spawnEnemy(state, type, elite, fx) {
 
 function pickType(state) {
   const w = spawnWeights(state.stage);
-  // The run's spawn mix tilts the weights — the tide never repeats.
+  // The spawn mix tilts the weights — the tide never repeats.
   const mix = state.mix || {};
   let total = 0;
   for (const k in w) { w[k] *= mix[k] || 1; total += w[k]; }
@@ -59,7 +59,7 @@ function spawnBoss(state, fx, audio) {
   audio.boss(); fx.shake(0.6);
 }
 
-// The spawn director: a budget per stage; elite + boss arrive at half budget.
+// Spawn director: a budget per stage; elite + boss at half budget.
 export function updateSpawner(state, dt, fx, audio) {
   const plan = STAGES[state.stage - 1];
   state.spawnT -= dt;
@@ -68,7 +68,7 @@ export function updateSpawner(state, dt, fx, audio) {
     const n = Math.min(plan.batch, plan.budget - state.stageSpawned);
     for (let i = 0; i < n; i += 1) { spawnEnemy(state, pickType(state), false, fx); state.stageSpawned += 1; }
   }
-  // The elite (and the boss) arrive at half the budget — the stage's midpoint twist.
+  // Elites and bosses arrive at half the budget — the midpoint twist.
   if (plan.elite && !state.stageEliteDone && state.stageSpawned >= plan.budget / 2) {
     state.stageEliteDone = true;
     const type = state.rng.pick(['urchin', 'jelly', 'eel', 'starfish']);
@@ -79,8 +79,8 @@ export function updateSpawner(state, dt, fx, audio) {
   if (plan.boss && !state.bossSpawned && state.stageSpawned >= plan.budget / 2) {
     spawnBoss(state, fx, audio);
   }
-  // A summoning heron calls gulls while it lives (not counted in the budget).
-  // Called gulls fly in from the edges — never pop up next to the boss.
+  // A summoning heron calls gulls while it lives (not in the budget).
+  // Called gulls fly in from the edges — never pop by the boss.
   if (state.boss && state.boss.summonN > 0) {
     state.boss.summonT -= dt;
     if (state.boss.summonT <= 0 && state.enemies.length < 55) {
@@ -110,7 +110,7 @@ export function updateEnemies(state, dt) {
       else if (e.windup > 0) { e.windup -= dt; if (e.windup <= 0) { e.lungeT = 0.45; e.lungeCd = 2.6; } }
       else if (e.lungeCd <= 0 && d < 260) { e.windup = 0.4; }
       else { e.x += nx * sp * 0.55 * dt; e.y += ny * sp * 0.55 * dt; }
-    } else if (e.type === 'archer') { // spitter: holds 240–360px, aims 0.35s, spits at where the crab IS
+    } else if (e.type === 'archer') { // spitter: holds 240–360px, aims 0.35s, spits at the crab
       e.lungeCd -= dt; // reuses the eel's cooldown slot as the spit timer
       if (e.windup > 0) {
         e.windup -= dt;
@@ -119,7 +119,7 @@ export function updateEnemies(state, dt) {
           e.lungeCd = SPIT.cd * state.rng.range(0.85, 1.15);
         }
       } else if (e.lungeCd <= 0 && d < SPIT.range) { e.windup = SPIT.aim; }
-      else { // too far: close in; too close: back off; in band: strafe sideways
+      else { // too far: close in; too close: back off; in band: strafe
         const want = d > 360 ? 1 : d < 240 ? -1 : 0;
         const strafe = want === 0 ? Math.sin(e.wob * 0.7) * 0.8 : 0;
         e.x += (nx * want - ny * strafe) * sp * dt; e.y += (ny * want + nx * strafe) * sp * dt;
@@ -142,7 +142,7 @@ export function updateEnemies(state, dt) {
       e.x += nx * sp * dt; e.y += ny * sp * dt;
     }
   }
-  // Separation: creatures push each other apart, so the swarm stays a swarm.
+  // Separation: creatures push apart, so the swarm stays a swarm.
   const list = state.enemies;
   for (let i = 0; i < list.length; i += 1) {
     for (let j = i + 1; j < list.length; j += 1) {
@@ -157,7 +157,7 @@ export function updateEnemies(state, dt) {
   }
 }
 
-// Starfish split into two minis at the death spot (a split, not a spawn).
+// Starfish split into two minis at the death spot.
 export function onEnemyKilled(state, e, fx) {
   if (e.type === 'starfish') {
     for (let i = 0; i < 2; i += 1) {

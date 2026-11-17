@@ -1,7 +1,7 @@
-// The water: full width, edge to edge, NO frame. Colour changes by band.
+// The water: full width, edge to edge, NO frame. Colour by band.
 import { envForStage, POOL } from '../config.js';
 
-// Ambient particles: fixed tables, positions a pure function of time.
+// Ambient particles: fixed tables, positions a function of time.
 function table(n, seed) {
   const a = []; let s = seed;
   for (let i = 0; i < n; i += 1) {
@@ -15,7 +15,7 @@ const rainDrops = table(60, 7654321);
 const glowDots = table(24, 987654);
 const motes = table(36, 24680); // drifting plankton dots
 
-// Standing seaweed: tapered vertical strands, swaying. Outside the decor rotation.
+// Standing seaweed: tapered vertical strands, swaying.
 function drawWeed(ctx, d, env, t, swA, swS) {
   ctx.save(); ctx.translate(d.x, d.y); ctx.globalAlpha = 0.9;
   ctx.fillStyle = 'rgba(4,26,32,0.35)';
@@ -108,7 +108,7 @@ export function drawPool(ctx, state, t) {
     ctx.beginPath(); ctx.arc(mx, my, m.r * 0.45, 0, Math.PI * 2); ctx.fill();
   }
   ctx.restore();
-  // Decor (seeded RNG): rocks, weed, shells, sand dollars. Weed sways; faster in the storm.
+  // Seeded decor: rocks, weed, shells, sand dollars. Weed sways.
   const swA = env.rain ? 17 : 13, swS = env.rain ? 3 : 1.8;
   for (const d of state.decor) {
     if (d.kind === 'weed') { drawWeed(ctx, d, env, t, swA, swS); continue; }
@@ -125,7 +125,7 @@ export function drawPool(ctx, state, t) {
       ctx.strokeStyle = '#a894c4'; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(0, 0, 4 * d.s, Math.PI, 0); ctx.stroke();
     } else {
-      // A sand dollar, not a starfish (pink would read as an enemy).
+      // A sand dollar, not a starfish (pink reads as an enemy).
       ctx.fillStyle = 'rgba(224,196,143,0.8)';
       ctx.beginPath(); ctx.arc(0, 0, 8 * d.s, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = 'rgba(138,111,77,0.8)';

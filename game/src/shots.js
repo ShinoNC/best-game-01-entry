@@ -1,4 +1,4 @@
-// Screenshot scenes (?shot=start|play|elite|boss|storm|stageclear|end&seed=N).
+// Screenshot scenes (?shot=<scene>&seed=N).
 import { POOL, STAGE_COUNT } from './config.js';
 import { createRandom } from './random.js';
 import { createState } from './state.js';
@@ -6,7 +6,7 @@ import { nextStage, stepWorld } from './world.js';
 import { autoBuy } from './cards.js';
 import { spawnEnemy } from './enemies.js';
 
-// Autopilot: flee threats, chase coins, dash out of crowds.
+// Autopilot: flee threats, chase coins, dash from crowds.
 function autopilotInput(state) {
   const p = state.player;
   let mx = 0, my = 0, fx = 0, fy = 0;
@@ -47,7 +47,7 @@ function autopilotInput(state) {
   };
 }
 
-// Run the sim until pred(state) is true, a run ends, or maxSteps is hit.
+// Run the sim until pred(state), a run ends, or maxSteps is hit.
 function runUntil(state, pred, maxSteps, fx, audio) {
   let steps = 0;
   while (steps < maxSteps) {
@@ -100,11 +100,13 @@ export function stageShot(shot, seed, fx, audio) {
       runUntil(s, (st) => st.phase === 'play' && st.stage === wantStage && st.boss, 120000, fx, audio);
       if (s.phase === 'play' && s.boss && s.stage === wantStage) {
         const b = s.boss;
-        // Frame the heron whole: crab centre-left, bird upper-right.
+        // Frame the heron whole: crab left, bird upper-right.
         s.player.x = 480; s.player.y = 430; s.player.angle = -0.5;
         b.x = 830; b.y = 280;
         b.state = 'dive'; b.diveT = 0.4;
         b.hp = Math.min(b.hp, b.maxHp * 0.7);
+        // Stage a plausible armor remainder: the autopilot burns it all by 30.
+        if (shot === 'storm') s.player.armor = Math.max(s.player.armor, 60);
         for (let i = 0; i < 3; i += 1) {
           const g = spawnEnemy(s, 'gull', false);
           const a = 0.6 + i * 2.0;
@@ -133,7 +135,7 @@ export function stageShot(shot, seed, fx, audio) {
     return s;
   }
   if (shot.startsWith('band')) {
-    // ?shot=band16 — a live play frame at the given stage (water-band check).
+    // ?shot=band16 — a live play frame at the given stage.
     const target = parseInt(shot.slice(4), 10) || 1;
     for (let trySeed = seed; trySeed < seed + 8; trySeed += 1) {
       const s = createStateFromSeed(trySeed); s.phase = 'play';
@@ -145,7 +147,7 @@ export function stageShot(shot, seed, fx, audio) {
     return s;
   }
   if (shot === 'stageclear') {
-    // Stage-clear menu after a later stage (15, then 10, then 3).
+    // Stage-clear menu after stage 15, then 10, then 3.
     for (const wantStage of [15, 10, 3]) {
       let fallback = null;
       for (let trySeed = seed; trySeed < seed + 6; trySeed += 1) {

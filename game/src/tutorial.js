@@ -1,4 +1,4 @@
-// First-30-seconds tutorial: sequential, contextual, non-blocking hints.
+// First-30-seconds tutorial: sequential, contextual hints.
 export const HINTS = [
   { id: 'move', icon: '✥', text: 'WASD / ARROWS — move', show: 5.0,
     cond: (s) => s.time > 0.5 },
@@ -18,17 +18,17 @@ export function updateHints(state, dt) {
     if (h.t <= 0) { h.done[h.idx] = true; h.idx += 1; h.cur = null; h.wait = 0; }
     return;
   }
-  // A banner owns the screen while it shows — a new hint waits its turn.
+  // A banner owns the screen; a new hint waits its turn.
   if (state.bannerT > 0) return;
-  // Hints fire in order; one whose moment never comes is skipped after 8 s,
-  // so a stuck hint never blocks the rest. The LAST hint is never skipped.
+  // Hints fire in order; one whose moment never comes is skipped after 8s,
+  // so a stuck hint never blocks the rest. The LAST is never skipped.
   const def = HINTS[h.idx];
   if (def && def.cond(state)) { h.cur = def; h.t = def.show; h.wait = 0; return; }
   h.wait += dt;
   if (h.idx < HINTS.length - 1 && h.wait > 8) { h.done[h.idx] = true; h.idx += 1; h.wait = 0; }
 }
 
-// How far through the tutorial the player is (0–4), for the playtest report.
+// Tutorial progress (0–4), for the playtest report.
 export function hintsShown(state) {
   return state.hints ? state.hints.done.filter(Boolean).length : 0;
 }

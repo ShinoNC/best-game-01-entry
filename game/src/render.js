@@ -1,4 +1,4 @@
-// The renderer: canvas, letterbox transform, draw layers. Drawing lives in render/.
+// Renderer: canvas, letterbox transform, draw layers.
 import { PAL, VIEW_H, VIEW_W } from './config.js';
 import { weaponStatsFor } from './weapons.js';
 import { drawCrab, drawEnemy } from './render/creatures.js';
@@ -15,7 +15,7 @@ export { MENU_ITEMS, SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE, difficultyLayout, o
 
 export function createRenderer(canvas) {
   const ctx = canvas.getContext('2d');
-  // DPR-aware sizing (capped 2x): crisp on HiDPI, 4px safety inset, letterboxes never crops.
+  // DPR-aware sizing (capped 2x): crisp on HiDPI, letterboxes, never crops.
   let cssW = 0, cssH = 0, dpr = 1;
   function resize() {
     cssW = window.innerWidth; cssH = window.innerHeight;
@@ -26,7 +26,7 @@ export function createRenderer(canvas) {
   addEventListener('orientationchange', resize);
   resize();
 
-  // The letterbox transform in CSS pixels — shared with main.js for mouse mapping.
+  // Letterbox transform in CSS pixels, shared for mouse mapping.
   function viewTransform() {
     const scale = Math.min((cssW - 8) / VIEW_W, (cssH - 8) / VIEW_H);
     return { scale, ox: (cssW - VIEW_W * scale) / 2, oy: (cssH - VIEW_H * scale) / 2, cssW, cssH, dpr };
@@ -35,22 +35,22 @@ export function createRenderer(canvas) {
   return {
     viewTransform,
     render(state, fx, t, alpha = 1, hover = null) {
-      // Re-measure if the window changed since the last resize event.
+      // Re-measure if the window changed since the last resize.
       if (window.innerWidth !== cssW || window.innerHeight !== cssH) resize();
       const { scale, ox, oy } = viewTransform();
       const s = scale * dpr; // device-pixel scale for the transform
       const oxd = ox * dpr, oyd = oy * dpr;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = PAL.deep; ctx.fillRect(0, 0, canvas.width, canvas.height);
-      // L0–L20: the world, with screen shake; positions interpolate between sim steps.
+      // L0–L20: the world, with screen shake and interpolated positions.
       const a = Math.max(0, Math.min(1, alpha));
       const lerp = (prev, cur) => prev + (cur - prev) * a;
       ctx.setTransform(s, 0, 0, s, oxd + fx.shakeX * s, oyd + fx.shakeY * s);
-      // Background life runs on the render clock, not sim time — the water
+      // Background life runs on the render clock, not sim time
       // keeps moving on the title and while paused.
       const rt = state.shotMode ? t : performance.now() / 1000;
       drawPool(ctx, state, rt);
-      // Dive telegraph: a swooper about to dive shows a dashed line to the crab, a ring on the crab, "!" over the bird.
+      // Dive telegraph: dashed line to the crab, ring on the crab, "!" over the bird.
       for (const e of state.enemies) {
         if ((e.type === 'gull' || e.type.endsWith('heron')) && e.state === 'circle' && e.diveT < 0.6) {
           const ix = lerp(e.px ?? e.x, e.x), iy = lerp(e.py ?? e.y, e.y);
@@ -140,7 +140,7 @@ export function createRenderer(canvas) {
           state.weapons.spin > 0 ? weaponStatsFor(state, 'spin') : null);
       }
       fx.draw(ctx);
-      // Hurt vignette: red edges while the crab is flashing from a hit.
+      // Hurt vignette: red edges while the crab flashes.
       if (state.player.flash > 0 && state.phase === 'play') {
         const vg = ctx.createRadialGradient(VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.35, VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.75);
         vg.addColorStop(0, 'rgba(255,45,85,0)');

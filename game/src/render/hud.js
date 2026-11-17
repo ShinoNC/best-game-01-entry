@@ -1,5 +1,5 @@
 // The HUD: two bars framing the play area, boss bar, banner, hint pill.
-// No minimap: the whole pool is on one screen, and spawn ripples mark entries.
+// No minimap: the whole pool is on one screen.
 import { CREATURE_NAMES, DIFFICULTIES, PAL, STAGES, STAGE_COUNT, VIEW_H, VIEW_W, WEAPON_ORDER, bossForStage, nextTypes } from '../config.js';
 import { UPGRADE_DEFS } from '../upgrades.js';
 import { comboMult } from '../world.js';
@@ -16,7 +16,7 @@ export function drawHud(ctx, state, t) {
   ctx.fillStyle = 'rgba(255,255,255,0.14)';
   ctx.fillRect(0, 70, VIEW_W, 2);
   ctx.fillRect(0, VIEW_H - 72, VIEW_W, 2);
-  // Top bar: STAGE + left/next (left, two lines) + SCORE / COINS / COMBO (right).
+  // Top bar: STAGE + left/next (left) + SCORE / COINS / COMBO (right).
   const remaining = (STAGES[state.stage - 1].budget - state.stageSpawned) + state.enemies.length;
   const diffLabel = (DIFFICULTIES[state.difficulty || 'normal'] || DIFFICULTIES.normal).label;
   const nx = state.stage + 1;
@@ -51,12 +51,10 @@ export function drawHud(ctx, state, t) {
     ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(VIEW_W / 2 - 180, 100, 360, 6);
     ctx.fillStyle = '#ff5d73'; ctx.fillRect(VIEW_W / 2 - 180, 100, 360 * (state.boss.hp / state.boss.maxHp), 6);
   }
-  // Bottom bar: weapons (left) | HP (centre) | skills (right). 7 + 7 slots,
-  // 52×52: big icon + 2-letter label with the level (CL3 = claw Lv3). The
-  // 44px icon-only slots were unreadable on a phone; the label carries the
-  // level the old pips showed, so the pips are gone.
+  // Bottom bar: weapons | HP | skills. 7 + 7 slots, 52×52: big icon +
+  // 2-letter label with the level (CL3 = claw Lv3). No pips.
   const WABBR = { claw: 'CL', bow: 'BW', blaster: 'BL', shell: 'SH', spin: 'SP', laser: 'LZ', trident: 'TR' };
-  const SABBR = { claws: 'DM', tempo: 'FR', reach: 'RG', shell: 'HP', legs: 'SW', bubbles: 'BB', magnet: 'MG' };
+  const SABBR = { claws: 'DM', tempo: 'FR', reach: 'RG', shell: 'EN', legs: 'SW', bubbles: 'BB', magnet: 'MG' };
   for (let i = 0; i < WEAPON_ORDER.length; i += 1) {
     const id = WEAPON_ORDER[i];
     const lv = state.weapons[id];
@@ -70,20 +68,29 @@ export function drawHud(ctx, state, t) {
     ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
     txt(ctx, lv > 0 ? WABBR[id] + lv : WABBR[id], bx + 26, by + 47, lv > 0 ? PAL.text : PAL.dim, 1);
   }
-  // HP in the middle: heart + numbers, the bar, the shell tier below.
-  ctx.textAlign = 'left'; ctx.font = 'bold 14px sans-serif';
-  const hpTxt = `${Math.ceil(p.hp)} / ${p.maxHp} HP`;
-  const hx = 640 - ctx.measureText(`♥ ${hpTxt}`).width / 2;
-  txt(ctx, '♥', hx, 668, PAL.hp);
-  txt(ctx, hpTxt, hx + ctx.measureText('♥ ').width, 668, PAL.text);
+  // HP: ONE line — numbers left, shell level right, bar between.
+  // Shell COLOUR still follows shellTier.
+  ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'left';
+  txt(ctx, '♥', 490, 670, PAL.hp, 3);
+  txt(ctx, ` ${Math.ceil(p.hp)}/${p.maxHp}`, 490 + ctx.measureText('♥ ').width, 670, PAL.text, 3);
+  if (state.ups.shell > 0) {
+    ctx.textAlign = 'right';
+    txt(ctx, `Lv${state.ups.shell}`, 790, 670, PAL.gold, 3);
+  }
   ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(490, 677, 300, 14);
   ctx.fillStyle = PAL.hp; ctx.fillRect(490, 677, 300 * (p.hp / p.maxHp), 14);
-  // The shell line: explicit text, not dots — Lv<N> · +<X> HP. Hidden at
-  // Lv0 (nothing bought, nothing to show). The crab's shell COLOUR still
-  // follows shellTier (creatures.js) — that is separate.
-  if (state.ups.shell > 0) {
-    ctx.textAlign = 'center'; ctx.font = 'bold 12px sans-serif';
-    txt(ctx, `SHELL Lv${state.ups.shell} · +${state.ups.shell * 15} HP`, 640, 706, PAL.gold);
+  // Armor: steel shield + pool, centred above the HP bar. Hidden at 0.
+  if (p.armor > 0) {
+    ctx.font = 'bold 14px sans-serif';
+    const num = `${p.armor}`;
+    const x0 = 640 - (ctx.measureText(num).width + 16) / 2;
+    ctx.fillStyle = PAL.armor;
+    ctx.beginPath();
+    ctx.moveTo(x0, 657); ctx.lineTo(x0 + 12, 657); ctx.lineTo(x0 + 12, 665);
+    ctx.quadraticCurveTo(x0 + 12, 671, x0 + 6, 674); ctx.quadraticCurveTo(x0, 671, x0, 665);
+    ctx.closePath(); ctx.fill();
+    ctx.textAlign = 'left';
+    txt(ctx, num, x0 + 16, 670, PAL.armor, 3);
   }
   for (let i = 0; i < UPGRADE_DEFS.length; i += 1) {
     const d = UPGRADE_DEFS[i];

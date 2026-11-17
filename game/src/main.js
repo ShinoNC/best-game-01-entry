@@ -1,4 +1,4 @@
-// TIDEKEEPER — boot and the one loop. Fixed 60 Hz sim, renderer interpolates.
+// Boot and the one loop. Fixed 60 Hz sim, renderer interpolates.
 import { AWARD_KIND, AWARD_TIERS, BEST_KEY, DIFF_ORDER } from './config.js';
 import { createRandom } from './random.js';
 import { createState } from './state.js';
@@ -28,7 +28,7 @@ function readBest() {
   try { return Number.parseInt(window.localStorage.getItem(BEST_KEY) ?? '0', 10) || 0; } catch { return 0; }
 }
 
-// Attach the meta record (bests, feats, last runs) to a state.
+// Attach the meta record (bests, feats, runs) to a state.
 function attachMeta(s) {
   s.meta = readMeta();
   s.best = Math.max(0, ...DIFF_ORDER.map((d) => s.meta.bests[d] || 0), readBest());
@@ -36,7 +36,7 @@ function attachMeta(s) {
   return s;
 }
 
-// Mouse mapping goes through the renderer's view transform.
+// Mouse mapping goes through the view transform.
 function toLogical(mx, my) {
   const { scale, ox, oy } = renderer.viewTransform();
   return { x: (mx - ox) / scale, y: (my - oy) / scale };
@@ -51,7 +51,7 @@ if (shot) {
   state = stageShot(shot, seed, fx, audio);
   attachMeta(state);
   if (state.phase === 'over') state.featsEarned = featsEarnedThisRun(state, state.meta.feats);
-  state.shotMode = true; // staged frames always show the blinking prompts, never a blank blink
+  state.shotMode = true; // staged frames always show the blinking prompts
   renderer.render(state, fx, state.time);
   renderer.render(state, fx, state.time);
   window.__shotReady = true;
@@ -68,7 +68,7 @@ if (shot) {
     if (state.phase === 'stageclear' && state.menuMsgT > 0) state.menuMsgT -= dt;
     if (state.phase === 'play') {
       acc += dt;
-// The harness fast-forward steps the world itself; the loop must not ALSO step.
+// The harness fast-forwards the world itself; the loop must not step too.
       if (!window.__ffActive) {
         let steps = 0;
         while (acc >= STEP && steps < 4) { stepWorld(state, input, STEP, fx, audio); acc -= STEP; steps += 1; if (state.phase !== 'play') break; }
@@ -118,7 +118,7 @@ function doReroll() {
   }
 }
 
-// An open overlay swallows its own input. True while an overlay is open.
+// An open overlay swallows its own input.
 function handleOverlay() {
   if (!state.overlay) return false;
   const L = overlayLayout(state);
@@ -140,7 +140,7 @@ function startRun() {
   status.textContent = 'Clear 30 stages. A heron waits at every fifth stage!';
 }
 
-// The title menu: START opens the difficulty select; the rest open overlays.
+// Title menu: START opens difficulty select; the rest open overlays.
 function activateMenu(item) {
   if (item === 'start') { state.phase = 'difficulty'; status.textContent = 'Choose your tide'; }
   else state.overlay = item;
@@ -242,7 +242,7 @@ function handleMenus() {
   }
 }
 
-// A fresh state for a new run or a return to the title — meta survives.
+// A fresh state for a new run or a return to the title.
 function freshState(phase) {
   const best = state.best;
   const meta = state.meta;

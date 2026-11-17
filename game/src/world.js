@@ -1,5 +1,5 @@
-// The fixed-step simulation: spawn, move, collide, collect, win, lose.
-import { COMBO_MAX, COMBO_WINDOW, ENEMIES, POOL, STAGES, STAGE_COUNT, bossForStage, envForStage } from './config.js';
+// Fixed-step sim: spawn, move, collide, collect, win, lose.
+import { ARMOR_PER_BOSS, COMBO_MAX, COMBO_WINDOW, ENEMIES, POOL, STAGES, STAGE_COUNT, bossForStage, envForStage } from './config.js';
 import { onEnemyKilled, updateEnemies, updateSpawner } from './enemies.js';
 import { hurtPlayer, nearestEnemy, updatePlayer } from './player.js';
 import { drawHand } from './cards.js';
@@ -24,7 +24,7 @@ function dropCoins(state, e) {
       life: 25, bob: state.rng.angle(),
     });
   }
-  // Elites always drop a heal; others 4% of the time (a boss drops a bomb).
+  // Elites always drop a heal; others 4% (a boss drops a bomb).
   if (e.elite || (!e.boss && state.rng.chance(0.04))) state.pickups.push({ x: e.x, y: e.y, kind: 'heal', life: 20 });
   if (e.boss) state.pickups.push({ x: e.x, y: e.y, kind: 'bomb', life: 20 });
 }
@@ -54,7 +54,7 @@ export function nextStage(state, audio) {
   state.spawnT = 0.8;
   state.hand = []; state.rerolls = 0; state.clearBonus = 0; state.menuMsg = ''; state.menuMsgT = 0;
   state.stageTaken = 0; state.combo = 0; state.comboT = 0; // fresh stage, fresh chain
-  // Boss flags are per-stage: reset, or the stage-5 boss suppresses stage 10's.
+  // Boss flags are per-stage: reset each stage.
   state.bossSpawned = false; state.boss = null;
   state.phase = 'play';
   const boss = bossForStage(state.stage);
@@ -62,7 +62,7 @@ export function nextStage(state, audio) {
     state.banner = `⚠ STAGE ${state.stage} — ${boss.name}! ⚠`; state.bannerT = 3;
     if (audio) audio.elite();
   } else if (state.stage % 5 === 1 && state.stage > 1) {
-    // A new water: the last band's boss is beaten, the tide turns.
+    // A new water: the last band's boss is beaten.
     state.banner = `THE TIDE TURNS — ${envForStage(state.stage).name}`; state.bannerT = 3;
   } else {
     state.banner = `STAGE ${state.stage} — THE TIDE RISES`; state.bannerT = 2.5;
@@ -76,7 +76,7 @@ export function stepWorld(state, input, dt, fx, audio) {
   p.px = p.x; p.py = p.y;
   for (const e of state.enemies) { e.px = e.x; e.py = e.y; }
 
-  updateHints(state, dt); // the first-30-seconds tutorial, contextual and once-only
+  updateHints(state, dt); // the first-30-seconds tutorial
 
   if (state.stageClearT > 0) {
     updatePlayer(state, input, dt, fx, audio);
@@ -222,6 +222,7 @@ export function stepWorld(state, input, dt, fx, audio) {
     noteCoins(state);
     if (vacuumedCoins > 0) audio.coin();
     const clearedBoss = bossForStage(state.stage);
+    if (clearedBoss) state.player.armor += ARMOR_PER_BOSS; // boss-clear reward
     if (state.stage >= STAGE_COUNT) {
       state.banner = 'THE HERON KING FALLS — HIGH TIDE!'; state.bannerT = 1.2;
     } else if (clearedBoss) {

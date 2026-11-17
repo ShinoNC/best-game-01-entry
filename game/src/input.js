@@ -1,4 +1,4 @@
-// Keyboard + mouse, read once per frame. WASD move, Space dash, 1-5 buy, R reroll, P/Esc pause, M mute, H help.
+// Keyboard + mouse, read once per frame: WASD, Space dash, 1-5 buy, R, P/Esc, M, H.
 export const ACTION_CONFIRM = 'confirm';
 export const ACTION_PAUSE = 'pause';
 export const ACTION_MUTE = 'mute';
@@ -17,7 +17,7 @@ export function createInput(canvas) {
   const clearAll = () => { keys.clear(); pressed.clear(); };
   addEventListener('keydown', down);
   addEventListener('keyup', up);
-  // Losing focus clears BOTH sets: a held key must not stick across the blur.
+  // Losing focus clears BOTH sets: no held key sticks across the blur.
   addEventListener('blur', clearAll);
   document.addEventListener('visibilitychange', () => { if (document.hidden) clearAll(); });
   canvas.addEventListener('pointermove', (e) => {
@@ -57,7 +57,7 @@ export function createInput(canvas) {
     },
     mouse() { return { x: mouseX, y: mouseY }; },
     click() { const c = mouseClicked; mouseClicked = false; return c; },
-    // A click is an edge event like a keypress: seen by one frame, then discarded.
+    // A click is an edge event: seen by one frame, then discarded.
     endFrame() { pressed.clear(); mouseClicked = false; },
   };
 }

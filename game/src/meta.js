@@ -1,4 +1,4 @@
-// Meta-progression: best per difficulty, feats, last runs, win counts — in localStorage.
+// Meta-progression in localStorage: bests, feats, runs, win counts.
 import { AWARD_TIERS, AWARD_TITLES, DIFF_ORDER, FEATS } from './config.js';
 
 const BESTS_KEY = 'tidekeeper-bests';
@@ -20,7 +20,7 @@ function writeJson(key, value) {
   try { window.localStorage.setItem(key, JSON.stringify(value)); } catch { /* private mode */ }
 }
 
-// The meta record: { bests, feats, runs, wins }. A legacy single best
+// Meta record: { bests, feats, runs, wins }. A legacy single best
 // (pre-v8) is adopted as the NORMAL best once.
 export function readMeta() {
   const bests = readJson(BESTS_KEY, {});
@@ -40,7 +40,7 @@ export function readMeta() {
   };
 }
 
-// Award tier for a win count: 0/1/2 for 3/10/20 wins, -1 below 3.
+// Award tier for a win count: 0/1/2 for 3/10/20, -1 below 3.
 export function awardTier(w) { return w >= 20 ? 2 : w >= 10 ? 1 : w >= 3 ? 0 : -1; }
 // The player's HARD title (highest tier earned) or null.
 export function bestTitle(wins) {
@@ -48,7 +48,7 @@ export function bestTitle(wins) {
   return t < 0 ? null : AWARD_TITLES[t];
 }
 
-// The last difficulty chosen — the difficulty screen opens on it.
+// Last difficulty chosen — the screen opens on it.
 export function readLastDiff() {
   try {
     const d = window.localStorage.getItem(LAST_DIFF_KEY);
@@ -76,8 +76,8 @@ export function featsEarnedThisRun(state, unlocked) {
   return earned;
 }
 
-// Record a finished run: best, feats, win count, history. Returns the new
-// meta record, the feats earned, and the award earned (if the win hit 3/10/20).
+// Record a finished run: best, feats, wins, history. Returns the new
+// meta record, feats earned, and award earned (win hit 3/10/20).
 export function recordRun(state, meta) {
   const diff = state.difficulty || 'normal';
   const bests = { ...meta.bests };
@@ -101,7 +101,7 @@ export function recordRun(state, meta) {
   writeJson(FEATS_KEY, feats);
   writeJson(RUNS_KEY, runs);
   writeJson(WINS_KEY, wins);
-  // Keep the legacy single best in step (the HUD's BEST line reads it).
+  // Keep the legacy single best in step.
   try { window.localStorage.setItem(LEGACY_BEST_KEY, String(Math.max(...DIFF_ORDER.map((d) => bests[d] || 0)))); } catch { /* ignore */ }
   return { meta: next, earned, award };
 }

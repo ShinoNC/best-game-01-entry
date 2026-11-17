@@ -1,4 +1,4 @@
-// The crab: WASD moves, ALL owned weapons auto-fire, Space dashes.
+// The crab: WASD moves, weapons auto-fire, Space dashes.
 import { PAL, PLAYER, POOL, WEAPON_ORDER } from './config.js';
 import { weaponStatsFor } from './weapons.js';
 
@@ -27,12 +27,12 @@ export function nearestEnemy(state, x, y, range) {
   return best;
 }
 
-// One weapon attack, aimed at the nearest creature in range.
+// One weapon attack, at the nearest creature in range.
 function fireWeapon(state, id, aim, target, fx, audio) {
   const p = state.player, w = weaponStatsFor(state, id);
   p.weapCd[id] = w.rate;
   if (id === 'claw') {
-    p.angle = aim; // the crab faces its claw target, so the arc reads clearly
+    p.angle = aim; // the crab faces its claw target
     p.swing = 0.18;
     const inArc = state.enemies
       .map((e) => ({ e, d: Math.hypot(e.x - p.x, e.y - p.y) }))
@@ -154,7 +154,7 @@ export function updatePlayer(state, input, dt, fx, audio) {
     p.x += s.vx * dt; p.y += s.vy * dt;
     p.angle = Math.atan2(mv.y, mv.x);
   }
-  clampToPool(p); // safety net — the slide above already keeps the crab inside
+  clampToPool(p); // safety net — the slide above keeps the crab inside
   if (input.dashHeld() && p.dashCd <= 0 && (mv.x || mv.y)) {
     p.dashCd = PLAYER.dashCd; p.dashT = PLAYER.dashTime;
     p.dashVx = mv.x * PLAYER.dashSpeed; p.dashVy = mv.y * PLAYER.dashSpeed;
@@ -162,7 +162,7 @@ export function updatePlayer(state, input, dt, fx, audio) {
     state.stats.dashes += 1;
     fx.bubbles(p.x, p.y, 8); audio.dash();
   }
-// Auto-attack: EVERY owned weapon fires on its own cooldown.
+// Auto-attack: EVERY weapon fires on its own cooldown.
   const face = nearestEnemy(state, p.x, p.y, 560);
   if (face) p.angle = Math.atan2(face.y - p.y, face.x - p.x);
   for (const id of WEAPON_ORDER) {
@@ -182,7 +182,11 @@ export function hurtPlayer(state, dmg, fx, audio) {
   if (p.iframes > 0 || state.phase !== 'play') return;
   const soaked = Math.min(4, state.ups.shell * 1);
   const real = Math.max(1, dmg - soaked);
-  p.hp -= real; p.iframes = PLAYER.iframes; p.flash = 0.25;
+  // Armor absorbs damage before HP; only boss clears refill it.
+  const absorbed = Math.min(p.armor, real);
+  p.armor -= absorbed;
+  const toHp = real - absorbed;
+  p.hp -= toHp; p.iframes = PLAYER.iframes; p.flash = 0.25;
   state.stats.taken += real;
   state.stageTaken += real; // any damage this stage voids UNTOUCHED for it
   for (const e of state.enemies) {
@@ -192,7 +196,7 @@ export function hurtPlayer(state, dmg, fx, audio) {
       e.x += Math.cos(ka) * 20; e.y += Math.sin(ka) * 20;
     }
   }
-  fx.shake(0.15); fx.text(p.x, p.y - 30, `-${real}`, PAL.hp, true);
+  fx.shake(0.15); fx.text(p.x, p.y - 30, toHp > 0 ? `-${toHp}` : 'BLOCKED', toHp > 0 ? PAL.hp : PAL.armor, true);
   fx.burst(p.x, p.y, PAL.hp, 8, 160);
   audio.hurt();
   if (p.hp <= 0) { p.hp = 0; state.phase = 'over'; state.result = 'lost'; audio.lose(); }
