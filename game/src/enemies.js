@@ -198,12 +198,12 @@ export function updateEnemies(state, dt, fx) {
     } else if (e.type === 'squid' || e.boss) {
       e.diveT -= dt;
       const boss = !!e.boss;
-      if (e.state === 'approach' && d < 200) { e.state = 'circle'; e.diveT = boss ? 0.8 : 1.1; }
+      if (e.state === 'approach' && d < 200) { e.state = 'circle'; e.diveT = boss ? 0.5 : 1.1; }
       if (e.state === 'circle') {
         const t = e.wob * 1.4;
         e.x += (Math.cos(t) * 0.8 + nx * 0.2) * sp * dt;
         e.y += (Math.sin(t) * 0.8 + ny * 0.2) * sp * dt;
-        if (e.diveT <= 0) { e.state = 'dive'; e.diveT = 0.5; }
+        if (e.diveT <= 0) { e.state = 'dive'; e.diveT = boss ? 0.7 : 0.5; }
       } else if (e.state === 'dive') {
         const mul = e.diveMul || 2.1;
         e.x += nx * sp * mul * dt; e.y += ny * sp * mul * dt;

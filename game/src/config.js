@@ -81,20 +81,20 @@ export const BOSS_XP = 25;
 export const SPIT = { speed: 240, r: 6, cd: 3.0, range: 420, aim: 0.35, life: 2.5 };
 export const ELITE = { hpMul: 3.6, dmgMul: 1.5, sizeMul: 1.55, score: 150, coins: 5 };
 export const BOSS_STAGES = [
-  { stage: 5, hp: 1600, dmg: 18, score: 500, coins: 25, summon: 0, summonEvery: 7 },
-  { stage: 10, hp: 2600, dmg: 22, score: 1000, coins: 50, summon: 2, summonEvery: 7 },
-  { stage: 15, hp: 4500, dmg: 26, score: 1500, coins: 75, summon: 2, summonEvery: 6 },
-  { stage: 20, hp: 12000, dmg: 30, score: 2000, coins: 100, summon: 3, summonEvery: 7 },
-  { stage: 25, hp: 19000, dmg: 34, score: 2500, coins: 125, summon: 3, summonEvery: 6 },
-  { stage: 30, hp: 27000, dmg: 38, score: 4000, coins: 200, summon: 3, summonEvery: 5 },
+  { stage: 5, hp: 3200, dmg: 27, score: 500, coins: 25, summon: 0, summonEvery: 7 },
+  { stage: 10, hp: 5200, dmg: 33, score: 1000, coins: 50, summon: 2, summonEvery: 7 },
+  { stage: 15, hp: 9000, dmg: 39, score: 1500, coins: 75, summon: 2, summonEvery: 6 },
+  { stage: 20, hp: 24000, dmg: 45, score: 2000, coins: 100, summon: 3, summonEvery: 7 },
+  { stage: 25, hp: 38000, dmg: 51, score: 2500, coins: 125, summon: 3, summonEvery: 6 },
+  { stage: 30, hp: 54000, dmg: 57, score: 4000, coins: 200, summon: 3, summonEvery: 5 },
 ];
 export const BOSS_TYPES = {
-  turtle: { name: 'THE ANCIENT TURTLE', speed: 118, r: 46, color: '#8ab86a', dark: '#4a7a3e', dive: 2.1, atk: 'shell', atkEvery: 10 },
-  octopus: { name: 'THE EMERALD OCTOPUS', speed: 132, r: 52, color: '#c08497', dark: '#7a4a5e', dive: 2.6, atk: 'ink', atkEvery: 9 },
-  hammerhead: { name: 'THE HAMMERHEAD', speed: 140, r: 54, color: '#7a9bb8', dark: '#4a6a8a', dive: 2.8, atk: 'line', atkEvery: 11 },
-  angler: { name: 'THE ANGLER', speed: 128, r: 58, color: '#6a5a9a', dark: '#3a2d5e', dive: 2.4, atk: 'lure', atkEvery: 8 },
-  stingray: { name: 'THE CRIMSON STINGRAY', speed: 148, r: 60, color: '#c05a5a', dark: '#7a2e2e', dive: 3.0, atk: 'barbs', atkEvery: 7 },
-  kraken: { name: 'THE KRAKEN', speed: 140, r: 66, color: '#9a4a6a', dark: '#5a2438', dive: 2.8, atk: 'slam', atkEvery: 12 },
+  turtle: { name: 'THE ANCIENT TURTLE', speed: 195, r: 46, color: '#8ab86a', dark: '#4a7a3e', dive: 2.4, atk: 'shell', atkEvery: 7 },
+  octopus: { name: 'THE EMERALD OCTOPUS', speed: 205, r: 52, color: '#c08497', dark: '#7a4a5e', dive: 2.8, atk: 'ink', atkEvery: 6 },
+  hammerhead: { name: 'THE HAMMERHEAD', speed: 215, r: 54, color: '#7a9bb8', dark: '#4a6a8a', dive: 3.0, atk: 'line', atkEvery: 8 },
+  angler: { name: 'THE ANGLER', speed: 200, r: 58, color: '#6a5a9a', dark: '#3a2d5e', dive: 2.6, atk: 'lure', atkEvery: 6 },
+  stingray: { name: 'THE CRIMSON STINGRAY', speed: 220, r: 60, color: '#c05a5a', dark: '#7a2e2e', dive: 3.2, atk: 'barbs', atkEvery: 5 },
+  kraken: { name: 'THE KRAKEN', speed: 210, r: 66, color: '#9a4a6a', dark: '#5a2438', dive: 3.0, atk: 'slam', atkEvery: 8 },
 };
 export function bossForStage(stage, order) {
   if (stage % 5 !== 0) return null;
