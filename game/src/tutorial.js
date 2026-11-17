@@ -1,4 +1,3 @@
-// First-30-seconds tutorial: sequential, contextual hints.
 export const HINTS = [
   { id: 'move', icon: '✥', text: 'WASD / ARROWS — move', show: 5.0,
     cond: (s) => s.time > 0.5 },
@@ -18,9 +17,7 @@ export function updateHints(state, dt) {
     if (h.t <= 0) { h.done[h.idx] = true; h.idx += 1; h.cur = null; h.wait = 0; }
     return;
   }
-  // A banner owns the screen; a new hint waits its turn.
   if (state.bannerT > 0) return;
-  // Hints fire in order; missed ones skip after 8s,
 
   const def = HINTS[h.idx];
   if (def && def.cond(state)) { h.cur = def; h.t = def.show; h.wait = 0; return; }
@@ -28,7 +25,6 @@ export function updateHints(state, dt) {
   if (h.idx < HINTS.length - 1 && h.wait > 8) { h.done[h.idx] = true; h.idx += 1; h.wait = 0; }
 }
 
-// Tutorial progress (0–4), for the playtest report.
 export function hintsShown(state) {
   return state.hints ? state.hints.done.filter(Boolean).length : 0;
 }

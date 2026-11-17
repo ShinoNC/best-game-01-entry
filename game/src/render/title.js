@@ -1,4 +1,3 @@
-// Title: vertical menu, then difficulty select, over bright water.
 import { CREATURE_ORDER, DIFFICULTIES, ENEMIES, PAL, VIEW_W } from '../config.js';
 import { bestTitle } from '../meta.js';
 import { drawCrab, drawEnemy } from './creatures.js';
@@ -14,7 +13,6 @@ for (let i = 0; i < 24; i += 1) {
     dep: 0.55 + Math.random() * 0.45 });
 }
 
-// Menu background: light veil + drifting creatures.
 function drawAmbient(ctx, state) {
   ctx.fillStyle = 'rgba(6,42,51,0.28)'; ctx.fillRect(0, 0, VIEW_W, 720);
   const tt = state.shotMode ? 2.5 : performance.now() / 1000;
@@ -30,7 +28,6 @@ function drawAmbient(ctx, state) {
   return tt;
 }
 
-// The crab strolls along the bottom, turning at edges.
 function drawPatrolCrab(ctx, state, tt) {
   const span = 1280 - 2 * 90, cyc = (tt * 50) % (span * 2);
   const cx = 90 + (cyc < span ? cyc : span * 2 - cyc);
@@ -70,7 +67,6 @@ export function drawTitle(ctx, state) {
     tx += ctx.measureText(p.t).width;
   }
   ctx.textAlign = 'center';
-  // An earned HARD title shows under the tagline (gold).
   const title = bestTitle((state.meta || {}).wins || {});
   if (title) {
     ctx.font = 'bold 17px sans-serif';
@@ -87,24 +83,23 @@ export function drawTitle(ctx, state) {
     const isStart = key === 'start';
     if (isStart) bevel(ctx, b.x, b.y, b.w, b.h, 10, '#ffe08a', '#f0b23e', PAL.gold, 2);
     else bevel(ctx, b.x, b.y, b.w, b.h, 10, '#11566b', '#062a33', sel ? PAL.gold : PAL.foam, sel ? 3 : 2);
-    if (sel && !isStart) { // a selected dark button gets a gold glow outline
+    if (sel && !isStart) {
       ctx.strokeStyle = 'rgba(255,209,102,0.45)'; ctx.lineWidth = 2;
       ctx.strokeRect(b.x - 4, b.y - 4, b.w + 8, b.h + 8);
     }
     const ty = b.y + (isStart ? 41 : 30);
     ctx.font = isStart ? 'bold 24px sans-serif' : 'bold 18px sans-serif';
-    if (isStart) { // dark text on gold: a highlight above sells the bevel
+    if (isStart) {
       ctx.fillStyle = 'rgba(255,255,255,0.55)';
       ctx.fillText(label, b.x + b.w / 2, ty - 1);
       ctx.fillStyle = '#062a33';
       ctx.fillText(label, b.x + b.w / 2, ty);
-    } else { // light text on dark: outlined, crisp over the water
+    } else {
       txt(ctx, label, b.x + b.w / 2, ty, PAL.text);
     }
   }
 }
 
-// Difficulty select: three cards + a BACK button.
 export function drawDifficulty(ctx, state) {
   const tt = drawAmbient(ctx, state);
   drawPatrolCrab(ctx, state, tt); // the crab keeps strolling here too

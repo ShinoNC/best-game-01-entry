@@ -1,12 +1,9 @@
-// Layouts shared by game and click handling: FIXED and CENTRED.
 import { DIFF_ORDER, VIEW_W } from '../config.js';
 
 export const SCREEN_TITLE = 'title';
 export const SCREEN_PLAY = 'play';
 export const SCREEN_OVER = 'over';
 
-// Stage-clear menu: 5 × 200×240 cards, 16px gaps, y 240–480
-// REROLL 240×52 + 24 + NEXT 280×52, y 520–572.
 export const MENU_CARD_W = 200, MENU_CARD_H = 240, MENU_CARD_GAP = 16, MENU_CARDS_Y = 240;
 export function stageMenuLayout(state) {
   const hand = state.hand || [];
@@ -21,8 +18,6 @@ export function stageMenuLayout(state) {
   };
 }
 
-// Title: vertical menu stack, centred — gold START then
-// four dark buttons, all 340 wide, 16px gaps. y 272–594.
 export const MENU_BTN_W = 340, MENU_BTN_H = 48, MENU_BTN_GAP = 16;
 export const MENU_ITEMS = ['start', 'help', 'feats', 'history', 'settings'];
 export function titleLayout() {

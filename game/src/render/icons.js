@@ -1,4 +1,3 @@
-// Shared drawn shapes: stars, hearts, weapon icons, pips, coins.
 import { WEAPON_MAX } from '../config.js';
 
 export function star(ctx, x, y, r, rot, color) {
@@ -22,7 +21,6 @@ export function heart(ctx, x, y, r, c) {
 }
 
 // Weapon icons.
-// shell, whirlpool, gun+beam, trident. Unowned = dimmed.
 export function drawWeaponIcon(ctx, id, x, y, s, owned) {
   ctx.save(); ctx.translate(x, y); ctx.scale(s / 40, s / 40);
   if (!owned) ctx.globalAlpha = 0.35;
@@ -79,7 +77,6 @@ export function drawWeaponIcon(ctx, id, x, y, s, owned) {
   ctx.restore();
 }
 
-// Award icons (40-unit box): medal (disc + ribbon), cup (trophy),
 // Crown.
 export function drawAwardIcon(ctx, kind, x, y, s, color, locked) {
   ctx.save(); ctx.translate(x, y); ctx.scale(s / 40, s / 40);
@@ -107,7 +104,6 @@ export function drawAwardIcon(ctx, kind, x, y, s, color, locked) {
   ctx.restore();
 }
 
-// Drawn gold coin: dark rim, gold face, $ inside.
 export function drawCoin(ctx, x, y, r) {
   ctx.save();
   ctx.fillStyle = '#c9962e';

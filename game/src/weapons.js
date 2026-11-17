@@ -63,7 +63,6 @@ export const WEAPONS = {
 };
 
 // Effective stats.
-// crab's upgrade tracks. Sim and HUD both use it, so they agree.
 export function weaponStatsFor(state, id) {
   const lv = state.weapons[id];
   const def = WEAPONS[id].levels[Math.max(0, Math.min(WEAPON_MAX, lv) - 1)];

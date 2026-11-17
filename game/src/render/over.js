@@ -1,4 +1,3 @@
-// End screen: minimal — title, big SCORE, one stage/time line,
 // PLAY AGAIN + MENU buttons.
 import { PAL, STAGE_COUNT, VIEW_H, VIEW_W } from '../config.js';
 import { overLayout } from './layout.js';
@@ -7,7 +6,6 @@ import { bevel, logoText, txt } from './polish.js';
 export function drawOver(ctx, state) {
   const won = state.result === 'won';
   const mins = Math.floor(state.time / 60), secs = Math.floor(state.time % 60);
-  // A light veil — the living water shows through.
   ctx.fillStyle = 'rgba(6,42,51,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   ctx.textAlign = 'center';
   if (won) {

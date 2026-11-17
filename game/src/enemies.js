@@ -1,7 +1,12 @@
-// Enemies: seven behaviours + elites + six bosses.
 import { DIFFICULTIES, ELITE, ENEMIES, POOL, SPIT, STAGES, bossForStage, dmgScale, hpScale, spawnWeights, speedScale } from './config.js';
 
 let nextId = 1;
+
+export function hurtEnemy(state, e, dmg) {
+  if (e.shelled) return false;
+  e.hp -= dmg; e.flash = 0.12; state.stats.damage += dmg;
+  return true;
+}
 
 export function spawnEnemy(state, type, elite, fx) {
   const def = ENEMIES[type];
@@ -9,7 +14,6 @@ export function spawnEnemy(state, type, elite, fx) {
   const s = Math.floor(state.rng.next() * 4), f = state.rng.next(); // one of the four edges, just outside it
   const x = s === 1 ? POOL.x1 + 14 : s === 3 ? POOL.x0 - 14 : POOL.x0 + f * (POOL.x1 - POOL.x0);
   const y = s === 0 ? POOL.y0 - 14 : s === 2 ? POOL.y1 + 14 : POOL.y0 + f * (POOL.y1 - POOL.y0);
-  // Spawn telegraph: a ripple ring at the edge entry point.
   if (fx && fx.ring) fx.ring(Math.max(POOL.x0 + 8, Math.min(POOL.x1 - 8, x)), Math.max(POOL.y0 + 8, Math.min(POOL.y1 - 8, y)));
   const hp = Math.round(def.hp * hpScale(state.stage) * diff.hp * (elite ? ELITE.hpMul : 1));
   const e = {
@@ -27,7 +31,6 @@ export function spawnEnemy(state, type, elite, fx) {
 
 function pickType(state) {
   const w = spawnWeights(state.stage);
-  // The spawn mix tilts the weights — the tide never repeats.
   const mix = state.mix || {};
   let total = 0;
   for (const k in w) { w[k] *= mix[k] || 1; total += w[k]; }
@@ -38,7 +41,7 @@ function pickType(state) {
 
 function spawnBoss(state, fx, audio) {
   state.bossSpawned = true;
-  const def = bossForStage(state.stage);
+  const def = bossForStage(state.stage, state.bossOrder);
   const diff = DIFFICULTIES[state.difficulty || 'normal'];
   const b = spawnEnemy(state, 'squid', true, fx);
   b.type = def.type;
@@ -53,6 +56,8 @@ function spawnBoss(state, fx, audio) {
   b.summonN = def.summon;
   b.summonEvery = def.summonEvery;
   b.summonT = 5;
+  b.atk = def.atk; b.atkEvery = def.atkEvery; b.atkT = 4;
+  b.atkState = null; b.atkPhaseT = 0; b.shelled = false; b.dmgMul = 1; b.slamSpots = null;
   state.boss = b;
   state.banner = `${def.name} ARRIVES!`;
   state.bannerT = 3;
@@ -80,7 +85,6 @@ export function updateSpawner(state, dt, fx, audio) {
     spawnBoss(state, fx, audio);
   }
   // A summoning boss calls squids.
-  // Called squids fly in from the edges — never pop by the boss.
   if (state.boss && state.boss.summonN > 0) {
     state.boss.summonT -= dt;
     if (state.boss.summonT <= 0 && state.enemies.length < 55) {
@@ -94,24 +98,88 @@ export function updateSpawner(state, dt, fx, audio) {
   }
 }
 
-export function updateEnemies(state, dt) {
+const ATK_TELE = { shell: 0.5, ink: 0.5, line: 0.8, lure: 0.6, barbs: 0.5, slam: 0.9 };
+function bossAttack(state, e, dt, nx, ny, fx) {
+  if (!e.atkState) {
+    e.atkT -= dt;
+    if (e.atkT > 0) return false;
+    e.atkState = 'tele'; e.atkPhaseT = ATK_TELE[e.atk]; e.state = 'approach';
+    e.atkDx = nx; e.atkDy = ny;
+    if (e.atk === 'slam') {
+      const p = state.player;
+      e.slamSpots = [{ x: p.x, y: p.y, r: 55 }, { x: p.x + 90, y: p.y - 40, r: 55 }, { x: p.x - 80, y: p.y + 50, r: 55 }];
+    }
+    return true;
+  }
+  e.atkPhaseT -= dt;
+  if (e.atkState === 'tele') {
+    if (e.atkPhaseT > 0) return true;
+    const base = Math.atan2(e.atkDy, e.atkDx);
+    const fan = (offs, speed, r, life, color) => {
+      for (const off of offs) {
+        const a = base + off;
+        state.spits.push({ x: e.x + Math.cos(a) * e.r, y: e.y + Math.sin(a) * e.r,
+          vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, dmg: e.dmg, r, life, color });
+      }
+    };
+    if (e.atk === 'ink') fan([-0.35, 0, 0.35], 200, 10, 2.5, '#5e2a84');
+    else if (e.atk === 'barbs') fan([-0.5, -0.25, 0, 0.25, 0.5], 330, 4, 2, '#ff5d5d');
+    else if (e.atk === 'slam') {
+      for (const s of e.slamSpots) {
+        state.spits.push({ x: s.x, y: s.y, vx: 0, vy: 0, dmg: e.dmg, r: s.r, life: 0.15, color: '#ff5d73' });
+        if (fx) { fx.burst(s.x, s.y, '#ff5d73', 10, 160); if (fx.ring) fx.ring(s.x, s.y); }
+      }
+      e.slamSpots = null;
+      if (fx) fx.shake(0.4);
+    } else if (e.atk === 'shell') { e.atkState = 'retreat'; e.atkPhaseT = 2; e.shelled = true; return true; }
+    else if (e.atk === 'line') { e.atkState = 'charge'; e.atkPhaseT = 1.2; e.dmgMul = 1.5; return true; }
+    else if (e.atk === 'lure') { e.atkState = 'dash'; e.atkPhaseT = 0.6; return true; }
+    e.atkState = null; e.atkT = e.atkEvery;
+    return true;
+  }
+  if (e.atkState === 'retreat') {
+    if (e.atkPhaseT <= 0) { e.shelled = false; e.atkState = 'charge'; e.atkPhaseT = 1; }
+    return true;
+  }
+  if (e.atkState === 'charge' || e.atkState === 'dash') {
+    const mul = e.atk === 'line' ? 4 : e.atk === 'lure' ? 3.5 : 3;
+    e.x += e.atkDx * e.speed * mul * dt; e.y += e.atkDy * e.speed * mul * dt;
+    const hitEdge = e.x <= POOL.x0 + e.r || e.x >= POOL.x1 - e.r || e.y <= POOL.y0 + e.r || e.y >= POOL.y1 - e.r;
+    e.x = Math.max(POOL.x0 + e.r, Math.min(POOL.x1 - e.r, e.x));
+    e.y = Math.max(POOL.y0 + e.r, Math.min(POOL.y1 - e.r, e.y));
+    if (e.atkPhaseT <= 0 || hitEdge) {
+      e.dmgMul = 1;
+      if (e.atk === 'lure') { e.atkState = 'stun'; e.atkPhaseT = 0.5; }
+      else { e.atkState = null; e.atkT = e.atkEvery; }
+    }
+    return true;
+  }
+  if (e.atkState === 'stun') {
+    if (e.atkPhaseT <= 0) { e.atkState = null; e.atkT = e.atkEvery; }
+    return true;
+  }
+  return false;
+}
+
+export function updateEnemies(state, dt, fx) {
   const p = state.player;
   for (const e of state.enemies) {
     e.hitCd -= dt; e.flash -= dt; e.wob += dt;
     const dx = p.x - e.x, dy = p.y - e.y, d = Math.hypot(dx, dy) || 1;
     const nx = dx / d, ny = dy / d;
     let sp = e.speed;
+    if (e.boss && bossAttack(state, e, dt, nx, ny, fx)) continue;
     if (e.type === 'jelly') { // drifters wobble sideways as they close in
       const w = Math.sin(e.wob * 2.2) * 0.6;
       e.x += (nx - ny * w) * sp * dt; e.y += (ny + nx * w) * sp * dt;
-    } else if (e.type === 'eel') { // lunges: 0.4s wind-up (still + flashing), then burst
+    } else if (e.type === 'eel') {
       e.lungeCd -= dt;
       if (e.lungeT > 0) { e.lungeT -= dt; e.x += nx * sp * 2.4 * dt; e.y += ny * sp * 2.4 * dt; }
       else if (e.windup > 0) { e.windup -= dt; if (e.windup <= 0) { e.lungeT = 0.45; e.lungeCd = 2.6; } }
       else if (e.lungeCd <= 0 && d < 260) { e.windup = 0.4; }
       else { e.x += nx * sp * 0.55 * dt; e.y += ny * sp * 0.55 * dt; }
-    } else if (e.type === 'archer') { // spitter: holds 240–360px, aims 0.35s, spits at the crab
-      e.lungeCd -= dt; // reuses the eel's cooldown slot as the spit timer
+    } else if (e.type === 'archer') {
+      e.lungeCd -= dt;
       if (e.windup > 0) {
         e.windup -= dt;
         if (e.windup <= 0) {
@@ -119,7 +187,7 @@ export function updateEnemies(state, dt) {
           e.lungeCd = SPIT.cd * state.rng.range(0.85, 1.15);
         }
       } else if (e.lungeCd <= 0 && d < SPIT.range) { e.windup = SPIT.aim; }
-      else { // too far: close in; too close: back off; in band: strafe
+      else {
         const want = d > 360 ? 1 : d < 240 ? -1 : 0;
         const strafe = want === 0 ? Math.sin(e.wob * 0.7) * 0.8 : 0;
         e.x += (nx * want - ny * strafe) * sp * dt; e.y += (ny * want + nx * strafe) * sp * dt;
@@ -142,7 +210,6 @@ export function updateEnemies(state, dt) {
       e.x += nx * sp * dt; e.y += ny * sp * dt;
     }
   }
-  // Separation: creatures push apart, so the swarm stays a swarm.
   const list = state.enemies;
   for (let i = 0; i < list.length; i += 1) {
     for (let j = i + 1; j < list.length; j += 1) {
@@ -157,7 +224,6 @@ export function updateEnemies(state, dt) {
   }
 }
 
-// Starfish split into two minis at the death spot.
 export function onEnemyKilled(state, e, fx) {
   if (e.type === 'starfish') {
     for (let i = 0; i < 2; i += 1) {

@@ -1,4 +1,3 @@
-// Drawing helpers every screen shares: beveled buttons,
 // gradient logo text, lifted panels.
 export function rr(ctx, x, y, w, h, r) {
   ctx.beginPath();
@@ -10,7 +9,6 @@ export function rr(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-// Beveled button: drop shadow, gradient fill, light top edge.
 export function bevel(ctx, x, y, w, h, r, top, bottom, border, bw = 2) {
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 5;
@@ -25,7 +23,6 @@ export function bevel(ctx, x, y, w, h, r, top, bottom, border, bw = 2) {
   rr(ctx, x + 2, y + 1, w - 4, Math.min(10, h / 3), r - 1); ctx.fill();
 }
 
-// Logo text: gradient fill + dark outline + drop shadow.
 // Reads as a game logo, not flat text.
 export function logoText(ctx, text, x, y, font, top, bottom, outline, lw = 3) {
   ctx.save();
@@ -41,7 +38,6 @@ export function logoText(ctx, text, x, y, font, top, bottom, outline, lw = 3) {
   ctx.restore();
 }
 
-// Outlined text: dark stroke behind the fill so text stays crisp
 // over bright shallows and dark storm alike.
 export function txt(ctx, text, x, y, fill, lw = 2) {
   ctx.save();
@@ -51,7 +47,6 @@ export function txt(ctx, text, x, y, fill, lw = 2) {
   ctx.restore();
 }
 
-// Lift a panel: soft shadow + faint top highlight.
 export function lift(ctx, x, y, w, h, r = 4) {
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 6;

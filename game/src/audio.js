@@ -1,8 +1,5 @@
-// WebAudio SFX + soft music loop, synthesised. M toggles mute.
 export function createAudio() {
   let ctx = null, muted = false;
-  // Music: a barely-there pad — two soft chords, one every 6s,
-  // slow fades, sine only, very quiet: felt, not heard.
   const CHORDS = [[131, 165, 196], [110, 131, 165]];
   let musicOn = false, musicStep = 0;
   function pad(freqs) {
@@ -51,7 +48,7 @@ export function createAudio() {
     src.connect(f).connect(g).connect(c.destination); src.start();
   }
   return {
-    unlock() { ensure(); startMusic(); }, // game start = the one user gesture: audio + music on
+    unlock() { ensure(); startMusic(); },
     toggleMute() { muted = !muted; return muted; },
     get muted() { return muted; },
     toggleMusic() { musicOn = !musicOn; if (musicOn) musicTick(); return musicOn; },

@@ -73,7 +73,7 @@ export function drawCrab(ctx, p, t, clawStats, spinStats) {
     ctx.beginPath(); ctx.arc(0, 0, 30 + prog * (spinStats.range - 30), 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
-  if (p.laser > 0) { // the beam: soft glow + thick magenta body + white-hot core
+  if (p.laser > 0) {
     const a = (p.laser / 0.15) * 0.75;
     const dirs = p.laserBeams >= 2 ? [1, -1] : [1];
     ctx.save(); ctx.lineCap = 'round';
@@ -157,7 +157,7 @@ export function drawEnemy(ctx, e, t, ang) {
       ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(0, 0, e.r * 1.9, 0, Math.PI * 2); ctx.stroke();
     }
-  } else if (e.type === 'archer') { // spitter: tube snout + dark band; droplet swells while aiming
+  } else if (e.type === 'archer') {
     ctx.rotate(face);
     ctx.fillStyle = flash ? '#fff' : e.color;
     ctx.beginPath(); ctx.ellipse(0, 0, e.r, e.r * 0.62, 0, 0, Math.PI * 2); ctx.fill();
@@ -167,7 +167,7 @@ export function drawEnemy(ctx, e, t, ang) {
     ctx.fillStyle = flash ? '#fff' : e.color;
     ctx.beginPath(); ctx.moveTo(e.r * 0.7, -3); ctx.lineTo(e.r * 1.6, -1.5); ctx.lineTo(e.r * 1.6, 1.5); ctx.lineTo(e.r * 0.7, 3); ctx.closePath(); ctx.fill();
     ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(e.r * 0.45, -3, 2, 0, Math.PI * 2); ctx.fill();
-    if (e.windup > 0) { // aiming: droplet swells at the snout tip — move now
+    if (e.windup > 0) {
       ctx.fillStyle = 'rgba(191,232,224,0.95)';
       ctx.beginPath(); ctx.arc(e.r * 1.85, 0, 3 + (0.35 - e.windup) * 12, 0, Math.PI * 2); ctx.fill();
     }
@@ -193,10 +193,18 @@ export function drawEnemy(ctx, e, t, ang) {
     const s = e.r / 26, R = e.r;
     const col = flash ? '#fff' : e.color, drk = flash ? '#fff' : e.dark;
     const eye = (x, y, r) => { ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); };
+    const tele = e.atkState === 'tele';
+    const puff = tele && e.atk === 'ink' ? 1.2 : 1; // the octopus swells before spraying ink
     ctx.rotate(face);
-    ctx.scale(s, s);
+    ctx.scale(s * puff, s * puff);
     ctx.fillStyle = col;
-    if (e.type === 'turtle') { // domed shell, flippers, head out front
+    if (e.type === 'turtle' && e.shelled) {
+      ctx.beginPath(); ctx.ellipse(0, 0, R * 0.95, R * 0.7, 0, 0, Math.PI * 2); ctx.fill();
+      ol(ctx, drk, 2);
+      ctx.strokeStyle = drk; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, R * 0.5, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, 0, R * 0.25, 0, Math.PI * 2); ctx.stroke();
+    } else if (e.type === 'turtle') { // domed shell, flippers, head out front
       const pad = Math.sin(t * 4 + e.wob) * 0.25;
       for (const [fx, fy, fa] of [[0.5, -0.7, -0.6], [0.5, 0.7, 0.6], [-0.6, -0.6, 0.6], [-0.6, 0.6, -0.6]]) {
         ctx.save(); ctx.translate(R * fx, R * fy); ctx.rotate(fa + pad);
@@ -250,15 +258,17 @@ export function drawEnemy(ctx, e, t, ang) {
       }
       ctx.strokeStyle = drk; ctx.lineWidth = 3; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(-R * 0.1, -R * 0.6); ctx.quadraticCurveTo(R * 0.3, -R * 1.1, R * 0.7, -R * 0.9); ctx.stroke();
+      const lure = tele && e.atk === 'lure' ? 1.9 : 1; // the lure flares before the dash
       ctx.fillStyle = 'rgba(255,220,100,0.35)';
-      ctx.beginPath(); ctx.arc(R * 0.7, -R * 0.9, R * 0.22, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(R * 0.7, -R * 0.9, R * 0.22 * lure, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#ffe66d';
-      ctx.beginPath(); ctx.arc(R * 0.7, -R * 0.9, R * 0.1, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(R * 0.7, -R * 0.9, R * 0.1 * lure, 0, Math.PI * 2); ctx.fill();
       eye(R * 0.45, -R * 0.3, 4);
     } else if (e.type === 'stingray') { // wide wings + whip tail
+      const lift = tele && e.atk === 'barbs' ? -R * 0.55 : 0; // the tail rises before firing barbs
       ctx.strokeStyle = drk; ctx.lineWidth = 3; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(-R * 0.8, 0);
-      ctx.quadraticCurveTo(-R * 1.6, Math.sin(t * 2 + e.wob) * R * 0.2, -R * 2.2, Math.sin(t * 2 + e.wob + 1) * R * 0.3);
+      ctx.quadraticCurveTo(-R * 1.6, Math.sin(t * 2 + e.wob) * R * 0.2 + lift, -R * 2.2, Math.sin(t * 2 + e.wob + 1) * R * 0.3 + lift * 1.4);
       ctx.stroke();
       ctx.fillStyle = col;
       ctx.beginPath();

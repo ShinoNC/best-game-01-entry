@@ -1,7 +1,5 @@
-// The water: full width, edge to edge, NO frame. Colour by band.
 import { envForStage, POOL } from '../config.js';
 
-// Ambient particles: fixed tables, positions a function of time.
 function table(n, seed) {
   const a = []; let s = seed;
   for (let i = 0; i < n; i += 1) {
@@ -15,7 +13,6 @@ const rainDrops = table(60, 7654321);
 const glowDots = table(24, 987654);
 const motes = table(36, 24680); // drifting plankton dots
 
-// Standing seaweed: tapered vertical strands, swaying.
 function drawWeed(ctx, d, env, t, swA, swS) {
   ctx.save(); ctx.translate(d.x, d.y); ctx.globalAlpha = 0.9;
   ctx.fillStyle = 'rgba(4,26,32,0.35)';
@@ -39,7 +36,7 @@ function drawWeed(ctx, d, env, t, swA, swS) {
 let poolGrad = null, gradEnv = '';
 
 export function drawPool(ctx, state, t) {
-  const env = envForStage(state.stage);
+  const env = envForStage(state.stage, state.envs);
   // Menu screens: open water, no frame.
   const menu = state.phase === 'title' || state.phase === 'difficulty';
   const x0 = menu ? 0 : POOL.x0, y0 = menu ? 0 : POOL.y0;
@@ -51,7 +48,6 @@ export function drawPool(ctx, state, t) {
     gradEnv = key;
   }
   ctx.fillStyle = poolGrad; ctx.fillRect(x0, y0, pw, ph);
-// Light rays: strong in SHALLOWS, gone in STORM.
   ctx.save();
   ctx.beginPath(); ctx.rect(x0, y0, pw, ph); ctx.clip();
   if (env.rays > 0) {
@@ -85,7 +81,6 @@ export function drawPool(ctx, state, t) {
       ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 6, y + 16); ctx.stroke();
     }
   }
-  // Bioluminescence (STORM TIDE): twinkling plankton.
   if (env.glow) {
     for (const b of glowDots) {
       const x = x0 + b.fx * pw, y = y0 + b.fy * ph;
@@ -108,7 +103,6 @@ export function drawPool(ctx, state, t) {
     ctx.beginPath(); ctx.arc(mx, my, m.r * 0.45, 0, Math.PI * 2); ctx.fill();
   }
   ctx.restore();
-  // Seeded decor: rocks, weed, shells, sand dollars. Weed sways.
   const swA = env.rain ? 17 : 13, swS = env.rain ? 3 : 1.8;
   for (const d of state.decor) {
     if (d.kind === 'weed') { drawWeed(ctx, d, env, t, swA, swS); continue; }
@@ -125,7 +119,6 @@ export function drawPool(ctx, state, t) {
       ctx.strokeStyle = '#a894c4'; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(0, 0, 4 * d.s, Math.PI, 0); ctx.stroke();
     } else {
-      // A sand dollar, not a starfish (pink reads as an enemy).
       ctx.fillStyle = 'rgba(224,196,143,0.8)';
       ctx.beginPath(); ctx.arc(0, 0, 8 * d.s, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = 'rgba(138,111,77,0.8)';

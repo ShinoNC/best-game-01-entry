@@ -1,9 +1,8 @@
-// Stage-clear menu cards: ONE menu, 5 cards with coin prices.
 import { SHOP, WEAPON_MAX, WEAPON_ORDER } from './config.js';
 import { WEAPONS } from './weapons.js';
 import { SKILL_PRICES, UPGRADE_DEFS, applyUpgrade } from './upgrades.js';
 
-export const REROLL_COST = 10; // flat per reroll — cheap to use, dear enough to matter
+export const REROLL_COST = 10;
 export const HAND_SIZE = 5;
 export const REPAIR_PRICE = 25;
 export const REPAIR_HEAL = 40;
@@ -11,7 +10,6 @@ export const REPAIR_HEAL = 40;
 function shopEntry(wid) { return SHOP.find((s) => s.id === wid); }
 
 // One stats line per card.
-// (1.14x base × SHARPER CLAWS) — what the buyer gets.
 export function cardStats(card, state) {
   if (card.kind === 'repair') return `+${REPAIR_HEAL} HP`;
   if (card.kind === 'skill') {
@@ -37,7 +35,6 @@ export function cardStats(card, state) {
   return s;
 }
 
-// Drawable now: unowned weapons (3), level-ups (2), skills (1).
 export function cardPool(state) {
   const pool = [];
   for (const wid of WEAPON_ORDER) {
@@ -73,7 +70,6 @@ function repairCard(n) {
     weight: 0, bought: false };
 }
 
-// Draw a fresh 5-card hand: weighted sample, no replacement.
 export function drawHand(state) {
   const pool = cardPool(state);
   const weighted = [];
@@ -95,7 +91,6 @@ export function drawHand(state) {
   return hand;
 }
 
-// Buy one card. Returns 'ok', 'poor' or 'bought'.
 export function buyCard(state, card) {
   if (!card || card.bought) return 'bought';
   if (state.coins < card.price) return 'poor';
@@ -112,7 +107,6 @@ export function buyCard(state, card) {
   return 'ok';
 }
 
-// Reroll the hand for 10 coins. False when unaffordable.
 export function rerollHand(state) {
   if (state.coins < REROLL_COST) return false;
   state.coins -= REROLL_COST;

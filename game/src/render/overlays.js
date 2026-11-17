@@ -1,5 +1,4 @@
-// Title overlays: HOW TO PLAY, ACHIEVEMENTS, HISTORY, SETTINGS.
-import { ARMOR_PER_BOSS, AWARD_KIND, AWARD_TIERS, BOSSES, CREATURE_NAMES, CREATURE_ORDER, DIFFICULTIES, DIFF_ORDER, ENEMIES, PAL, VIEW_W } from '../config.js';
+import { ARMOR_PER_BOSS, AWARD_KIND, AWARD_TIERS, BOSS_STAGES, CREATURE_NAMES, CREATURE_ORDER, DIFFICULTIES, DIFF_ORDER, ENEMIES, PAL, VIEW_W, bossForStage } from '../config.js';
 import { bestTitle } from '../meta.js';
 import { drawEnemy } from './creatures.js';
 import { drawAwardIcon } from './icons.js';
@@ -42,7 +41,6 @@ function dimHint(ctx, y) {
   txt(ctx, 'H / ESC / click outside also closes', VIEW_W / 2, y, PAL.dim);
 }
 
-// One line per creature: what it does, in ≤5 words.
 const BEHAVIOUR = {
   guppy: 'swims straight at you', jelly: 'drifts in, wobbling', urchin: 'slow and tough',
   starfish: 'splits into two minis', eel: 'winds up, then lunges', squid: 'circles, then dives',
@@ -63,7 +61,6 @@ export function drawHelp(ctx, state) {
   const right = ['1–5 — buy a card', 'R — reroll the hand', 'ENTER — continue', 'M — mute · H — help'];
   left.forEach((s, i) => txt(ctx, s, 180, 156 + i * 22, PAL.text));
   right.forEach((s, i) => txt(ctx, s, 700, 156 + i * 22, PAL.text));
-  // Bestiary: icon + name + one behaviour line each.
   ctx.font = 'bold 15px sans-serif';
   txt(ctx, 'THE POOL — 7 CREATURES', 180, 252, PAL.gold);
   for (let i = 0; i < CREATURE_ORDER.length; i += 1) {
@@ -81,8 +78,8 @@ export function drawHelp(ctx, state) {
   // Sea beasts.
   ctx.font = 'bold 15px sans-serif';
   txt(ctx, 'SEA BEASTS — ONE EVERY 5 STAGES', 180, 356, PAL.gold);
-  for (let i = 0; i < BOSSES.length; i += 1) {
-    const b = BOSSES[i];
+  for (let i = 0; i < BOSS_STAGES.length; i += 1) {
+    const b = bossForStage(BOSS_STAGES[i].stage, state.bossOrder);
     const hx = 180 + i * 158;
     ctx.fillStyle = b.color;
     ctx.beginPath(); ctx.arc(hx + 5, 380, 5, 0, Math.PI * 2); ctx.fill();
@@ -116,7 +113,6 @@ export function drawAchievements(ctx, state) {
     ctx.font = 'bold 16px sans-serif';
     txt(ctx, `YOUR TITLE: ${title}`, VIEW_W / 2, 142, PAL.gold);
   }
-  // 9 awards, centred, big icons in a snug frame.
   for (let d = 0; d < DIFF_ORDER.length; d += 1) {
     const diff = DIFF_ORDER[d];
     const w = wins[diff] || 0;

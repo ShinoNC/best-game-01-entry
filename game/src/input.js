@@ -43,7 +43,6 @@ export function createInput(canvas) {
       return { x, y };
     },
     dashHeld() { return keys.has(' ') || keys.has('shift'); },
-    // Edge-triggered: true once per physical press.
     wasPressed(...names) { return names.some((n) => pressed.has(n)); },
     confirmPressed() { return this.wasPressed('enter', ' '); },
     pausePressed() { return this.wasPressed('p', 'escape'); },
@@ -57,7 +56,6 @@ export function createInput(canvas) {
     },
     mouse() { return { x: mouseX, y: mouseY }; },
     click() { const c = mouseClicked; mouseClicked = false; return c; },
-    // A click is an edge event: seen by one frame, then discarded.
     endFrame() { pressed.clear(); mouseClicked = false; },
   };
 }

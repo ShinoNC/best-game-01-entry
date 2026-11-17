@@ -20,8 +20,6 @@ function writeJson(key, value) {
   try { window.localStorage.setItem(key, JSON.stringify(value)); } catch { /* private mode */ }
 }
 
-// Meta record: { bests, feats, runs, wins }. A legacy single best
-// (pre-v8) is adopted as the NORMAL best once.
 export function readMeta() {
   const bests = readJson(BESTS_KEY, {});
   for (const d of DIFF_ORDER) if (typeof bests[d] !== 'number') bests[d] = 0;
@@ -40,15 +38,12 @@ export function readMeta() {
   };
 }
 
-// Award tier for a win count: 0/1/2 for 3/10/20, -1 below 3.
 export function awardTier(w) { return w >= 20 ? 2 : w >= 10 ? 1 : w >= 3 ? 0 : -1; }
-// The player's HARD title (highest tier earned) or null.
 export function bestTitle(wins) {
   const t = awardTier((wins || {}).hard || 0);
   return t < 0 ? null : AWARD_TITLES[t];
 }
 
-// Last difficulty chosen — the screen opens on it.
 export function readLastDiff() {
   try {
     const d = window.localStorage.getItem(LAST_DIFF_KEY);
@@ -60,7 +55,6 @@ export function writeLastDiff(d) {
 }
 
 // Which feats did THIS run earn?
-// it never writes; the caller writes the union.
 export function featsEarnedThisRun(state, unlocked) {
   const have = new Set(unlocked);
   const won = state.result === 'won';
@@ -77,7 +71,6 @@ export function featsEarnedThisRun(state, unlocked) {
 }
 
 // Record a finished run.
-// meta record, feats earned, and award earned (win hit 3/10/20).
 export function recordRun(state, meta) {
   const diff = state.difficulty || 'normal';
   const bests = { ...meta.bests };

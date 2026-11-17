@@ -1,5 +1,4 @@
 // The HUD.
-// No minimap: the whole pool is on one screen.
 import { CREATURE_NAMES, DIFFICULTIES, PAL, STAGES, STAGE_COUNT, VIEW_H, VIEW_W, WEAPON_ORDER, bossForStage, nextTypes } from '../config.js';
 import { UPGRADE_DEFS } from '../upgrades.js';
 import { comboMult } from '../world.js';
@@ -20,7 +19,7 @@ export function drawHud(ctx, state, t) {
   const remaining = (STAGES[state.stage - 1].budget - state.stageSpawned) + state.enemies.length;
   const diffLabel = (DIFFICULTIES[state.difficulty || 'normal'] || DIFFICULTIES.normal).label;
   const nx = state.stage + 1;
-  const nextBoss = nx <= STAGE_COUNT ? bossForStage(nx) : null;
+  const nextBoss = nx <= STAGE_COUNT ? bossForStage(nx, state.bossOrder) : null;
   const nextBit = nextBoss ? `⚠ ${nextBoss.name}`
     : nx > STAGE_COUNT ? 'FINAL STAGE'
     : nextTypes(nx).map((k) => CREATURE_NAMES[k]).join(' + ');
@@ -36,7 +35,7 @@ export function drawHud(ctx, state, t) {
   txt(ctx, coinTxt, 1252, 60, PAL.gold);
   drawCoin(ctx, 1252 - ctx.measureText(coinTxt).width - 13, 55, 8);
   if (STAGES[state.stage - 1].boss && !state.bossSpawned && !state.boss) {
-    const boss = bossForStage(state.stage);
+    const boss = bossForStage(state.stage, state.bossOrder);
     const warn = `⚠ ${boss ? boss.name : 'THE BEAST'} IS COMING ⚠`;
     ctx.font = 'bold 17px sans-serif';
     const ww = ctx.measureText(warn).width + 40;
@@ -52,7 +51,6 @@ export function drawHud(ctx, state, t) {
     ctx.fillStyle = '#ff5d73'; ctx.fillRect(VIEW_W / 2 - 180, 100, 360 * (state.boss.hp / state.boss.maxHp), 6);
   }
   // Bottom bar: weapons | HP | skills.
-  // 2-letter label with the level (CL3 = claw Lv3). No pips.
   const WABBR = { claw: 'CL', bow: 'BW', blaster: 'BL', shell: 'SH', spin: 'SP', laser: 'LZ', trident: 'TR' };
   const SABBR = { claws: 'DM', tempo: 'FR', reach: 'RG', shell: 'EN', legs: 'SW', bubbles: 'BB', magnet: 'MG' };
   for (let i = 0; i < WEAPON_ORDER.length; i += 1) {
@@ -68,7 +66,6 @@ export function drawHud(ctx, state, t) {
     ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
     txt(ctx, lv > 0 ? WABBR[id] + lv : WABBR[id], bx + 26, by + 47, lv > 0 ? PAL.text : PAL.dim, 1);
   }
-  // HP: ONE line — numbers left, shell level right, bar between.
   // Shell COLOUR still follows shellTier.
   ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'left';
   txt(ctx, '♥', 490, 670, PAL.hp, 3);
@@ -95,7 +92,7 @@ export function drawHud(ctx, state, t) {
   for (let i = 0; i < UPGRADE_DEFS.length; i += 1) {
     const d = UPGRADE_DEFS[i];
     const lv = state.ups[d.id];
-    const bx = 864 + i * 56, by = 658; // 7 chips: 864–1252, mirroring the weapons (28–416)
+    const bx = 864 + i * 56, by = 658;
     ctx.fillStyle = lv > 0 ? 'rgba(127,224,195,0.22)' : 'rgba(255,255,255,0.08)';
     ctx.fillRect(bx, by, 52, 52);
     ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(bx, by, 52, 2);

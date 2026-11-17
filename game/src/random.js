@@ -1,4 +1,3 @@
-// Seeded RNG (mulberry32). Same seed = same game.
 export function createRandom(seed) {
   let a = seed >>> 0;
   return {

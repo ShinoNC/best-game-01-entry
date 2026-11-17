@@ -6,7 +6,6 @@ import { nextStage, stepWorld } from './world.js';
 import { autoBuy } from './cards.js';
 import { spawnEnemy } from './enemies.js';
 
-// Autopilot: flee threats, chase coins, dash from crowds.
 function autopilotInput(state) {
   const p = state.player;
   let mx = 0, my = 0, fx = 0, fy = 0;
@@ -23,6 +22,12 @@ function autopilotInput(state) {
       const sgn = (px * (p.x - s.x) + py * (p.y - s.y)) >= 0 ? 1 : -1;
       const w = 3 / (d * d + 40);
       fx += px * sgn * w; fy += py * sgn * w;
+    }
+  }
+  if (state.boss && state.boss.slamSpots) {
+    for (const c of state.boss.slamSpots) {
+      const d = Math.hypot(c.x - p.x, c.y - p.y);
+      if (d < c.r + 70) { near += 1; const w = 4 / (d * d + 40); fx += (p.x - c.x) * w; fy += (p.y - c.y) * w; }
     }
   }
   if (near > 0 && (fx || fy)) {
@@ -47,7 +52,6 @@ function autopilotInput(state) {
   };
 }
 
-// Run the sim until pred(state), a run ends, or maxSteps is hit.
 function runUntil(state, pred, maxSteps, fx, audio) {
   let steps = 0;
   while (steps < maxSteps) {
@@ -100,13 +104,20 @@ export function stageShot(shot, seed, fx, audio) {
       runUntil(s, (st) => st.phase === 'play' && st.stage === wantStage && st.boss, 120000, fx, audio);
       if (s.phase === 'play' && s.boss && s.stage === wantStage) {
         const b = s.boss;
-        // Frame the boss whole: crab left, beast upper-right.
         s.player.x = 480; s.player.y = 430; s.player.angle = -0.5;
         b.x = 830; b.y = 280;
         b.state = 'dive'; b.diveT = 0.4;
         b.hp = Math.min(b.hp, b.maxHp * 0.7);
 
-        if (shot === 'storm') s.player.armor = Math.max(s.player.armor, 60);
+        if (shot === 'storm') {
+          s.player.armor = Math.max(s.player.armor, 60);
+          b.atkState = 'tele'; b.atkPhaseT = 0.9;
+          b.slamSpots = [
+            { x: s.player.x + 70, y: s.player.y - 40, r: 55 },
+            { x: s.player.x - 80, y: s.player.y + 55, r: 55 },
+            { x: s.player.x + 140, y: s.player.y + 90, r: 55 },
+          ];
+        }
         for (let i = 0; i < 3; i += 1) {
           const g = spawnEnemy(s, 'squid', false);
           const a = 0.6 + i * 2.0;
@@ -135,7 +146,6 @@ export function stageShot(shot, seed, fx, audio) {
     return s;
   }
   if (shot.startsWith('band')) {
-    // ?shot=band16 — a live play frame at the given stage.
     const target = parseInt(shot.slice(4), 10) || 1;
     for (let trySeed = seed; trySeed < seed + 8; trySeed += 1) {
       const s = createStateFromSeed(trySeed); s.phase = 'play';
@@ -147,7 +157,6 @@ export function stageShot(shot, seed, fx, audio) {
     return s;
   }
   if (shot === 'stageclear') {
-    // Stage-clear menu after stage 15, then 10, then 3.
     for (const wantStage of [15, 10, 3]) {
       let fallback = null;
       for (let trySeed = seed; trySeed < seed + 6; trySeed += 1) {

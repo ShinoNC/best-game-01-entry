@@ -1,4 +1,3 @@
-// Particles, floating numbers, screen shake — the juice.
 const TEXT_TOP = 200, TEXT_BOTTOM = 560, TEXT_LEFT = 40, TEXT_RIGHT = 1240;
 const TEXT_MAX = 5;
 export function createParticles() {
@@ -7,7 +6,6 @@ export function createParticles() {
   return {
     add(p) { if (parts.length < 420) parts.push(p); },
     text(x, y, str, color, big, key) {
-      // Same-target merge: a live number absorbs the new hit.
       if (key != null) {
         const old = texts.find((t) => t.key === key);
         if (old) {
@@ -17,14 +15,12 @@ export function createParticles() {
           return;
         }
       }
-      // At the cap, a small number evicts the oldest small one.
       if (texts.length >= TEXT_MAX) {
         const i = texts.findIndex((t) => !t.big);
         if (i >= 0) texts.splice(i, 1);
         else if (!big) return;
         else texts.shift();
       }
-      // Each number gets its own floor + x nudge — no overlaps.
       const floor = TEXT_TOP + Math.floor(Math.random() * 3) * 13;
       const cy = Math.max(floor, Math.min(TEXT_BOTTOM, y));
       const moved = cy !== y;
@@ -46,7 +42,6 @@ export function createParticles() {
       }
     },
     bubbles(x, y, n) { this.burst(x, y, '#bfe8e0', n, 50, 'bubble'); },
-    // Spawn telegraph: an expanding ripple ring at the edge.
     ring(x, y) { this.add({ x, y, vx: 0, vy: 0, life: 0.45, max: 0.45, r: 6, color: '#bfe8e0', kind: 'ring' }); },
     shake(amount) { trauma = Math.min(1, trauma + amount); },
     get shakeX() { return trauma * trauma * 14 * (Math.random() * 2 - 1); },

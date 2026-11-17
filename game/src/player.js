@@ -1,6 +1,6 @@
-// The crab: WASD moves, weapons auto-fire, Space dashes.
 import { PAL, PLAYER, POOL, WEAPON_ORDER } from './config.js';
 import { weaponStatsFor } from './weapons.js';
+import { hurtEnemy } from './enemies.js';
 
 function clampToPool(p) {
   const r = p.radius || 0;
@@ -8,7 +8,6 @@ function clampToPool(p) {
   p.y = Math.max(POOL.y0 + r, Math.min(POOL.y1 - r, p.y));
 }
 
-// Slide along the pool edge instead of sticking to it.
 function slideAtEdge(p, vx, vy) {
   const r = p.radius || 0, m = 6;
   if (p.x - r - POOL.x0 < m && vx < 0) vx = 0;
@@ -27,7 +26,6 @@ export function nearestEnemy(state, x, y, range) {
   return best;
 }
 
-// One weapon attack, at the nearest creature in range.
 function fireWeapon(state, id, aim, target, fx, audio) {
   const p = state.player, w = weaponStatsFor(state, id);
   p.weapCd[id] = w.rate;
@@ -48,7 +46,7 @@ function fireWeapon(state, id, aim, target, fx, audio) {
     let hits = 0;
     for (const { e } of inArc) {
       const dmg = Math.round(w.dmg * (0.9 + state.rng.next() * 0.2));
-      e.hp -= dmg; e.flash = 0.12; state.stats.damage += dmg;
+      if (!hurtEnemy(state, e, dmg)) continue;
       const ka = Math.atan2(e.y - p.y, e.x - p.x);
       const kb = e.elite ? 8 : 26;
       e.x += Math.cos(ka) * kb; e.y += Math.sin(ka) * kb;
@@ -76,20 +74,20 @@ function fireWeapon(state, id, aim, target, fx, audio) {
         const dx = (e.x - p.x) * dir, dy = Math.abs(e.y - p.y);
         if (dx < 0 || dx > w.range + e.r || dy > 16 + e.r) continue;
         const dmg = Math.round(w.dmg * (0.9 + state.rng.next() * 0.2));
-        e.hp -= dmg; e.flash = 0.12; state.stats.damage += dmg;
+        if (!hurtEnemy(state, e, dmg)) continue;
         if (hits < 4) fx.text(e.x, e.y - e.r - 6, `${dmg}`, '#ff2e88', false, e.id);
         hits += 1;
       }
     }
     fx.burst(p.x, p.y, '#ff2e88', 6, 120);
     audio.bolt();
-  } else if (id === 'shell') { // homing: one shell that steers toward its target
+  } else if (id === 'shell') {
     state.bolts.push({ x: p.x + Math.cos(aim) * 28, y: p.y + Math.sin(aim) * 28,
       vx: Math.cos(aim) * w.speed, vy: Math.sin(aim) * w.speed, dmg: Math.round(w.dmg),
       pierce: 0, r: 9, life: 2.0, kind: 'homing', target, turn: w.turn, speed: w.speed });
     fx.bubbles(p.x + Math.cos(aim) * 28, p.y + Math.sin(aim) * 28, 2);
     audio.bolt();
-  } else if (id === 'spin') { // ring blast: everything nearby takes damage + a shove
+  } else if (id === 'spin') {
     p.spin = 0.3;
     fx.burst(p.x, p.y, '#7fe0c3', 18, 260, 'bubble');
     let hits = 0;
@@ -97,7 +95,7 @@ function fireWeapon(state, id, aim, target, fx, audio) {
       const d = Math.hypot(e.x - p.x, e.y - p.y);
       if (d > w.range + e.r) continue;
       const dmg = Math.round(w.dmg * (0.9 + state.rng.next() * 0.2));
-      e.hp -= dmg; e.flash = 0.12; state.stats.damage += dmg;
+      if (!hurtEnemy(state, e, dmg)) continue;
       const ka = Math.atan2(e.y - p.y, e.x - p.x);
       const kb = e.elite ? 8 : 30;
       e.x += Math.cos(ka) * kb; e.y += Math.sin(ka) * kb;
@@ -144,7 +142,7 @@ export function updatePlayer(state, input, dt, fx, audio) {
   p.dashCd -= dt; p.iframes -= dt; p.flash -= dt; p.swing -= dt; p.spin -= dt; p.laser -= dt;
   const mv = input.move();
   p.moving = (mv.x || mv.y || p.dashT > 0) ? 1 : Math.max(0, p.moving - dt * 5); // drives the walk cycle
-  if (p.dashT > 0) { // dashing: keep the burst direction, ignore steering
+  if (p.dashT > 0) {
     p.dashT -= dt;
     const s = slideAtEdge(p, p.dashVx, p.dashVy);
     p.x += s.vx * dt; p.y += s.vy * dt;
@@ -154,7 +152,7 @@ export function updatePlayer(state, input, dt, fx, audio) {
     p.x += s.vx * dt; p.y += s.vy * dt;
     p.angle = Math.atan2(mv.y, mv.x);
   }
-  clampToPool(p); // safety net — the slide above keeps the crab inside
+  clampToPool(p);
   if (input.dashHeld() && p.dashCd <= 0 && (mv.x || mv.y)) {
     p.dashCd = PLAYER.dashCd; p.dashT = PLAYER.dashTime;
     p.dashVx = mv.x * PLAYER.dashSpeed; p.dashVy = mv.y * PLAYER.dashSpeed;
@@ -162,7 +160,6 @@ export function updatePlayer(state, input, dt, fx, audio) {
     state.stats.dashes += 1;
     fx.bubbles(p.x, p.y, 8); audio.dash();
   }
-// Auto-attack: EVERY weapon fires on its own cooldown.
   const face = nearestEnemy(state, p.x, p.y, 560);
   if (face) p.angle = Math.atan2(face.y - p.y, face.x - p.x);
   for (const id of WEAPON_ORDER) {
@@ -182,13 +179,12 @@ export function hurtPlayer(state, dmg, fx, audio) {
   if (p.iframes > 0 || state.phase !== 'play') return;
   const soaked = Math.min(4, state.ups.shell * 1);
   const real = Math.max(1, dmg - soaked);
-  // Armor absorbs damage before HP; only boss clears refill it.
   const absorbed = Math.min(p.armor, real);
   p.armor -= absorbed;
   const toHp = real - absorbed;
   p.hp -= toHp; p.iframes = PLAYER.iframes; p.flash = 0.25;
   state.stats.taken += real;
-  state.stageTaken += real; // any damage this stage voids UNTOUCHED for it
+  state.stageTaken += real;
   for (const e of state.enemies) {
     const d = Math.hypot(e.x - p.x, e.y - p.y);
     if (d < 60 + e.r) {

@@ -1,4 +1,3 @@
-// The stage-clear menu: the ONLY menu, only between stages.
 import { ARMOR_PER_BOSS, PAL, VIEW_H, VIEW_W, bossForStage, envForStage } from '../config.js';
 import { REROLL_COST, cardStats } from '../cards.js';
 import { drawCoin, drawPips, drawWeaponIcon } from './icons.js';
@@ -9,14 +8,12 @@ import { bevel, rr, txt } from './polish.js';
 const KIND_COLOR = { skill: '#7fe0c3', wup: '#ffd166', weapon: '#c9a7ff', repair: '#ff8fb0' };
 
 // One menu card.
-// red price + dimmed; bought = green border + ✓.
 function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   const poor = !card.bought && state.coins < card.price;
   const kc = KIND_COLOR[card.kind] || PAL.dim;
   ctx.save();
   if (card.bought) ctx.globalAlpha = 0.6;
   else if (poor) ctx.globalAlpha = 0.85;
-  // Lifted card: shadow, gradient, top highlight.
   ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 5;
   const cg = ctx.createLinearGradient(0, y, 0, y + h);
   cg.addColorStop(0, '#116072'); cg.addColorStop(1, '#0b4256');
@@ -28,7 +25,7 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   ctx.strokeStyle = card.bought ? '#7fe0c3' : hovered ? PAL.gold : poor ? 'rgba(159,196,189,0.4)' : kc;
   ctx.lineWidth = hovered && !card.bought ? 4 : 2;
   rr(ctx, x, y, w, h, 8); ctx.stroke();
-  if (hovered && !card.bought) { // a second frame: the focus ring reads at a glance
+  if (hovered && !card.bought) {
     ctx.strokeStyle = 'rgba(255,209,102,0.45)'; ctx.lineWidth = 2;
     ctx.strokeRect(x - 3, y - 3, w + 6, h + 6);
   }
@@ -44,16 +41,13 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
     ctx.font = 'bold 40px sans-serif';
     txt(ctx, card.icon, x + w / 2, y + 78, card.kind === 'repair' ? '#ff8fb0' : PAL.xp);
   }
-  // The name shrinks if it would overflow the card.
   ctx.font = 'bold 18px sans-serif';
   if (ctx.measureText(card.name).width > w - 20) ctx.font = 'bold 15px sans-serif';
   txt(ctx, card.name, x + w / 2, y + 108, PAL.text);
-  // Stats line: what the card does. Shrinks if overflowing.
   const st = cardStats(card, state);
   ctx.font = 'bold 13px sans-serif';
   if (ctx.measureText(st).width > w - 16) ctx.font = 'bold 12px sans-serif';
   txt(ctx, st, x + w / 2, y + 134, PAL.foam);
-  // Level pips: filled owned, gold = the level this card adds.
   if (card.kind !== 'repair') drawPips(ctx, x + w / 2, y + 158, card.lv, !card.bought);
   // Price (coin + number) or the bought stamp.
   if (card.bought) {
@@ -71,13 +65,12 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
 
 export function drawStageMenu(ctx, state, hover) {
   const L = stageMenuLayout(state);
-  // The shop has its own opaque dark background.
   const bg = ctx.createRadialGradient(640, 360, 100, 640, 360, 750);
   bg.addColorStop(0, '#0a3542'); bg.addColorStop(1, '#041f28');
   ctx.fillStyle = bg; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   ctx.textAlign = 'center';
   ctx.font = 'bold 36px sans-serif';
-  txt(ctx, `★ STAGE ${state.stage} CLEAR — ${envForStage(state.stage).name} ★`, VIEW_W / 2, 130, PAL.gold, 3);
+  txt(ctx, `★ STAGE ${state.stage} CLEAR — ${envForStage(state.stage, state.envs).name} ★`, VIEW_W / 2, 130, PAL.gold, 3);
   ctx.font = 'bold 28px sans-serif';
   const ct = `${state.coins} COINS`;
   const cw = ctx.measureText(ct).width;
@@ -120,7 +113,6 @@ export function drawStageMenu(ctx, state, hover) {
   bevel(ctx, n.x, n.y, n.w, n.h, 8, nHover ? '#ffe08a' : '#ffd97a', '#f0b23e', PAL.gold, 2);
   ctx.font = 'bold 20px sans-serif';
   txt(ctx, `NEXT STAGE ${state.stage + 1} →  [Enter]`, n.x + n.w / 2, n.y + 33, '#062a33');
-  // Error message under the buttons, while it lasts.
   if (state.menuMsgT > 0 && state.menuMsg) {
     ctx.font = 'bold 16px sans-serif';
     txt(ctx, state.menuMsg, VIEW_W / 2, 600, '#ff8fa0');

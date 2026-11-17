@@ -1,22 +1,53 @@
 // Balance numbers.
 export const STAGE_COUNT = 30; // a full run is ~20–25 minutes
-export const ARMOR_PER_BOSS = 30; // boss-clear reward: absorbs damage before HP, never heals
+export const ARMOR_PER_BOSS = 30;
 export const VIEW_W = 1280;
 export const VIEW_H = 720;
-export const POOL = { x0: 0, y0: 72, x1: 1280, y1: 648, cx: 640, cy: 360, rx: 640, ry: 288 }; // full width between the HUD bars; rx/ry = half-extents
+export const POOL = { x0: 0, y0: 72, x1: 1280, y1: 648, cx: 640, cy: 360, rx: 640, ry: 288 };
 export const BEST_KEY = 'tidekeeper-best';
 
-// Environments: six water colours, 5 stages each.
-// Bosses at 5/10/15/20/25/30, the last stage of each band.
-export const ENVS = [
-  { name: 'SHALLOWS', water: '#35b8dc', water2: '#8fe8f8', sand: '#c9a86a', weed: '#2f8f6b', weed2: '#4fae7d', rays: 1, rain: 0, glow: 0 },
-  { name: 'EMERALD LAGOON', water: '#0e7a4e', water2: '#3fc98a', sand: '#b0a05e', weed: '#0a5a36', weed2: '#1f7a4a', rays: 0.8, rain: 0, glow: 0 },
-  { name: 'OPEN SEA', water: '#1a2f7e', water2: '#3563d8', sand: '#8a7a5a', weed: '#b04a7a', weed2: '#d97aa8', rays: 0.4, rain: 0, glow: 0 },
-  { name: 'TWILIGHT DEEP', water: '#2a1a5e', water2: '#4d33a0', sand: '#6a5a7a', weed: '#5a3a8a', weed2: '#7a55a8', rays: 0.15, rain: 0, glow: 0 },
-  { name: 'RED TIDE', water: '#5e1220', water2: '#8f2a3d', sand: '#7a5a4a', weed: '#5a2230', weed2: '#7a3040', rays: 0, rain: 0, glow: 0 },
-  { name: 'STORM TIDE', water: '#0a0f24', water2: '#1a2547', sand: '#4a5060', weed: '#1a2a4a', weed2: '#2a3a5a', rays: 0, rain: 1, glow: 1 },
+export const ENV_BANDS = [
+  { rays: 1, rain: 0, glow: 0 }, { rays: 0.8, rain: 0, glow: 0 }, { rays: 0.4, rain: 0, glow: 0 },
+  { rays: 0.15, rain: 0, glow: 0 }, { rays: 0, rain: 0, glow: 0 }, { rays: 0, rain: 1, glow: 1 },
 ];
-export function envForStage(stage) { return ENVS[Math.min(5, Math.floor((stage - 1) / 5))]; }
+export const ENV_PALETTES = [
+  [['SHALLOWS', '#35b8dc', '#8fe8f8', '#c9a86a', '#2f8f6b', '#4fae7d'],
+   ['SUNLIT LAGOON', '#2ec4d8', '#a5f0e8', '#d8c08a', '#3a9a6a', '#5fc48a'],
+   ['TURQUOISE BAY', '#1fb6c9', '#7fe8f0', '#cbb27a', '#2a8a7a', '#4fb89a'],
+   ['PALE REEF', '#4fc8e0', '#b8f0f8', '#d8c89a', '#4a9a7a', '#6fc49a'],
+   ['SEA MIST', '#5ec8d8', '#c0ecf0', '#d0c090', '#3f8f7a', '#5fb89a']],
+  [['EMERALD LAGOON', '#0e7a4e', '#3fc98a', '#b0a05e', '#0a5a36', '#1f7a4a'],
+   ['JADE WATERS', '#0a7a5e', '#2ec98a', '#a8a05e', '#085a3e', '#1a7a55'],
+   ['TEAL GARDEN', '#0a6a6a', '#2eb8a8', '#a89a5e', '#0a4a4a', '#1a7a6a'],
+   ['KELP FOREST', '#1a6a3a', '#4ab86a', '#9a8a4e', '#0a4a26', '#2a7a3a'],
+   ['MINT SHOALS', '#1a8a6a', '#5ed8a8', '#b8a86a', '#0a5a44', '#2a8a5a']],
+  [['OPEN SEA', '#1a2f7e', '#3563d8', '#8a7a5a', '#b04a7a', '#d97aa8'],
+   ['ROYAL DEEP', '#1a2470', '#3a58c8', '#7a6a4a', '#9a4a6a', '#c06a98'],
+   ['STEEL BLUE', '#24406a', '#4a74b8', '#8a7a5a', '#6a5a8a', '#8a7aa8'],
+   ['SAPPHIRE TIDE', '#16286e', '#2a4ec0', '#7a6a5a', '#a03a7a', '#c85a98'],
+   ['SLATE WATERS', '#2a3a5e', '#4a6a98', '#8a7a6a', '#5a4a7a', '#7a6a98']],
+  [['TWILIGHT DEEP', '#2a1a5e', '#4d33a0', '#6a5a7a', '#5a3a8a', '#7a55a8'],
+   ['VIOLET ABYSS', '#2a1650', '#4a2a90', '#5a4a6a', '#4a2a7a', '#6a44a0'],
+   ['DUSK PLUM', '#331a4e', '#5a3088', '#6a5a6a', '#5a2a6a', '#7a44a0'],
+   ['MAGENTA DEEP', '#3a1650', '#6a2a80', '#6a4a6a', '#6a2a7a', '#8a44a0'],
+   ['INDIGO DUSK', '#1e1a58', '#3a3088', '#5a5a7a', '#4a3a8a', '#6a55a0']],
+  [['RED TIDE', '#5e1220', '#8f2a3d', '#7a5a4a', '#5a2230', '#7a3040'],
+   ['CRIMSON DEEP', '#6a1226', '#9a2a44', '#7a4a4a', '#5a1a2a', '#8a2a40'],
+   ['MAROON ABYSS', '#4e1220', '#7a2436', '#6a4a4a', '#4a1a28', '#6a2836'],
+   ['BLOOD REEF', '#6e1a1a', '#a03030', '#8a5a4a', '#5a2222', '#7a3232'],
+   ['EMBER TIDE', '#5e2010', '#8f3a20', '#8a6a4a', '#5a2a1a', '#7a3a28']],
+  [['STORM TIDE', '#0a0f24', '#1a2547', '#4a5060', '#1a2a4a', '#2a3a5a'],
+   ['ABYSSAL DARK', '#060a1e', '#141c38', '#3a4050', '#101c38', '#1e2a48'],
+   ['MIDNIGHT DEEP', '#0a0a22', '#1e1e4a', '#3a3a50', '#141428', '#242448'],
+   ['BLACK WATER', '#050810', '#101828', '#30343e', '#0c1424', '#1a2438'],
+   ['VOID TIDE', '#0d0818', '#241838', '#3e3448', '#180f2e', '#2a1e48']],
+];
+export function envForStage(stage, envs) {
+  const band = Math.min(5, Math.floor((stage - 1) / 5));
+  const p = (envs && envs[band]) || ENV_PALETTES[band][0];
+  const fx = ENV_BANDS[band];
+  return { name: p[0], water: p[1], water2: p[2], sand: p[3], weed: p[4], weed2: p[5], rays: fx.rays, rain: fx.rain, glow: fx.glow };
+}
 
 export const PAL = {
   deep: '#062a33', water: '#12708a', water2: '#1d8aa6', sand: '#c9a86a',
@@ -42,15 +73,30 @@ export const ENEMIES = {
 };
 export const SPIT = { speed: 240, r: 6, cd: 3.0, range: 420, aim: 0.35, life: 2.5 }; // archerfish water jet
 export const ELITE = { hpMul: 3.6, dmgMul: 1.5, sizeMul: 1.55, score: 150, coins: 5 };
-export const BOSSES = [
-  { stage: 5, type: 'turtle', name: 'THE ANCIENT TURTLE', hp: 1600, speed: 118, dmg: 18, r: 46, score: 500, coins: 25, color: '#8ab86a', dark: '#4a7a3e', dive: 2.1, summon: 0, summonEvery: 7 },
-  { stage: 10, type: 'octopus', name: 'THE EMERALD OCTOPUS', hp: 2600, speed: 132, dmg: 22, r: 52, score: 1000, coins: 50, color: '#c08497', dark: '#7a4a5e', dive: 2.6, summon: 2, summonEvery: 7 },
-  { stage: 15, type: 'hammerhead', name: 'THE HAMMERHEAD', hp: 4500, speed: 140, dmg: 26, r: 54, score: 1500, coins: 75, color: '#7a9bb8', dark: '#4a6a8a', dive: 2.8, summon: 2, summonEvery: 6 },
-  { stage: 20, type: 'angler', name: 'THE ANGLER', hp: 12000, speed: 128, dmg: 30, r: 58, score: 2000, coins: 100, color: '#6a5a9a', dark: '#3a2d5e', dive: 2.4, summon: 3, summonEvery: 7 },
-  { stage: 25, type: 'stingray', name: 'THE CRIMSON STINGRAY', hp: 19000, speed: 148, dmg: 34, r: 60, score: 2500, coins: 125, color: '#c05a5a', dark: '#7a2e2e', dive: 3.0, summon: 3, summonEvery: 6 },
-  { stage: 30, type: 'kraken', name: 'THE KRAKEN', hp: 27000, speed: 140, dmg: 38, r: 66, score: 4000, coins: 200, color: '#9a4a6a', dark: '#5a2438', dive: 2.8, summon: 3, summonEvery: 5 },
+export const BOSS_STAGES = [
+  { stage: 5, hp: 1600, dmg: 18, score: 500, coins: 25, summon: 0, summonEvery: 7 },
+  { stage: 10, hp: 2600, dmg: 22, score: 1000, coins: 50, summon: 2, summonEvery: 7 },
+  { stage: 15, hp: 4500, dmg: 26, score: 1500, coins: 75, summon: 2, summonEvery: 6 },
+  { stage: 20, hp: 12000, dmg: 30, score: 2000, coins: 100, summon: 3, summonEvery: 7 },
+  { stage: 25, hp: 19000, dmg: 34, score: 2500, coins: 125, summon: 3, summonEvery: 6 },
+  { stage: 30, hp: 27000, dmg: 38, score: 4000, coins: 200, summon: 3, summonEvery: 5 },
 ];
-export function bossForStage(stage) { return BOSSES.find((b) => b.stage === stage) || null; }
+export const BOSS_TYPES = {
+  turtle: { name: 'THE ANCIENT TURTLE', speed: 118, r: 46, color: '#8ab86a', dark: '#4a7a3e', dive: 2.1, atk: 'shell', atkEvery: 10 },
+  octopus: { name: 'THE EMERALD OCTOPUS', speed: 132, r: 52, color: '#c08497', dark: '#7a4a5e', dive: 2.6, atk: 'ink', atkEvery: 9 },
+  hammerhead: { name: 'THE HAMMERHEAD', speed: 140, r: 54, color: '#7a9bb8', dark: '#4a6a8a', dive: 2.8, atk: 'line', atkEvery: 11 },
+  angler: { name: 'THE ANGLER', speed: 128, r: 58, color: '#6a5a9a', dark: '#3a2d5e', dive: 2.4, atk: 'lure', atkEvery: 8 },
+  stingray: { name: 'THE CRIMSON STINGRAY', speed: 148, r: 60, color: '#c05a5a', dark: '#7a2e2e', dive: 3.0, atk: 'barbs', atkEvery: 7 },
+  kraken: { name: 'THE KRAKEN', speed: 140, r: 66, color: '#9a4a6a', dark: '#5a2438', dive: 2.8, atk: 'slam', atkEvery: 12 },
+};
+export const BOSS_ORDER_DEFAULT = ['turtle', 'octopus', 'hammerhead', 'angler', 'stingray'];
+export function bossForStage(stage, order) {
+  const st = BOSS_STAGES.find((b) => b.stage === stage);
+  if (!st) return null;
+  const type = stage === 30 ? 'kraken' : (order || BOSS_ORDER_DEFAULT)[stage / 5 - 1];
+  const cr = BOSS_TYPES[type];
+  return { stage, type, name: cr.name, hp: st.hp, speed: cr.speed, dmg: st.dmg, r: cr.r, score: st.score, coins: st.coins, color: cr.color, dark: cr.dark, dive: cr.dive, summon: st.summon, summonEvery: st.summonEvery, atk: cr.atk, atkEvery: cr.atkEvery };
+}
 
 export const STAGES = Array.from({ length: STAGE_COUNT }, (_, i) => {
   const stage = i + 1;

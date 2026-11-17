@@ -1,5 +1,4 @@
-// Renderer: canvas, letterbox transform, draw layers.
-import { PAL, VIEW_H, VIEW_W } from './config.js';
+import { PAL, POOL, VIEW_H, VIEW_W } from './config.js';
 import { weaponStatsFor } from './weapons.js';
 import { drawCrab, drawEnemy } from './render/creatures.js';
 import { drawPool } from './render/pool.js';
@@ -26,7 +25,6 @@ export function createRenderer(canvas) {
   addEventListener('orientationchange', resize);
   resize();
 
-  // Letterbox transform in CSS pixels, shared for mouse mapping.
   function viewTransform() {
     const scale = Math.min((cssW - 8) / VIEW_W, (cssH - 8) / VIEW_H);
     return { scale, ox: (cssW - VIEW_W * scale) / 2, oy: (cssH - VIEW_H * scale) / 2, cssW, cssH, dpr };
@@ -35,7 +33,6 @@ export function createRenderer(canvas) {
   return {
     viewTransform,
     render(state, fx, t, alpha = 1, hover = null) {
-      // Re-measure if the window changed since the last resize.
       if (window.innerWidth !== cssW || window.innerHeight !== cssH) resize();
       const { scale, ox, oy } = viewTransform();
       const s = scale * dpr; // device-pixel scale for the transform
@@ -50,6 +47,30 @@ export function createRenderer(canvas) {
 
       const rt = state.shotMode ? t : performance.now() / 1000;
       drawPool(ctx, state, rt);
+      const bb = state.boss;
+      if (bb && bb.atkState === 'tele' && bb.atk === 'line') {
+        let L = 900;
+        if (bb.atkDx > 0) L = Math.min(L, (POOL.x1 - bb.x) / bb.atkDx);
+        if (bb.atkDx < 0) L = Math.min(L, (POOL.x0 - bb.x) / bb.atkDx);
+        if (bb.atkDy > 0) L = Math.min(L, (POOL.y1 - bb.y) / bb.atkDy);
+        if (bb.atkDy < 0) L = Math.min(L, (POOL.y0 - bb.y) / bb.atkDy);
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255,93,115,0.85)'; ctx.lineWidth = 3; ctx.setLineDash([10, 8]);
+        ctx.beginPath(); ctx.moveTo(bb.x, bb.y);
+        ctx.lineTo(bb.x + bb.atkDx * L, bb.y + bb.atkDy * L); ctx.stroke();
+        ctx.restore();
+      }
+      if (bb && bb.atkState === 'tele' && bb.atk === 'slam' && bb.slamSpots) {
+        const pulse = 0.5 + 0.5 * Math.sin(t * 12);
+        for (const s of bb.slamSpots) {
+          ctx.save();
+          ctx.fillStyle = `rgba(255,93,115,${0.15 + 0.1 * pulse})`;
+          ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = `rgba(255,93,115,${0.6 + 0.3 * pulse})`; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.stroke();
+          ctx.restore();
+        }
+      }
       // Dive telegraph: dashed line, ring, "!".
       for (const e of state.enemies) {
         if ((e.type === 'squid' || e.boss) && e.state === 'circle' && e.diveT < 0.6) {
@@ -93,7 +114,7 @@ export function createRenderer(canvas) {
         }
       }
       for (const b of state.bolts) {
-        if (b.kind === 'arrow') { // bow arrow: a long bubble dart with a bright head
+        if (b.kind === 'arrow') {
           const ba = Math.atan2(b.vy, b.vx);
           ctx.strokeStyle = 'rgba(191,232,224,0.8)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
           ctx.beginPath(); ctx.moveTo(b.x - Math.cos(ba) * 16, b.y - Math.sin(ba) * 16);
@@ -102,7 +123,7 @@ export function createRenderer(canvas) {
         } else if (b.kind === 'pellet') { // blaster pellet: a violet ink blob
           ctx.fillStyle = '#7b5cff'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
           ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.arc(b.x - 1.5, b.y - 1.5, 2, 0, Math.PI * 2); ctx.fill();
-        } else if (b.kind === 'homing') { // homing shell: a lavender spiral shell, spinning
+        } else if (b.kind === 'homing') {
           const ba = Math.atan2(b.vy, b.vx);
           ctx.strokeStyle = 'rgba(216,207,232,0.6)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
           ctx.beginPath(); ctx.moveTo(b.x - Math.cos(ba) * 18, b.y - Math.sin(ba) * 18);
@@ -125,8 +146,8 @@ export function createRenderer(canvas) {
           ctx.closePath(); ctx.fill();
         }
       }
-      for (const s of state.spits) { // enemy spit: a bright droplet, easy to see and dodge
-        ctx.fillStyle = '#a8e6ff'; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+      for (const s of state.spits) {
+        ctx.fillStyle = s.color || '#a8e6ff'; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(s.x - 2, s.y - 2, 2, 0, Math.PI * 2); ctx.fill();
       }
       for (const e of state.enemies) {
@@ -140,7 +161,6 @@ export function createRenderer(canvas) {
           state.weapons.spin > 0 ? weaponStatsFor(state, 'spin') : null);
       }
       fx.draw(ctx);
-      // Hurt vignette: red edges while the crab flashes.
       if (state.player.flash > 0 && state.phase === 'play') {
         const vg = ctx.createRadialGradient(VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.35, VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.75);
         vg.addColorStop(0, 'rgba(255,45,85,0)');

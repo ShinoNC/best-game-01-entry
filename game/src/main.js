@@ -1,4 +1,3 @@
-// Boot and the one loop. Fixed 60 Hz sim, renderer interpolates.
 import { AWARD_KIND, AWARD_TIERS, BEST_KEY, DIFF_ORDER } from './config.js';
 import { createRandom } from './random.js';
 import { createState } from './state.js';
@@ -28,15 +27,13 @@ function readBest() {
   try { return Number.parseInt(window.localStorage.getItem(BEST_KEY) ?? '0', 10) || 0; } catch { return 0; }
 }
 
-// Attach the meta record (bests, feats, runs) to a state.
 function attachMeta(s) {
   s.meta = readMeta();
   s.best = Math.max(0, ...DIFF_ORDER.map((d) => s.meta.bests[d] || 0), readBest());
-  s.audio = audio; // the settings overlay reads the live mute/music state
+  s.audio = audio;
   return s;
 }
 
-// Mouse mapping goes through the view transform.
 function toLogical(mx, my) {
   const { scale, ox, oy } = renderer.viewTransform();
   return { x: (mx - ox) / scale, y: (my - oy) / scale };
@@ -51,7 +48,7 @@ if (shot) {
   state = stageShot(shot, seed, fx, audio);
   attachMeta(state);
   if (state.phase === 'over') state.featsEarned = featsEarnedThisRun(state, state.meta.feats);
-  state.shotMode = true; // staged frames always show the blinking prompts
+  state.shotMode = true;
   renderer.render(state, fx, state.time);
   renderer.render(state, fx, state.time);
   window.__shotReady = true;
@@ -94,7 +91,6 @@ if (shot) {
 
 function inBox(m, b) { return m.x >= b.x && m.x <= b.x + b.w && m.y >= b.y && m.y <= b.y + b.h; }
 
-// The menu opens with a 250 ms input cooldown.
 let menuCooldown = 0, menuPhase = 'title';
 
 function buyMenuCard(i) {
@@ -235,14 +231,13 @@ function handleMenus() {
     if (input.click()) {
       const m = toLogical(input.mouse().x, input.mouse().y);
       if (inBox(m, overLayout().menu)) { toTitle(); menuPhase = 'title'; return; }
-      restart(); // any other click (incl. PLAY AGAIN) restarts
+      restart();
       menuPhase = 'play';
     }
     menuPhase = 'over';
   }
 }
 
-// A fresh state for a new run or a return to the title.
 function freshState(phase) {
   const best = state.best;
   const meta = state.meta;

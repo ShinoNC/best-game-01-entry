@@ -1,4 +1,3 @@
-// Seven skill tracks, five levels each, bought as shop cards.
 // stat = per-level gain, shown on the card.
 export const UPGRADE_DEFS = [
   { id: 'claws', name: 'SHARPER CLAWS', icon: '✂', max: 5, stat: 'DMG +10%' },
@@ -11,7 +10,6 @@ export const UPGRADE_DEFS = [
 ];
 
 // Skill card prices.
-// steep late. All 7 tracks × 5 = 1,785 coins total.
 export const SKILL_PRICES = [20, 35, 50, 65, 85];
 
 export function applyUpgrade(state, id) {
@@ -20,6 +18,5 @@ export function applyUpgrade(state, id) {
   // claws/tempo/reach: see weaponStatsFor.
   if (id === 'shell') { p.maxHp += 15; p.hp = Math.min(p.maxHp, p.hp + 15); p.shellTier = Math.min(3, u.shell); }
   if (id === 'legs') p.speed *= 1.12;
-  if (id === 'magnet') p.magnet *= 1.45; // coin drops expire in 25s — the magnet is the economy
-  // bubbles takes effect from its level in world.js.
+  if (id === 'magnet') p.magnet *= 1.45;
 }

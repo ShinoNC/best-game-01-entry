@@ -1,6 +1,5 @@
-// Fixed-step sim: spawn, move, collide, collect, win, lose.
 import { ARMOR_PER_BOSS, COMBO_MAX, COMBO_WINDOW, ENEMIES, POOL, STAGES, STAGE_COUNT, bossForStage, envForStage } from './config.js';
-import { onEnemyKilled, updateEnemies, updateSpawner } from './enemies.js';
+import { hurtEnemy, onEnemyKilled, updateEnemies, updateSpawner } from './enemies.js';
 import { hurtPlayer, nearestEnemy, updatePlayer } from './player.js';
 import { drawHand } from './cards.js';
 import { updateHints } from './tutorial.js';
@@ -24,7 +23,6 @@ function dropCoins(state, e) {
       life: 25, bob: state.rng.angle(),
     });
   }
-  // Elites always drop a heal; others 4% (a boss drops a bomb).
   if (e.elite || (!e.boss && state.rng.chance(0.04))) state.pickups.push({ x: e.x, y: e.y, kind: 'heal', life: 20 });
   if (e.boss) state.pickups.push({ x: e.x, y: e.y, kind: 'bomb', life: 20 });
 }
@@ -54,16 +52,14 @@ export function nextStage(state, audio) {
   state.spawnT = 0.8;
   state.hand = []; state.rerolls = 0; state.clearBonus = 0; state.menuMsg = ''; state.menuMsgT = 0;
   state.stageTaken = 0; state.combo = 0; state.comboT = 0; // fresh stage, fresh chain
-  // Boss flags are per-stage: reset each stage.
   state.bossSpawned = false; state.boss = null;
   state.phase = 'play';
-  const boss = bossForStage(state.stage);
+  const boss = bossForStage(state.stage, state.bossOrder);
   if (boss) {
     state.banner = `⚠ STAGE ${state.stage} — ${boss.name}! ⚠`; state.bannerT = 3;
     if (audio) audio.elite();
   } else if (state.stage % 5 === 1 && state.stage > 1) {
-    // A new water: the last band's boss is beaten.
-    state.banner = `THE TIDE TURNS — ${envForStage(state.stage).name}`; state.bannerT = 3;
+    state.banner = `THE TIDE TURNS — ${envForStage(state.stage, state.envs).name}`; state.bannerT = 3;
   } else {
     state.banner = `STAGE ${state.stage} — THE TIDE RISES`; state.bannerT = 2.5;
   }
@@ -109,7 +105,7 @@ export function stepWorld(state, input, dt, fx, audio) {
 
   updateSpawner(state, dt, fx, audio);
   updatePlayer(state, input, dt, fx, audio);
-  updateEnemies(state, dt);
+  updateEnemies(state, dt, fx);
 
   state.bubbleT -= dt;
   if (state.ups.bubbles > 0 && state.bubbleT <= 0) {
@@ -117,8 +113,7 @@ export function stepWorld(state, input, dt, fx, audio) {
     const r = 110 + state.ups.bubbles * 22, dmg = 14 + state.ups.bubbles * 8;
     fx.burst(p.x, p.y, '#bfe8e0', 22, 260, 'bubble');
     for (const e of state.enemies) {
-      if (Math.hypot(e.x - p.x, e.y - p.y) < r + e.r) {
-        e.hp -= dmg; e.flash = 0.12; state.stats.damage += dmg;
+      if (Math.hypot(e.x - p.x, e.y - p.y) < r + e.r && hurtEnemy(state, e, dmg)) {
         const ka = Math.atan2(e.y - p.y, e.x - p.x);
         e.x += Math.cos(ka) * 30; e.y += Math.sin(ka) * 30;
       }
@@ -146,8 +141,7 @@ export function stepWorld(state, input, dt, fx, audio) {
     let dead = b.life <= 0;
     for (const e of state.enemies) {
       if (b.pierce < 0) break;
-      if (Math.hypot(e.x - b.x, e.y - b.y) < e.r + b.r) {
-        e.hp -= b.dmg; e.flash = 0.12; state.stats.damage += b.dmg;
+      if (Math.hypot(e.x - b.x, e.y - b.y) < e.r + b.r && hurtEnemy(state, e, b.dmg)) {
         const ka = Math.atan2(e.y - b.y, e.x - b.x);
         e.x += Math.cos(ka) * 14; e.y += Math.sin(ka) * 14;
         fx.text(e.x, e.y - e.r - 6, `${b.dmg}`, b.kind === 'pellet' ? '#c9a7ff' : '#bfe8e0', false, e.id);
@@ -172,7 +166,7 @@ export function stepWorld(state, input, dt, fx, audio) {
     if (e.hitCd > 0) continue;
     if (Math.hypot(e.x - p.x, e.y - p.y) < e.r + p.radius - 4) {
       e.hitCd = 0.9;
-      hurtPlayer(state, e.dmg, fx, audio);
+      hurtPlayer(state, Math.round(e.dmg * (e.dmgMul || 1)), fx, audio);
       if (state.phase !== 'play') return;
     }
   }
@@ -200,7 +194,7 @@ export function stepWorld(state, input, dt, fx, audio) {
       if (pk.kind === 'heal') { p.hp = Math.min(p.maxHp, p.hp + 25); fx.text(p.x, p.y - 30, '+25 ♥', '#ff8fb0'); audio.heal(); }
       if (pk.kind === 'bomb') {
         fx.burst(p.x, p.y, '#ffd166', 30, 320); fx.shake(0.5); audio.die();
-        for (const e of state.enemies) if (Math.hypot(e.x - p.x, p.y - p.y) < 180) { e.hp -= 70; e.flash = 0.15; }
+        for (const e of state.enemies) if (!e.shelled && Math.hypot(e.x - p.x, p.y - p.y) < 180) { e.hp -= 70; e.flash = 0.15; }
       }
       if (pk.kind === 'magnet') { for (const pe of state.drops) { pe.x = p.x; pe.y = p.y; } }
       state.pickups.splice(i, 1);
@@ -211,7 +205,6 @@ export function stepWorld(state, input, dt, fx, audio) {
       && state.stageClearT <= 0) {
     state.stageClearT = 1.2;
     state.score += 100 + state.stage * 50;
-    // A scratch-free stage counts toward the UNTOUCHED feat.
     if (state.stageTaken === 0) state.stats.cleanStage = true;
     state.combo = 0; state.comboT = 0; // the chain ends with the stage
     let vacuumedCoins = 0;
@@ -221,7 +214,7 @@ export function stepWorld(state, input, dt, fx, audio) {
     state.drops.length = 0;
     noteCoins(state);
     if (vacuumedCoins > 0) audio.coin();
-    const clearedBoss = bossForStage(state.stage);
+    const clearedBoss = bossForStage(state.stage, state.bossOrder);
     if (clearedBoss) state.player.armor += ARMOR_PER_BOSS; // boss-clear reward
     if (state.stage >= STAGE_COUNT) {
       state.banner = 'THE KRAKEN FALLS — HIGH TIDE!'; state.bannerT = 1.2;
