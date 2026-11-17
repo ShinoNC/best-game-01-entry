@@ -133,8 +133,10 @@ export function stepWorld(state, input, dt, fx, audio) {
     fx.burst(p.x, p.y, '#bfe8e0', 22, 260, 'bubble');
     for (const e of state.enemies) {
       if (Math.hypot(e.x - p.x, e.y - p.y) < r + e.r && hurtEnemy(state, e, dmg)) {
-        const ka = Math.atan2(e.y - p.y, e.x - p.x);
-        e.x += Math.cos(ka) * 30; e.y += Math.sin(ka) * 30;
+        if (!e.boss) {
+          const ka = Math.atan2(e.y - p.y, e.x - p.x);
+          e.x += Math.cos(ka) * 30; e.y += Math.sin(ka) * 30;
+        }
       }
     }
     audio.pop();
@@ -162,7 +164,7 @@ export function stepWorld(state, input, dt, fx, audio) {
       if (b.pierce < 0) break;
       if (Math.hypot(e.x - b.x, e.y - b.y) < e.r + b.r && hurtEnemy(state, e, b.dmg)) {
         const ka = Math.atan2(e.y - b.y, e.x - b.x);
-        e.x += Math.cos(ka) * 14; e.y += Math.sin(ka) * 14;
+        if (!e.boss) { e.x += Math.cos(ka) * 14; e.y += Math.sin(ka) * 14; }
         if (e.boss) fx.text(e.x, e.y - e.r - 6, `${b.dmg}`, b.kind === 'pellet' ? '#c9a7ff' : '#bfe8e0', false, e.id);
         b.pierce -= 1; fx.burst(b.x, b.y, b.kind === 'pellet' ? '#7b5cff' : '#bfe8e0', 4, 100, 'bubble');
         if (b.pierce < 0) dead = true;

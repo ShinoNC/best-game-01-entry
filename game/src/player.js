@@ -48,7 +48,7 @@ function fireWeapon(state, id, aim, target, fx, audio) {
       const dmg = Math.round(w.dmg * (0.9 + state.rng.next() * 0.2));
       if (!hurtEnemy(state, e, dmg)) continue;
       const ka = Math.atan2(e.y - p.y, e.x - p.x);
-      const kb = e.elite ? 8 : 26;
+      const kb = e.boss ? 0 : e.elite ? 8 : 26;
       e.x += Math.cos(ka) * kb; e.y += Math.sin(ka) * kb;
       if (hits < 4 && e.boss) fx.text(e.x, e.y - e.r - 6, `${dmg}`, '#ffd166', false, e.id);
       fx.burst(e.x, e.y, '#ffd166', 5, 150);
@@ -97,7 +97,7 @@ function fireWeapon(state, id, aim, target, fx, audio) {
       const dmg = Math.round(w.dmg * (0.9 + state.rng.next() * 0.2));
       if (!hurtEnemy(state, e, dmg)) continue;
       const ka = Math.atan2(e.y - p.y, e.x - p.x);
-      const kb = e.elite ? 8 : 30;
+      const kb = e.boss ? 0 : e.elite ? 8 : 30;
       e.x += Math.cos(ka) * kb; e.y += Math.sin(ka) * kb;
       if (hits < 4 && e.boss) fx.text(e.x, e.y - e.r - 6, `${dmg}`, '#7fe0c3', false, e.id);
       hits += 1;
@@ -187,7 +187,7 @@ export function hurtPlayer(state, dmg, fx, audio) {
   state.stageTaken += real;
   for (const e of state.enemies) {
     const d = Math.hypot(e.x - p.x, e.y - p.y);
-    if (d < 60 + e.r) {
+    if (d < 60 + e.r && !e.boss) {
       const ka = Math.atan2(e.y - p.y, e.x - p.x);
       e.x += Math.cos(ka) * 20; e.y += Math.sin(ka) * 20;
     }
