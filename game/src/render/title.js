@@ -71,7 +71,7 @@ export function drawTitle(ctx, state) {
   }
   if (state.modifier) {
     ctx.font = 'bold 15px sans-serif';
-    txt(ctx, `${state.modifier.n} — ${state.modifier.d}`, VIEW_W / 2, 226, PAL.xp);
+    txt(ctx, `EFFECT: ${state.modifier.n} — ${state.modifier.d}`, VIEW_W / 2, 226, PAL.xp);
   }
   const TL = titleLayout();
   const items = [['start', 'START GAME'], ['help', 'HOW TO PLAY  ?'], ['feats', 'ACHIEVEMENTS'],

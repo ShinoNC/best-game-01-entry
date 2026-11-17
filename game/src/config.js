@@ -3,11 +3,11 @@ export const ARMOR_PER_BOSS = 30;
 
 export const MODIFIERS = [
   { n: 'SWARM TIDE', d: 'foes swarm · +50% coins', spawn: 0.8, coin: 1.5 },
-  { n: 'HEAVY SHELLS', d: 'foes +15% HP · +15% damage', ehp: 1.15, dmg: 1.15 },
-  { n: 'SWIFT CURRENT', d: '+15% speed · foes +5% speed', spd: 1.15, espd: 1.05 },
-  { n: 'RICH WATERS', d: 'shop -20% · -20 max HP', price: 0.8, hpMul: 0.8 },
-  { n: 'THICK HIDE', d: 'take 20% less damage · fire 5% slower', taken: 0.8, rate: 1.05 },
-  { n: 'GLASS CANNON', d: '+25% damage · take 15% more', dmg: 1.25, taken: 1.15 },
+  { n: 'POWER HIT', d: 'foes +10% HP · +20% damage', ehp: 1.1, dmg: 1.2 },
+  { n: 'SWIFT CURRENT', d: '+35% speed · +10% damage', spd: 1.35, dmg: 1.1 },
+  { n: 'CHEAP WATERS', d: 'shop -20% · -20 max HP', price: 0.8, hpMul: 0.8 },
+  { n: 'THICK HIDE', d: 'take 25% less damage', taken: 0.75 },
+  { n: 'HIGH RISK', d: '+25% damage · take 15% more', dmg: 1.25, taken: 1.15 },
 ];
 export function modOf(state, key) { return (state.modifier && state.modifier[key]) || 1; }
 export function contentStage(state, pos) {

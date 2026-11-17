@@ -26,7 +26,7 @@ export function drawHud(ctx, state, t) {
   txt(ctx, `${remaining} LEFT · NEXT: ${nextBit}`, 28, 46, PAL.dim);
   if (state.modifier) {
     ctx.font = 'bold 13px sans-serif';
-    txt(ctx, state.modifier.n, 28, 64, PAL.gold);
+    txt(ctx, `EFFECT: ${state.modifier.n}`, 28, 64, PAL.gold);
   }
   ctx.textAlign = 'right';
   ctx.font = 'bold 30px sans-serif';

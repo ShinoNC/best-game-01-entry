@@ -59,7 +59,7 @@ export function createState(rng, seed, difficulty = 'normal') {
       laser: 0, laserLen: 0, laserBeams: 1, moving: 0,
     },
     ups: { claws: 0, tempo: 0, reach: 0, shell: 0, legs: 0, bubbles: 0, magnet: 0 },
-    skillPts: 2,
+    skillPts: 1,
     coins: 0, coinsEarned: 0,
     weapons: { claw: 1, bow: 0, blaster: 0, shell: 0, spin: 0, laser: 0, trident: 0 },
     stage: 1, stageSpawned: 0, stageEliteDone: false, stageClearT: 0,

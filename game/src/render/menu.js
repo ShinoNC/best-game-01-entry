@@ -67,15 +67,19 @@ export function drawStageMenu(ctx, state, hover) {
   ctx.fillStyle = bg; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   ctx.textAlign = 'center';
   ctx.font = 'bold 36px sans-serif';
-  txt(ctx, `★ STAGE ${state.stage} CLEAR — ${envForStage(state.stage, state.envs).name} ★`, VIEW_W / 2, 130, PAL.gold, 3);
+  txt(ctx, `★ STAGE ${state.stage} CLEAR — ${envForStage(state.stage, state.envs).name} ★`, VIEW_W / 2, 70, PAL.gold, 3);
+  if (state.modifier) {
+    ctx.font = 'bold 15px sans-serif';
+    txt(ctx, `EFFECT: ${state.modifier.n}`, VIEW_W / 2, 100, PAL.xp);
+  }
   ctx.font = 'bold 28px sans-serif';
   const ct = `${state.coins} COINS`;
   const cw = ctx.measureText(ct).width;
-  drawCoin(ctx, VIEW_W / 2 - cw / 2 - 18, 178, 12);
-  txt(ctx, ct, VIEW_W / 2 + 10, 186, PAL.gold);
+  drawCoin(ctx, VIEW_W / 2 - cw / 2 - 18, 132, 12);
+  txt(ctx, ct, VIEW_W / 2 + 10, 140, PAL.gold);
   if (bossForStage(state.stage)) {
     ctx.font = 'bold 20px sans-serif';
-    txt(ctx, `+${ARMOR_PER_BOSS} ARMOR`, VIEW_W / 2, 214, PAL.armor, 3);
+    txt(ctx, `+${ARMOR_PER_BOSS} ARMOR`, VIEW_W / 2, 168, PAL.armor, 3);
   }
   const hand = state.hand || [];
   if (hand.length === 0) {
@@ -108,13 +112,9 @@ export function drawStageMenu(ctx, state, hover) {
   bevel(ctx, n.x, n.y, n.w, n.h, 8, nHover ? '#ffe08a' : '#ffd97a', '#f0b23e', PAL.gold, 2);
   ctx.font = 'bold 20px sans-serif';
   txt(ctx, `NEXT STAGE ${state.stage + 1} →  [Enter]`, n.x + n.w / 2, n.y + 33, '#062a33');
-  if (state.modifier) {
-    ctx.font = 'bold 13px sans-serif';
-    txt(ctx, `THIS RUN: ${state.modifier.n}`, VIEW_W / 2, 712, PAL.dim);
-  }
   if (state.menuMsgT > 0 && state.menuMsg) {
     ctx.font = 'bold 16px sans-serif';
-    txt(ctx, state.menuMsg, VIEW_W / 2, 600, '#ff8fa0');
+    txt(ctx, state.menuMsg, VIEW_W / 2, 570, '#ff8fa0');
   }
   drawSkillRow(ctx, state, hover);
 }
@@ -123,7 +123,7 @@ function drawSkillRow(ctx, state, hover) {
   const L = stageMenuLayout(state);
   ctx.textAlign = 'center';
   ctx.font = 'bold 16px sans-serif';
-  txt(ctx, `SKILL POINTS: ${state.skillPts} — CLICK A SKILL TO RAISE IT`, VIEW_W / 2, 622, PAL.gold, 3);
+  txt(ctx, `SKILL POINTS: ${state.skillPts} — CLICK A SKILL TO RAISE IT`, VIEW_W / 2, 590, PAL.gold, 3);
   for (const s of L.skills) {
     const d = UPGRADE_DEFS.find((u) => u.id === s.id);
     const lv = state.ups[s.id];
@@ -140,7 +140,7 @@ function drawSkillRow(ctx, state, hover) {
     ctx.font = 'bold 20px sans-serif';
     txt(ctx, d.icon, s.x + s.w / 2, s.y + 22, PAL.xp);
     ctx.font = 'bold 13px sans-serif';
-    txt(ctx, `${SABBR[s.id]} ${lv}/10`, s.x + s.w / 2, s.y + 41, PAL.text);
+    txt(ctx, `${SABBR[s.id]} Lv${lv}`, s.x + s.w / 2, s.y + 41, PAL.text);
     ctx.font = '10px sans-serif';
     txt(ctx, maxed ? 'MAX' : d.stat, s.x + s.w / 2, s.y + 57, maxed ? '#7fe0c3' : PAL.dim);
     if (canSpend) {

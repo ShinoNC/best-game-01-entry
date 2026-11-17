@@ -95,7 +95,7 @@ export function drawHelp(ctx, state) {
   txt(ctx, 'Archers shoot from stage 12 — never stand still.', 180, 466, PAL.text);
   txt(ctx, `ARMOR absorbs damage before HP. Clear a boss to gain +${ARMOR_PER_BOSS} ARMOR. Armor does not heal.`, 180, 486, PAL.text);
   ctx.font = 'bold 15px sans-serif';
-  txt(ctx, 'RUN MODIFIERS — ONE PER RUN', 180, 508, PAL.gold);
+  txt(ctx, 'EFFECTS — ONE PER RUN', 180, 508, PAL.gold);
   ctx.font = '11px sans-serif';
   MODIFIERS.forEach((m, i) => {
     txt(ctx, `${m.n} — ${m.d}`, i < 3 ? 180 : 700, 528 + (i % 3) * 18, PAL.text);

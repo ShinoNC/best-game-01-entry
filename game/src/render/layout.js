@@ -4,8 +4,8 @@ export const SCREEN_TITLE = 'title';
 export const SCREEN_PLAY = 'play';
 export const SCREEN_OVER = 'over';
 
-export const MENU_CARD_W = 200, MENU_CARD_H = 240, MENU_CARD_GAP = 16, MENU_CARDS_Y = 240;
-export const SKILL_SLOT_W = 96, SKILL_SLOT_H = 64, SKILL_SLOT_GAP = 12, SKILL_SLOTS_Y = 632;
+export const MENU_CARD_W = 200, MENU_CARD_H = 240, MENU_CARD_GAP = 16, MENU_CARDS_Y = 200;
+export const SKILL_SLOT_W = 96, SKILL_SLOT_H = 64, SKILL_SLOT_GAP = 12, SKILL_SLOTS_Y = 600;
 export const SKILL_SLOT_IDS = ['claws', 'tempo', 'reach', 'legs', 'bubbles', 'magnet'];
 export function stageMenuLayout(state) {
   const hand = state.hand || [];
@@ -19,8 +19,8 @@ export function stageMenuLayout(state) {
   return {
     cards,
     skills,
-    reroll: { x: 368, y: 520, w: 240, h: 52 },
-    next: { x: 632, y: 520, w: 280, h: 52 },
+    reroll: { x: 368, y: 485, w: 240, h: 52 },
+    next: { x: 632, y: 485, w: 280, h: 52 },
   };
 }
 
