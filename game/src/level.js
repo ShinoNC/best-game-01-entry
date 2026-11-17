@@ -11,11 +11,12 @@ const CHOICE_POOL = [
   { id: 'legs', name: 'SWIFT LEGS', desc: 'SPEED +6%' },
   { id: 'bubbles', name: 'BUBBLE BURST', desc: '+4 BURST DMG' },
   { id: 'magnet', name: 'COIN MAGNET', desc: 'PICKUP +22%' },
+  { id: 'gold', name: 'GOLDEN TOUCH', desc: '+15% COINS', max: 5 },
   { id: 'heal', name: 'SHELL MEND', desc: 'HEAL +30 HP NOW' },
 ];
 
 export function rollLevelChoices(state) {
-  const pool = [...CHOICE_POOL];
+  const pool = CHOICE_POOL.filter((c) => !c.max || (state.ups[c.id] || 0) < c.max);
   const out = [];
   while (out.length < 3 && pool.length > 0) {
     const i = Math.floor(state.rng.next() * pool.length);
