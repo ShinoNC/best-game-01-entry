@@ -134,6 +134,11 @@ function bossAttack(state, e, dt, nx, ny, fx) {
       }
       e.slamSpots = null;
       if (fx) fx.shake(0.4);
+      for (let i = 0; i < 8; i += 1) {
+        const a = i * Math.PI / 4;
+        state.spits.push({ x: e.x + Math.cos(a) * e.r, y: e.y + Math.sin(a) * e.r,
+          vx: Math.cos(a) * 180, vy: Math.sin(a) * 180, dmg: e.dmg, r: 6, life: 2.5, color: '#ff5d73' });
+      }
     } else if (e.atk === 'shell') { e.atkState = 'retreat'; e.atkPhaseT = 2; e.shelled = true; return true; }
     else if (e.atk === 'line') { e.atkState = 'charge'; e.atkPhaseT = 1.2; e.dmgMul = 1.5; return true; }
     else if (e.atk === 'lure') { e.atkState = 'dash'; e.atkPhaseT = 0.6; return true; }
@@ -152,6 +157,13 @@ function bossAttack(state, e, dt, nx, ny, fx) {
     e.y = Math.max(POOL.y0 + e.r, Math.min(POOL.y1 - e.r, e.y));
     if (e.atkPhaseT <= 0 || hitEdge) {
       e.dmgMul = 1;
+      const base = Math.atan2(state.player.y - e.y, state.player.x - e.x);
+      const offs = e.atk === 'shell' ? [0, 1.05, 2.1, 3.14, 4.19, 5.24] : [-0.35, 0, 0.35];
+      for (const off of offs) {
+        const a = base + off;
+        state.spits.push({ x: e.x + Math.cos(a) * e.r, y: e.y + Math.sin(a) * e.r,
+          vx: Math.cos(a) * 220, vy: Math.sin(a) * 220, dmg: e.dmg, r: 6, life: 2.5, color: e.color });
+      }
       if (e.atk === 'lure') { e.atkState = 'stun'; e.atkPhaseT = 0.5; }
       else { e.atkState = null; e.atkT = e.atkEvery; }
     }
