@@ -42,10 +42,8 @@ export function createRenderer(canvas) {
       POOL.x1 = effW; POOL.cx = effW / 2; POOL.rx = effW / 2; POTION_BOX.x = POOL.cx + 160;
       const s = scale * dpr;
       const oxd = ox * dpr, oyd = oy * dpr;
-      // Re-assert every frame: canvas resize resets all context state.
       ctx.imageSmoothingEnabled = false;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      // Fill the whole window with stage water: no dark letterbox bars.
       ctx.fillStyle = envForStage(state.stage, state.envs).water;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       const a = Math.max(0, Math.min(1, alpha));

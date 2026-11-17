@@ -1,4 +1,3 @@
-// never deleted on death, only by pause-restart or the slot DELETE button.
 const SLOT_KEYS = ['tidekeeper_slot_0', 'tidekeeper_slot_1', 'tidekeeper_slot_2'];
 export const SLOT_COUNT = 3;
 

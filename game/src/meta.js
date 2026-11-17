@@ -57,7 +57,6 @@ export function featTier(id, value) {
   return t;
 }
 
-// Fold a kill + run maxima into lifetime progress; return new tiers.
 export function checkFeats(state, killed) {
   const meta = state.meta;
   if (!meta) return [];

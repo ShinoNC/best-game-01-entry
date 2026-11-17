@@ -20,7 +20,6 @@ const seed = Number.isInteger(seedParam) ? seedParam : Math.floor(Math.random() 
 
 const canvas = document.getElementById('game');
 const status = document.getElementById('status');
-// Warm up the pixel fonts so the first frame uses them, not the fallback.
 function loadPixelFonts() {
   try {
     return Promise.race([
@@ -144,12 +143,16 @@ function handleOverlay() {
   if (input.click()) {
     const m = toLogical(input.mouse().x, input.mouse().y);
     if (state.overlay === 'slots') {
-      if (inBox(m, L.close) || !inBox(m, L.panel)) { state.overlay = null; return true; }
+      if (inBox(m, L.close) || !inBox(m, L.panel)) { state.overlay = null; state.delArm = null; return true; }
       for (let i = 0; i < SLOT_COUNT; i += 1) {
-        if (L.dels[i] && inBox(m, L.dels[i]) && hasSlotSave(i)) { clearSlot(i); return true; }
+        if (L.dels[i] && inBox(m, L.dels[i]) && hasSlotSave(i)) {
+          if (state.delArm === i) { clearSlot(i); state.delArm = null; }
+          else state.delArm = i;
+          return true;
+        }
       }
       for (let i = 0; i < SLOT_COUNT; i += 1) {
-        if (inBox(m, L.cards[i])) { pickSlot(i); return true; }
+        if (inBox(m, L.cards[i])) { state.delArm = null; pickSlot(i); return true; }
       }
       return true;
     }

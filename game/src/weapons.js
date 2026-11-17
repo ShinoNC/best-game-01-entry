@@ -59,7 +59,6 @@ export const WEAPONS = {
     ] },
 };
 
-// Level def: defined to Lv5, then scaled from Lv5 (no max level).
 export function weaponLevelDef(id, lv) {
   const levels = WEAPONS[id].levels;
   const base = levels[Math.min(levels.length, lv) - 1];

@@ -165,9 +165,10 @@ export function drawSlots(ctx, state) {
       if (s.phase === 'stageclear') txt(ctx, 'AT THE SHOP', cx, c.y + c.h - 56, '#7fe0c3');
       txt(ctx, 'TAP TO CONTINUE', cx, c.y + c.h - 28, '#7fe0c3');
       const d = L.dels[i];
-      bevel(ctx, d.x, d.y, d.w, d.h, 6, '#e85d6a', '#a32c38', '#ff8fa0', 2);
+      const armed = state.delArm === i;
+      bevel(ctx, d.x, d.y, d.w, d.h, 6, armed ? '#ffd166' : '#e85d6a', armed ? '#c9962e' : '#a32c38', armed ? '#fff3c4' : '#ff8fa0', 2);
       ctx.font = px(14);
-      txt(ctx, '×', d.x + d.w / 2, d.y + 26, '#fff');
+      txt(ctx, armed ? '?' : '×', d.x + d.w / 2, d.y + 26, armed ? '#062a33' : '#fff');
     } else {
       ctx.font = px(15);
       txt(ctx, 'EMPTY', cx, c.y + 120, PAL.dim);
@@ -176,6 +177,10 @@ export function drawSlots(ctx, state) {
       ctx.font = px(10);
       txt(ctx, 'TAP TO START', cx, c.y + c.h - 28, '#7fe0c3');
     }
+  }
+  if (state.delArm != null) {
+    ctx.font = px(10); ctx.textAlign = 'center';
+    txt(ctx, `TAP ? AGAIN TO DELETE SLOT ${state.delArm + 1}`, POOL.cx, 556, '#ff8fa0');
   }
   closeButton(ctx, L.close);
   dimHint(ctx, 664);
