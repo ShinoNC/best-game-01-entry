@@ -95,8 +95,8 @@ export function drawTitle(ctx, state) {
     }
   }
   ctx.textAlign = 'right';
-  ctx.font = '11px sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.font = 'bold 16px sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
   ctx.fillText('v1.0', VIEW_W - 12, 708);
 }
 

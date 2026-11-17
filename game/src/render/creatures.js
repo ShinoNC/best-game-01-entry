@@ -76,9 +76,9 @@ export function drawCrab(ctx, p, t, clawStats, spinStats) {
     const dirs = p.laserBeams >= 2 ? [1, -1] : [1];
     ctx.save(); ctx.lineCap = 'round';
     for (const dir of dirs) {
-      ctx.strokeStyle = `rgba(255,46,136,${a * 0.28})`; ctx.lineWidth = 12;
+      ctx.strokeStyle = `rgba(255,46,136,${a * 0.28})`; ctx.lineWidth = 16;
       ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + dir * p.laserLen, p.y); ctx.stroke();
-      ctx.strokeStyle = `rgba(255,46,136,${a})`; ctx.lineWidth = 7;
+      ctx.strokeStyle = `rgba(255,46,136,${a})`; ctx.lineWidth = 9;
       ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + dir * p.laserLen, p.y); ctx.stroke();
       ctx.strokeStyle = `rgba(255,255,255,${a})`; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + dir * p.laserLen, p.y); ctx.stroke();
