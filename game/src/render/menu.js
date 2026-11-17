@@ -43,7 +43,7 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
     ctx.font = px(14);
     const pt = `${card.price}`;
     const pw = ctx.measureText(pt).width;
-    drawCoin(ctx, x + w / 2 - pw / 2 - 14, y + 190, 10);
+    drawCoin(ctx, x + w / 2 - pw / 2 - 16, y + 190, 12);
     txt(ctx, pt, x + w / 2 + 8, y + 198, poor ? '#ff8fa0' : PAL.gold);
   }
   ctx.restore();
@@ -90,7 +90,7 @@ export function drawStageMenu(ctx, state, hover) {
   const tx0 = r.x + r.w / 2 - totW / 2;
   ctx.textAlign = 'left';
   txt(ctx, rt, tx0, r.y + 33, canReroll ? PAL.text : PAL.dim);
-  drawCoin(ctx, tx0 + ctx.measureText(rt).width + 12, r.y + 26, 9);
+  drawCoin(ctx, tx0 + ctx.measureText(rt).width + 14, r.y + 26, 11);
   txt(ctx, rs, tx0 + ctx.measureText(rt).width + 24, r.y + 33, canReroll ? PAL.text : PAL.dim);
   ctx.textAlign = 'center';
   ctx.globalAlpha = 1;

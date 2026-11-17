@@ -37,7 +37,7 @@ export function drawHud(ctx, state, t) {
   ctx.font = px(9);
   const coinTxt = `${state.coins} COINS`;
   txt(ctx, coinTxt, POOL.x1 - 28, 60, PAL.gold);
-  drawCoin(ctx, POOL.x1 - 28 - ctx.measureText(coinTxt).width - 13, 55, 8);
+  drawCoin(ctx, POOL.x1 - 28 - ctx.measureText(coinTxt).width - 17, 54, 12);
   const cm = comboMult(state);
   ctx.textAlign = 'center'; ctx.font = px(13);
   txt(ctx, `COMBO ×${cm}`, POOL.cx, 40, cm > 1 ? PAL.gold : PAL.dim);
