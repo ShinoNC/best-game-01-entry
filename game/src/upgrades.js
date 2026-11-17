@@ -1,12 +1,13 @@
 // Skill tracks: seven tracks, five levels each, bought as cards in the stage-clear menu.
+// stat = the per-level gain, shown on the card so the buyer sees what it does.
 export const UPGRADE_DEFS = [
-  { id: 'claws', name: 'SHARPER CLAWS', icon: '✂', max: 5 },
-  { id: 'tempo', name: 'QUICK CLAWS', icon: '≫', max: 5 },
-  { id: 'reach', name: 'LONGER REACH', icon: '↔', max: 5 },
-  { id: 'shell', name: 'STURDIER SHELL', icon: '⦿', max: 5 },
-  { id: 'legs', name: 'SWIFT LEGS', icon: '»', max: 5 },
-  { id: 'bubbles', name: 'BUBBLE BURST', icon: '○', max: 5 },
-  { id: 'magnet', name: 'COIN MAGNET', icon: '◎', max: 5 },
+  { id: 'claws', name: 'SHARPER CLAWS', icon: '✂', max: 5, stat: 'DMG +10%' },
+  { id: 'tempo', name: 'QUICK CLAWS', icon: '≫', max: 5, stat: 'FIRE RATE +11%' },
+  { id: 'reach', name: 'LONGER REACH', icon: '↔', max: 5, stat: 'RANGE +20%' },
+  { id: 'shell', name: 'STURDIER SHELL', icon: '⦿', max: 5, stat: '+15 MAX HP' },
+  { id: 'legs', name: 'SWIFT LEGS', icon: '»', max: 5, stat: 'SPEED +12%' },
+  { id: 'bubbles', name: 'BUBBLE BURST', icon: '○', max: 5, stat: '+8 BURST DMG' },
+  { id: 'magnet', name: 'COIN MAGNET', icon: '◎', max: 5, stat: 'PICKUP +45%' },
 ];
 
 // Skill card prices by the level the card BUYS (index 0 = Lv1). Cheap early,

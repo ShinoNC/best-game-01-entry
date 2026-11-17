@@ -1,42 +1,10 @@
-// The HUD: two fixed bars framing the play area, boss bar, banner, hint pill, minimap, INCOMING panel.
-import { CREATURE_NAMES, DIFFICULTIES, PAL, POOL, STAGES, STAGE_COUNT, VIEW_H, VIEW_W, WEAPON_MAX, WEAPON_ORDER, bossForStage, nextTypes } from '../config.js';
+// The HUD: two bars framing the play area, boss bar, banner, hint pill.
+// No minimap: the whole pool is on one screen, and spawn ripples mark entries.
+import { CREATURE_NAMES, DIFFICULTIES, PAL, STAGES, STAGE_COUNT, VIEW_H, VIEW_W, WEAPON_MAX, WEAPON_ORDER, bossForStage, nextTypes } from '../config.js';
 import { UPGRADE_DEFS } from '../upgrades.js';
 import { comboMult } from '../world.js';
 import { drawCoin, drawWeaponIcon } from './icons.js';
 import { txt } from './polish.js';
-
-// Minimap: the whole pool in one glance — crab white, creatures coral, elite gold, boss orange. Top-right corner.
-function drawMinimap(ctx, state, t) {
-  const mx = 1225, my = 36;
-  ctx.fillStyle = 'rgba(6,42,51,0.78)';
-  ctx.fillRect(mx - 40, my - 24, 80, 48);
-  ctx.strokeStyle = 'rgba(255,209,102,0.5)'; ctx.lineWidth = 1.5;
-  ctx.strokeRect(mx - 40, my - 24, 80, 48);
-  ctx.fillStyle = 'rgba(29,138,166,0.9)';
-  ctx.fillRect(mx - 35, my - 19, 70, 38);
-  const dot = (wx, wy) => [mx + ((wx - POOL.cx) / POOL.rx) * 35, my + ((wy - POOL.cy) / POOL.ry) * 19];
-  for (const e of state.enemies) {
-    const [dx, dy] = dot(e.x, e.y);
-    if (e.boss) {
-      const pulse = 0.5 + 0.5 * Math.sin(t * 5);
-      ctx.strokeStyle = `rgba(255,122,60,${0.5 + 0.5 * pulse})`; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(dx, dy, 4 + pulse, 0, Math.PI * 2); ctx.stroke();
-      ctx.fillStyle = '#ff7a3c';
-      ctx.beginPath(); ctx.arc(dx, dy, 3, 0, Math.PI * 2); ctx.fill();
-    } else if (e.elite) {
-      ctx.fillStyle = '#ffd166';
-      ctx.beginPath(); ctx.arc(dx, dy, 2, 0, Math.PI * 2); ctx.fill();
-    } else {
-      ctx.fillStyle = '#ff5d73';
-      ctx.beginPath(); ctx.arc(dx, dy, 1.5, 0, Math.PI * 2); ctx.fill();
-    }
-  }
-  const [cx, cy] = dot(state.player.x, state.player.y);
-  ctx.fillStyle = '#062a33';
-  ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.arc(cx, cy, 2, 0, Math.PI * 2); ctx.fill();
-}
 
 export function drawHud(ctx, state, t) {
   const p = state.player;
@@ -62,12 +30,11 @@ export function drawHud(ctx, state, t) {
   txt(ctx, `${remaining} LEFT · NEXT: ${nextBit}`, 28, 58, PAL.dim);
   ctx.textAlign = 'right';
   ctx.font = 'bold 30px sans-serif';
-  txt(ctx, `SCORE ${state.score}`, 1170, 38, PAL.gold);
+  txt(ctx, `SCORE ${state.score}`, 1252, 38, PAL.gold);
   ctx.font = 'bold 15px sans-serif';
   const coinTxt = `${state.coins} COINS · COMBO ×${comboMult(state)} · BEST ${state.best}`;
-  txt(ctx, coinTxt, 1170, 60, PAL.gold);
-  drawCoin(ctx, 1170 - ctx.measureText(coinTxt).width - 13, 55, 8);
-  drawMinimap(ctx, state, t);
+  txt(ctx, coinTxt, 1252, 60, PAL.gold);
+  drawCoin(ctx, 1252 - ctx.measureText(coinTxt).width - 13, 55, 8);
   if (STAGES[state.stage - 1].boss && !state.bossSpawned && !state.boss) {
     const boss = bossForStage(state.stage);
     const warn = `⚠ ${boss ? boss.name : 'THE HERON'} IS COMING ⚠`;
@@ -109,8 +76,13 @@ export function drawHud(ctx, state, t) {
   txt(ctx, hpTxt, hx + ctx.measureText('♥ ').width, 668, PAL.text);
   ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(490, 677, 300, 14);
   ctx.fillStyle = PAL.hp; ctx.fillRect(490, 677, 300 * (p.hp / p.maxHp), 14);
-  ctx.textAlign = 'center'; ctx.font = 'bold 12px sans-serif';
-  txt(ctx, `SHELL ${'●'.repeat(p.shellTier + 1)}${'○'.repeat(3 - p.shellTier)}`, 640, 706, PAL.gold);
+  // The shell line: explicit text, not dots — Lv<N> · +<X> HP. Hidden at
+  // Lv0 (nothing bought, nothing to show). The crab's shell COLOUR still
+  // follows shellTier (creatures.js) — that is separate.
+  if (state.ups.shell > 0) {
+    ctx.textAlign = 'center'; ctx.font = 'bold 12px sans-serif';
+    txt(ctx, `SHELL Lv${state.ups.shell} · +${state.ups.shell * 15} HP`, 640, 706, PAL.gold);
+  }
   for (let i = 0; i < UPGRADE_DEFS.length; i += 1) {
     const d = UPGRADE_DEFS[i];
     const lv = state.ups[d.id];

@@ -103,7 +103,7 @@ function buyMenuCard(i) {
   const res = buyCard(state, card);
   if (res === 'ok') { audio.buy(); status.textContent = `Bought ${card.name}!`; }
   else if (res === 'poor') {
-    state.menuMsg = `NOT ENOUGH COINS — NEED ${card.price - state.coins} MORE`;
+    state.menuMsg = 'NOT ENOUGH COINS';
     state.menuMsgT = 1.5;
     status.textContent = state.menuMsg;
   }

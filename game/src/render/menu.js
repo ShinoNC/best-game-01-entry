@@ -1,6 +1,6 @@
 // The stage-clear menu: the ONLY menu, shown only between stages.
 import { PAL, VIEW_H, VIEW_W, envForStage } from '../config.js';
-import { REROLL_COST } from '../cards.js';
+import { REROLL_COST, cardStats } from '../cards.js';
 import { drawCoin, drawPips, drawWeaponIcon } from './icons.js';
 import { stageMenuLayout } from './layout.js';
 import { bevel, rr, txt } from './polish.js';
@@ -8,16 +8,15 @@ import { bevel, rr, txt } from './polish.js';
 // Card colour coding: SKILL mint, LEVEL-UP gold, NEW WEAPON purple, REPAIR pink.
 const KIND_COLOR = { skill: '#7fe0c3', wup: '#ffd166', weapon: '#c9a7ff', repair: '#ff8fb0' };
 
-// One menu card: tag, picture, name, level pips, price. States differ by more
-// than colour: unaffordable = RED price; bought = green border + "✓ BOUGHT".
+// One menu card: tag, picture, name, stats, pips, price. Unaffordable =
+// red price + dimmed; bought = green border + ✓.
 function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   const poor = !card.bought && state.coins < card.price;
-  const need = card.price - state.coins;
   const kc = KIND_COLOR[card.kind] || PAL.dim;
   ctx.save();
   if (card.bought) ctx.globalAlpha = 0.6;
   else if (poor) ctx.globalAlpha = 0.85;
-  // Lifted card: soft shadow beneath, gradient body, faint top highlight.
+  // Lifted card: shadow, gradient, top highlight.
   ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 5;
   const cg = ctx.createLinearGradient(0, y, 0, y + h);
   cg.addColorStop(0, '#116072'); cg.addColorStop(1, '#0b4256');
@@ -34,12 +33,12 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
     ctx.strokeRect(x - 3, y - 3, w + 6, h + 6);
   }
   ctx.textAlign = 'center';
-  // Tag (top) + key badge (top-right): both own their own corner, they never meet.
+  // Tag + key badge own separate corners.
   ctx.font = 'bold 12px sans-serif';
   txt(ctx, card.tag, x + w / 2, y + 22, kc);
   ctx.font = 'bold 14px sans-serif';
   txt(ctx, `[${i + 1}]`, x + w - 24, y + 22, PAL.dim);
-  // Picture first: a weapon card shows its drawn icon, a skill card its glyph.
+  // Weapon icon or skill glyph.
   if (card.kind === 'weapon' || card.kind === 'wup') drawWeaponIcon(ctx, card.wid, x + w / 2, y + 62, 48, true);
   else {
     ctx.font = 'bold 40px sans-serif';
@@ -49,9 +48,14 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   ctx.font = 'bold 18px sans-serif';
   if (ctx.measureText(card.name).width > w - 20) ctx.font = 'bold 15px sans-serif';
   txt(ctx, card.name, x + w / 2, y + 108, PAL.text);
+  // Stats line: what the card does. Shrinks if it would overflow.
+  const st = cardStats(card, state);
+  ctx.font = 'bold 13px sans-serif';
+  if (ctx.measureText(st).width > w - 16) ctx.font = 'bold 12px sans-serif';
+  txt(ctx, st, x + w / 2, y + 134, PAL.foam);
   // Level pips: filled = owned, gold = the level this card adds.
-  if (card.kind !== 'repair') drawPips(ctx, x + w / 2, y + 148, card.lv, !card.bought);
-  // Price — a drawn coin + the number — or the bought stamp, or the shortfall in words (never colour alone).
+  if (card.kind !== 'repair') drawPips(ctx, x + w / 2, y + 158, card.lv, !card.bought);
+  // Price (coin + number) or the bought stamp.
   if (card.bought) {
     ctx.font = 'bold 18px sans-serif';
     txt(ctx, '✓ BOUGHT', x + w / 2, y + 198, '#7fe0c3');
@@ -61,18 +65,13 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
     const pw = ctx.measureText(pt).width;
     drawCoin(ctx, x + w / 2 - pw / 2 - 14, y + 190, 10);
     txt(ctx, pt, x + w / 2 + 8, y + 198, poor ? '#ff8fa0' : PAL.gold);
-    if (poor) {
-      ctx.font = 'bold 13px sans-serif';
-      txt(ctx, `NEED ${need} MORE`, x + w / 2, y + 222, '#ff8fa0');
-    }
   }
   ctx.restore();
 }
 
 export function drawStageMenu(ctx, state, hover) {
   const L = stageMenuLayout(state);
-  // The shop is its own space: an opaque dark background — no pool, no
-  // creatures, no decor behind the cards.
+  // The shop has its own opaque dark background.
   const bg = ctx.createRadialGradient(640, 360, 100, 640, 360, 750);
   bg.addColorStop(0, '#0a3542'); bg.addColorStop(1, '#041f28');
   ctx.fillStyle = bg; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
@@ -86,7 +85,7 @@ export function drawStageMenu(ctx, state, hover) {
   txt(ctx, ct, VIEW_W / 2 + 10, 186, PAL.gold);
   const hand = state.hand || [];
   if (hand.length === 0) {
-    // Empty state: everything is owned and maxed and the shell is whole.
+    // Empty state: everything owned/maxed.
     ctx.font = 'bold 22px sans-serif';
     txt(ctx, 'BUILD COMPLETE — NOTHING LEFT TO BUY', VIEW_W / 2, 360, PAL.foam);
   }
@@ -95,7 +94,7 @@ export function drawStageMenu(ctx, state, hover) {
     const hovered = hover && hover.x >= b.x && hover.x <= b.x + b.w && hover.y >= b.y && hover.y <= b.y + b.h;
     drawMenuCard(ctx, c, b.x, b.y, b.w, b.h, i, state, hovered);
   });
-  // REROLL (secondary, outline) and NEXT (the one primary CTA, gold-filled).
+  // REROLL (secondary) and NEXT (primary CTA).
   const r = L.reroll;
   const canReroll = state.coins >= REROLL_COST;
   const rHover = hover && hover.x >= r.x && hover.x <= r.x + r.w && hover.y >= r.y && hover.y <= r.y + r.h;
@@ -117,7 +116,7 @@ export function drawStageMenu(ctx, state, hover) {
   bevel(ctx, n.x, n.y, n.w, n.h, 8, nHover ? '#ffe08a' : '#ffd97a', '#f0b23e', PAL.gold, 2);
   ctx.font = 'bold 20px sans-serif';
   txt(ctx, `NEXT STAGE ${state.stage + 1} →  [Enter]`, n.x + n.w / 2, n.y + 33, '#062a33');
-  // One line under the buttons: an error message shows while it lasts.
+  // Error message under the buttons, while it lasts.
   if (state.menuMsgT > 0 && state.menuMsg) {
     ctx.font = 'bold 16px sans-serif';
     txt(ctx, state.menuMsg, VIEW_W / 2, 600, '#ff8fa0');

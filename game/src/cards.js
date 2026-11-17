@@ -10,6 +10,33 @@ export const REPAIR_HEAL = 40;
 
 function shopEntry(wid) { return SHOP.find((s) => s.id === wid); }
 
+// One stats line per card, from the real numbers. Damage is EFFECTIVE
+// (1.14x base × SHARPER CLAWS owned) — what the buyer actually gets.
+export function cardStats(card, state) {
+  if (card.kind === 'repair') return `+${REPAIR_HEAL} HP`;
+  if (card.kind === 'skill') {
+    const d = UPGRADE_DEFS.find((u) => u.id === card.track);
+    return d ? d.stat : '';
+  }
+  const W = WEAPONS[card.wid];
+  const mult = 1.14 * (1.10 ** state.ups.claws);
+  const dmgAt = (lv) => Math.round(W.levels[lv - 1].dmg * mult);
+  if (card.kind === 'weapon') {
+    const L = W.levels[0];
+    const sig = L.harpoons ? `×${L.harpoons}` : L.beams ? `${L.beams} BEAM`
+      : L.pierce ? `PIERCE ${L.pierce}` : L.turn ? 'HOMING' : L.arc ? `${L.hits} HITS`
+      : L.rate <= 0.5 ? 'RAPID' : 'AREA';
+    return `${dmgAt(1)} DMG · ${sig}`;
+  }
+  let s = `DMG ${dmgAt(card.lv)}→${dmgAt(card.toLevel)}`;
+  const a = W.levels[card.lv - 1], b = W.levels[card.toLevel - 1];
+  for (const [k, label] of [['arrows', 'ARROW'], ['pellets', 'PELLET'], ['harpoons', 'HARPOON'],
+    ['beams', 'BEAM'], ['hits', 'HIT'], ['pierce', 'PIERCE']]) {
+    if ((b[k] || 0) > (a[k] || 0)) s += ` · +${b[k] - a[k]} ${label}`;
+  }
+  return s;
+}
+
 // Every card drawable right now: unowned weapons (weight 3), level-ups (2), skills (1).
 export function cardPool(state) {
   const pool = [];

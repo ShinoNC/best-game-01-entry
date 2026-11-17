@@ -1,13 +1,11 @@
-// The title screens: a clean vertical menu, then a difficulty select.
-// Open bright water behind both — no frame, no box — with living creatures.
+// Title screens: vertical menu, then difficulty select. Bright open water behind both.
 import { CREATURE_ORDER, DIFFICULTIES, ENEMIES, PAL, VIEW_W } from '../config.js';
 import { bestTitle } from '../meta.js';
 import { drawCrab, drawEnemy } from './creatures.js';
 import { difficultyLayout, titleLayout } from './layout.js';
 import { bevel, logoText, rr, txt } from './polish.js';
 
-// Ambient life: 24 creatures drifting behind the menu; positions are a pure
-// function of time, so the staged screenshot is deterministic.
+// Ambient life: 24 drifting creatures; positions are a pure function of time.
 const AMBIENT = [];
 for (let i = 0; i < 24; i += 1) {
   AMBIENT.push({ type: CREATURE_ORDER[i % CREATURE_ORDER.length],
@@ -16,7 +14,7 @@ for (let i = 0; i < 24; i += 1) {
     dep: 0.55 + Math.random() * 0.45 });
 }
 
-// Shared menu background: a light veil over the water, then drifting creatures.
+// Menu background: light veil + drifting creatures.
 function drawAmbient(ctx, state) {
   ctx.fillStyle = 'rgba(6,42,51,0.28)'; ctx.fillRect(0, 0, VIEW_W, 720);
   const tt = state.shotMode ? 2.5 : performance.now() / 1000;
@@ -32,7 +30,7 @@ function drawAmbient(ctx, state) {
   return tt;
 }
 
-// The crab strolls along the bottom, legs stepping, turning at each edge.
+// The crab strolls along the bottom, turning at each edge.
 function drawPatrolCrab(ctx, state, tt) {
   const span = 1280 - 2 * 90, cyc = (tt * 50) % (span * 2);
   const cx = 90 + (cyc < span ? cyc : span * 2 - cyc);
@@ -45,14 +43,13 @@ export function drawTitle(ctx, state) {
   const tt = drawAmbient(ctx, state);
   drawPatrolCrab(ctx, state, tt); // behind the menu, along the bottom
   ctx.textAlign = 'center';
-  // The logo: gradient orange + dark outline + drop shadow — a game logo, not flat text.
+  // Logo: gradient orange + dark outline + drop shadow.
   ctx.letterSpacing = '3px';
   logoText(ctx, 'TIDEKEEPER', VIEW_W / 2, 112,
     '900 88px "Trebuchet MS", "Segoe UI", Verdana, sans-serif',
     '#ffb35c', '#e8590c', '#4a2408', 3);
   ctx.letterSpacing = '0px';
-  // The tagline: bigger, pill-backed, "30 STAGES" emphasized — readable at
-  // phone size. No flashing: a static prominent line beats a blinking one.
+  // Tagline: bigger, pill-backed, "30 STAGES" emphasized; pill 30px below the logo.
   const tagParts = [
     { t: '★ CLEAR ', f: 'bold 24px sans-serif' },
     { t: '30 STAGES', f: '900 30px sans-serif' },
@@ -63,25 +60,23 @@ export function drawTitle(ctx, state) {
   ctx.save();
   ctx.shadowColor = 'rgba(4,26,32,0.5)'; ctx.shadowBlur = 8; ctx.shadowOffsetY = 3;
   ctx.fillStyle = 'rgba(6,42,51,0.72)';
-  rr(ctx, VIEW_W / 2 - tagW / 2 - 18, 122, tagW + 36, 44, 22); ctx.fill();
+  rr(ctx, VIEW_W / 2 - tagW / 2 - 18, 142, tagW + 36, 44, 22); ctx.fill();
   ctx.restore();
   ctx.textAlign = 'left';
   let tx = VIEW_W / 2 - tagW / 2;
   for (const p of tagParts) {
     ctx.font = p.f;
-    txt(ctx, p.t, tx, 152, PAL.gold, 3);
+    txt(ctx, p.t, tx, 172, PAL.gold, 3);
     tx += ctx.measureText(p.t).width;
   }
   ctx.textAlign = 'center';
-  // A HARD title earned (3/10/20 hard wins) shows under the tagline — gold,
-  // only when earned; no placeholder when the player has none.
+  // An earned HARD title shows under the tagline (gold); none when not earned.
   const title = bestTitle((state.meta || {}).wins || {});
   if (title) {
     ctx.font = 'bold 17px sans-serif';
-    txt(ctx, `✦ ${title.toUpperCase()} ✦`, VIEW_W / 2, 182, PAL.gold);
+    txt(ctx, `✦ ${title.toUpperCase()} ✦`, VIEW_W / 2, 202, PAL.gold);
   }
-  // The vertical menu: START first (gold, taller), then four dark buttons.
-  // Keyboard selection (Up/Down + Enter) gets a gold highlight ring.
+  // Vertical menu: START (gold, taller), then four dark buttons. Keyboard selection gets a gold ring.
   const TL = titleLayout();
   const items = [['start', 'START GAME'], ['help', 'HOW TO PLAY  ?'], ['feats', 'ACHIEVEMENTS'],
     ['history', 'HISTORY'], ['settings', 'SETTINGS']];
