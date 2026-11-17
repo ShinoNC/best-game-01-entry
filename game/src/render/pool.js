@@ -32,8 +32,10 @@ function drawSandCorner(ctx, x0, y0, pw, ph, corner) {
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(sx, sy + dy * h);
-  ctx.quadraticCurveTo(sx + dx * w * 0.25, sy + dy * h * 0.94, sx + dx * w * 0.52, sy + dy * h * 0.58);
-  ctx.quadraticCurveTo(sx + dx * w * 0.74, sy + dy * h * 0.36, sx + dx * w, sy);
+  for (let i = 0; i < 6; i += 1) {
+    ctx.lineTo(sx + dx * w * (i + 1) / 6, sy + dy * h * (1 - i / 6));
+    ctx.lineTo(sx + dx * w * (i + 1) / 6, sy + dy * h * (1 - (i + 1) / 6));
+  }
   ctx.lineTo(sx, sy);
   ctx.closePath();
   ctx.clip();

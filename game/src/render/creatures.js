@@ -30,7 +30,7 @@ export function drawCrab(ctx, p, t, clawStats, spinStats) {
   const size = p.radius * 2.4;
   const bob = Math.sin(t * 8) * 2 * (p.moving || 0);
   ctx.fillStyle = 'rgba(4,26,32,0.35)';
-  ctx.beginPath(); ctx.ellipse(p.x, p.y + p.radius * 0.8, p.radius * 1.05, p.radius * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(p.x - p.radius * 1.05, p.y + p.radius * 0.55, p.radius * 2.1, p.radius * 0.5);
   const blink = p.iframes > 0 && Math.floor(t * 20) % 2 === 0;
   if (img) {
     const asp = img.naturalHeight / img.naturalWidth;
@@ -51,41 +51,53 @@ export function drawCrab(ctx, p, t, clawStats, spinStats) {
     ctx.globalAlpha = (1 - prog) * 0.16;
     ctx.fillStyle = PAL.gold;
     ctx.beginPath(); ctx.moveTo(0, 0);
-    ctx.arc(0, 0, clawStats.range, p.angle - arc, p.angle + arc); ctx.closePath(); ctx.fill();
+    ctx.lineTo(Math.cos(p.angle - arc) * clawStats.range, Math.sin(p.angle - arc) * clawStats.range);
+    ctx.lineTo(Math.cos(p.angle) * clawStats.range, Math.sin(p.angle) * clawStats.range);
+    ctx.lineTo(Math.cos(p.angle + arc) * clawStats.range, Math.sin(p.angle + arc) * clawStats.range);
+    ctx.closePath(); ctx.fill();
     ctx.globalAlpha = (1 - prog) * 0.85;
-    ctx.strokeStyle = PAL.gold; ctx.lineWidth = 9; ctx.lineCap = 'round';
+    ctx.fillStyle = PAL.gold;
     const lead = p.angle - arc + prog * arc * 2;
-    ctx.beginPath(); ctx.arc(0, 0, r, lead - 0.55, lead + 0.15); ctx.stroke();
+    for (let i = 0; i < 4; i += 1) {
+      const a = lead - 0.5 + i * 0.22;
+      ctx.fillRect(Math.cos(a) * r - 4, Math.sin(a) * r - 4, 9, 9);
+    }
     ctx.restore();
   }
   if (p.spin > 0 && spinStats) {
     const prog = 1 - p.spin / 0.3;
+    const half = 30 + prog * (spinStats.range - 30);
     ctx.save(); ctx.translate(p.x, p.y);
     ctx.globalAlpha = (1 - prog) * 0.8;
     ctx.strokeStyle = '#7fe0c3'; ctx.lineWidth = 6;
-    ctx.beginPath(); ctx.arc(0, 0, 30 + prog * (spinStats.range - 30), 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeRect(-half, -half, half * 2, half * 2);
     ctx.globalAlpha = (1 - prog) * 0.2;
     ctx.fillStyle = '#7fe0c3';
-    ctx.beginPath(); ctx.arc(0, 0, 30 + prog * (spinStats.range - 30), 0, Math.PI * 2); ctx.fill();
+    ctx.fillRect(-half, -half, half * 2, half * 2);
     ctx.restore();
   }
   if (p.laser > 0) {
     const a = (p.laser / 0.15) * 0.75;
     const dirs = p.laserBeams >= 2 ? [1, -1] : [1];
-    ctx.save(); ctx.lineCap = 'round';
+    ctx.save();
     for (const dir of dirs) {
-      ctx.strokeStyle = `rgba(255,46,136,${a * 0.28})`; ctx.lineWidth = 16;
-      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + dir * p.laserLen, p.y); ctx.stroke();
-      ctx.strokeStyle = `rgba(255,46,136,${a})`; ctx.lineWidth = 9;
-      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + dir * p.laserLen, p.y); ctx.stroke();
-      ctx.strokeStyle = `rgba(255,255,255,${a})`; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + dir * p.laserLen, p.y); ctx.stroke();
+      for (let d = 0; d < p.laserLen; d += 26) {
+        const seg = Math.min(22, p.laserLen - d);
+        const x0 = dir > 0 ? p.x + d : p.x - d - seg;
+        ctx.fillStyle = `rgba(255,46,136,${a * 0.28})`;
+        ctx.fillRect(x0, p.y - 8, seg, 16);
+        ctx.fillStyle = `rgba(255,46,136,${a})`;
+        ctx.fillRect(x0, p.y - 5, seg, 10);
+        ctx.fillStyle = `rgba(255,255,255,${a})`;
+        ctx.fillRect(x0, p.y - 1, seg, 2);
+      }
     }
     ctx.restore();
   }
   if (p.flash > 0) {
     ctx.strokeStyle = `rgba(255,93,115,${p.flash * 3})`; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(p.x, p.y, p.radius + 6, 0, Math.PI * 2); ctx.stroke();
+    const fr = p.radius + 6;
+    ctx.strokeRect(p.x - fr, p.y - fr, fr * 2, fr * 2);
   }
 }
 
@@ -128,11 +140,13 @@ export function drawEnemy(ctx, e, t, ang) {
   }
   if (e.type === 'archer' && e.windup > 0) {
     ctx.fillStyle = 'rgba(191,232,224,0.95)';
-    ctx.beginPath(); ctx.arc(e.x + Math.cos(face) * e.r * 1.85, e.y + Math.sin(face) * e.r * 1.85, 3 + (0.35 - e.windup) * 12, 0, Math.PI * 2); ctx.fill();
+    const wr = 3 + (0.35 - e.windup) * 12;
+    ctx.fillRect(e.x + Math.cos(face) * e.r * 1.85 - wr, e.y + Math.sin(face) * e.r * 1.85 - wr, wr * 2, wr * 2);
   }
   if (e.elite) {
     ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(e.x, e.y, e.r + 7, 0, Math.PI * 2); ctx.stroke();
+    const er = e.r + 7;
+    ctx.strokeRect(e.x - er, e.y - er, er * 2, er * 2);
     ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
     txt(ctx, '★', e.x, e.y - e.r - 26, '#ffd166');
   }

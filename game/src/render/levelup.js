@@ -1,4 +1,5 @@
 import { PAL, VIEW_W } from '../config.js';
+import { drawSkillIcon } from './icons.js';
 import { levelupLayout } from './layout.js';
 import { txt } from './polish.js';
 
@@ -24,8 +25,7 @@ export function drawLevelUp(ctx, state, hover) {
     if (!c) continue;
     ctx.font = 'bold 13px sans-serif';
     txt(ctx, `[${i + 1}]`, b.x + b.w / 2, b.y + 24, PAL.dim);
-    ctx.font = 'bold 44px sans-serif';
-    txt(ctx, c.icon, b.x + b.w / 2, b.y + 84, PAL.xp);
+    drawSkillIcon(ctx, c.id, b.x + b.w / 2, b.y + 62, 44, true);
     ctx.font = 'bold 20px sans-serif';
     txt(ctx, c.name, b.x + b.w / 2, b.y + 120, PAL.text);
     ctx.font = 'bold 15px sans-serif';

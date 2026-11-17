@@ -50,7 +50,8 @@ export function drawTitle(ctx, state) {
   let tagW = 0;
   for (const p of tagParts) { ctx.font = p.f; tagW += ctx.measureText(p.t).width; }
   ctx.save();
-  ctx.shadowColor = 'rgba(4,26,32,0.5)'; ctx.shadowBlur = 8; ctx.shadowOffsetY = 3;
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(VIEW_W / 2 - tagW / 2 - 18 + 4, 142 + 4, tagW + 36, 44);
   ctx.fillStyle = 'rgba(6,42,51,0.72)';
   rr(ctx, VIEW_W / 2 - tagW / 2 - 18, 142, tagW + 36, 44, 22); ctx.fill();
   ctx.restore();

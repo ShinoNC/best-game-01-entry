@@ -1,65 +1,90 @@
 import { WEAPON_MAX } from '../config.js';
 
+// Pixel heart from a 7x6 bitmap, drawn with flat rects only.
+const HEART_ROWS = ['.XX.XX.', 'XXXXXXX', 'XXXXXXX', '.XXXXX.', '..XXX..', '...X...'];
 export function heart(ctx, x, y, r, c) {
-  ctx.fillStyle = c; ctx.beginPath();
-  ctx.moveTo(x, y + r * 0.85);
-  ctx.bezierCurveTo(x - r * 1.25, y, x - r * 0.6, y - r, x, y - r * 0.3);
-  ctx.bezierCurveTo(x + r * 0.6, y - r, x + r * 1.25, y, x, y + r * 0.85);
-  ctx.closePath(); ctx.fill();
+  const cell = (r * 2) / 7;
+  ctx.fillStyle = c;
+  for (let row = 0; row < HEART_ROWS.length; row += 1) {
+    for (let col = 0; col < 7; col += 1) {
+      if (HEART_ROWS[row][col] === 'X') {
+        ctx.fillRect(x - r + col * cell, y - r + row * cell, cell + 0.5, cell + 0.5);
+      }
+    }
+  }
 }
 
+function R(ctx, x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
+
+// Pixel-art weapon icons: chunky rects on a 40x40 grid, no curves.
 export function drawWeaponIcon(ctx, id, x, y, s, owned) {
   ctx.save(); ctx.translate(x, y); ctx.scale(s / 40, s / 40);
   if (!owned) ctx.globalAlpha = 0.35;
   if (id === 'claw') {
-    ctx.fillStyle = '#ff7a3c'; ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#062a33';
-    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(15, -7); ctx.lineTo(15, 7); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#d94f1e'; ctx.beginPath(); ctx.arc(-4, 0, 4, 0, Math.PI * 2); ctx.fill();
+    R(ctx, -16, -10, 10, 20, '#ff7a3c'); R(ctx, -10, -14, 6, 6, '#ff7a3c'); R(ctx, -10, 8, 6, 6, '#ff7a3c');
+    R(ctx, 6, -10, 10, 20, '#ff7a3c'); R(ctx, 4, -14, 6, 6, '#ff7a3c'); R(ctx, 4, 8, 6, 6, '#ff7a3c');
+    R(ctx, -4, -6, 8, 12, '#d94f1e');
   } else if (id === 'bow') {
-    ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.arc(-6, 0, 16, -1.1, 1.1); ctx.stroke();
-    ctx.strokeStyle = '#f4f9ff'; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(2, -15); ctx.lineTo(2, 15); ctx.stroke();
-    ctx.strokeStyle = '#bfe8e0'; ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.moveTo(-8, 0); ctx.lineTo(14, 0); ctx.stroke();
-    ctx.fillStyle = '#e8fffa'; ctx.beginPath(); ctx.arc(15, 0, 4, 0, Math.PI * 2); ctx.fill();
+    R(ctx, -16, -12, 5, 6, '#ffd166'); R(ctx, -18, -6, 5, 12, '#ffd166'); R(ctx, -16, 6, 5, 6, '#ffd166');
+    R(ctx, -11, -16, 5, 5, '#ffd166'); R(ctx, -11, 11, 5, 5, '#ffd166');
+    R(ctx, 0, -14, 2, 28, '#f4f9ff');
+    R(ctx, -6, -2, 18, 4, '#bfe8e0'); R(ctx, 12, -4, 6, 8, '#e8fffa');
   } else if (id === 'blaster') {
-    ctx.fillStyle = '#7b5cff';
-    for (const [bx, by, br] of [[-6, -9, 6], [4, -2, 7], [-6, 9, 6]]) {
-      ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.fillStyle = '#3a2d5e'; ctx.fillRect(-18, -4, 9, 8);
-    ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.beginPath(); ctx.arc(2, -4, 2, 0, Math.PI * 2); ctx.fill();
+    R(ctx, -14, -14, 12, 12, '#7b5cff'); R(ctx, 2, -8, 12, 12, '#7b5cff'); R(ctx, -14, 2, 12, 12, '#7b5cff');
+    R(ctx, -11, -11, 4, 4, '#a78bff'); R(ctx, 5, -5, 4, 4, '#a78bff');
+    R(ctx, -18, -4, 8, 8, '#3a2d5e');
   } else if (id === 'shell') {
-    ctx.strokeStyle = '#d8cfe8'; ctx.lineWidth = 3; ctx.lineCap = 'round';
-    for (const r of [14, 10, 6]) { ctx.beginPath(); ctx.arc(0, 0, r, 0.4, Math.PI * 1.8); ctx.stroke(); }
-    ctx.fillStyle = '#a894c4'; ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#d8cfe8'; ctx.lineWidth = 3;
+    ctx.strokeRect(-14, -14, 28, 28); ctx.strokeRect(-8, -8, 16, 16);
+    R(ctx, -3, -3, 6, 6, '#a894c4');
   } else if (id === 'laser') {
-    ctx.fillStyle = '#3a2d5e'; ctx.fillRect(-18, -5, 14, 10);
-    ctx.fillStyle = '#8a7fb8'; ctx.fillRect(-6, -2, 10, 4);
-    ctx.strokeStyle = '#ff2e88'; ctx.lineWidth = 4; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(18, 0); ctx.stroke();
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(18, 0); ctx.stroke();
-    ctx.fillStyle = '#ff2e88'; ctx.beginPath(); ctx.arc(19, 0, 3, 0, Math.PI * 2); ctx.fill();
+    R(ctx, -18, -6, 12, 12, '#3a2d5e'); R(ctx, -6, -2, 8, 4, '#8a7fb8');
+    R(ctx, 2, -4, 16, 8, '#ff2e88'); R(ctx, 2, -1, 16, 2, '#ffffff');
+    R(ctx, 18, -3, 4, 6, '#ff2e88');
   } else if (id === 'trident') {
-    ctx.strokeStyle = '#c8d8e0'; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(-14, 0); ctx.lineTo(10, 0); ctx.stroke();
-    ctx.strokeStyle = '#e8f4ff'; ctx.lineWidth = 3;
-    for (const dy of [-12, 0, 12]) {
-      ctx.beginPath(); ctx.moveTo(10, dy); ctx.lineTo(17, dy); ctx.stroke();
-    }
-    ctx.beginPath(); ctx.moveTo(10, -12); ctx.lineTo(10, 12); ctx.stroke();
-    ctx.fillStyle = '#e8f4ff';
-    ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(14, -4); ctx.lineTo(14, 4); ctx.closePath(); ctx.fill();
+    R(ctx, -18, -2, 22, 4, '#c8d8e0');
+    R(ctx, 4, -12, 4, 24, '#e8f4ff');
+    R(ctx, 8, -14, 8, 4, '#e8f4ff'); R(ctx, 8, -2, 8, 4, '#e8f4ff'); R(ctx, 8, 10, 8, 4, '#e8f4ff');
+    R(ctx, 16, -4, 4, 8, '#e8f4ff');
   } else {
-    ctx.strokeStyle = '#7fe0c3'; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.arc(0, 0, 13, 0.4, 4.8); ctx.stroke();
-    ctx.fillStyle = '#7fe0c3';
-    ctx.beginPath(); ctx.moveTo(13, -6); ctx.lineTo(18, 2); ctx.lineTo(9, 2); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = 'rgba(127,224,195,0.6)'; ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.arc(0, 0, 6.5, 2.2, 5.6); ctx.stroke();
+    R(ctx, -16, -4, 12, 8, '#7fe0c3'); R(ctx, -4, -16, 8, 12, '#7fe0c3');
+    R(ctx, 4, -4, 12, 8, '#7fe0c3'); R(ctx, -4, 4, 8, 12, '#7fe0c3');
+    R(ctx, -4, -4, 8, 8, '#c8f5e6');
+  }
+  ctx.restore();
+}
+
+// Pixel-art skill icons for the HUD skill slots, level-up cards and shop.
+export function drawSkillIcon(ctx, id, x, y, s, owned) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s / 40, s / 40);
+  if (!owned) ctx.globalAlpha = 0.4;
+  if (id === 'claws') {
+    R(ctx, -16, -8, 9, 16, '#ff7a3c'); R(ctx, -9, -12, 6, 6, '#ff7a3c'); R(ctx, -9, 6, 6, 6, '#ff7a3c');
+    R(ctx, 7, -8, 9, 16, '#ff7a3c'); R(ctx, 3, -12, 6, 6, '#ff7a3c'); R(ctx, 3, 6, 6, 6, '#ff7a3c');
+    R(ctx, -3, -5, 6, 10, '#d94f1e');
+  } else if (id === 'tempo') {
+    R(ctx, -14, -10, 6, 6, '#7fe0c3'); R(ctx, -8, -4, 6, 8, '#7fe0c3'); R(ctx, -14, 4, 6, 6, '#7fe0c3');
+    R(ctx, -2, -10, 6, 6, '#7fe0c3'); R(ctx, 4, -4, 6, 8, '#7fe0c3'); R(ctx, -2, 4, 6, 6, '#7fe0c3');
+  } else if (id === 'reach') {
+    R(ctx, -14, -2, 28, 4, '#ffd166');
+    R(ctx, -18, -5, 6, 10, '#ffd166'); R(ctx, 12, -5, 6, 10, '#ffd166');
+    R(ctx, -16, -8, 3, 3, '#ffe08a'); R(ctx, 13, -8, 3, 3, '#ffe08a');
+  } else if (id === 'shell') {
+    ctx.strokeStyle = '#7fe0c3'; ctx.lineWidth = 3;
+    ctx.strokeRect(-12, -12, 24, 24); ctx.strokeRect(-6, -6, 12, 12);
+    R(ctx, -2, -2, 4, 4, '#c8f5e6');
+  } else if (id === 'legs') {
+    R(ctx, -16, -10, 24, 4, '#bfe8e0'); R(ctx, -16, -1, 18, 4, '#bfe8e0'); R(ctx, -16, 8, 28, 4, '#bfe8e0');
+    R(ctx, 10, -10, 5, 4, '#ffffff');
+  } else if (id === 'bubbles') {
+    R(ctx, -14, -12, 10, 10, '#a8e6ff'); R(ctx, 2, -14, 12, 12, '#a8e6ff'); R(ctx, -6, 2, 14, 14, '#7fd4ff');
+    R(ctx, -11, -9, 4, 4, '#ffffff'); R(ctx, 5, -11, 4, 4, '#ffffff'); R(ctx, -2, 6, 5, 5, '#ffffff');
+  } else if (id === 'magnet') {
+    R(ctx, -12, -12, 8, 22, '#ff5d73'); R(ctx, 4, -12, 8, 22, '#ff5d73');
+    R(ctx, -12, 4, 24, 8, '#ff5d73');
+    R(ctx, -12, -12, 8, 8, '#ffffff'); R(ctx, 4, -12, 8, 8, '#ffffff');
+  } else {
+    heart(ctx, 0, 0, 14, '#ff5d73');
   }
   ctx.restore();
 }
@@ -79,6 +104,6 @@ export function drawCoin(ctx, x, y, r) {
 export function drawPips(ctx, cx, y, lv, next) {
   for (let i = 0; i < WEAPON_MAX; i += 1) {
     ctx.fillStyle = i < lv ? '#7fe0c3' : (next && i === lv ? '#ffd166' : 'rgba(255,255,255,0.25)');
-    ctx.beginPath(); ctx.arc(cx - 24 + i * 12, y, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillRect(cx - 26 + i * 12, y - 4, 8, 8);
   }
 }

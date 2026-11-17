@@ -1,4 +1,4 @@
-import { POOL, STAGE_COUNT } from './config.js';
+import { POOL } from './config.js';
 import { createRandom } from './random.js';
 import { createState } from './state.js';
 import { nextStage, stepWorld } from './world.js';
@@ -103,7 +103,7 @@ export function stageShot(shot, seed, fx, audio) {
     return s;
   }
   if (shot === 'boss' || shot === 'storm') {
-    const wantStage = shot === 'storm' ? STAGE_COUNT : 5;
+    const wantStage = shot === 'storm' ? 15 : 5;
     for (let trySeed = seed; trySeed < seed + 8; trySeed += 1) {
       const s = createStateFromSeed(trySeed); s.phase = 'play';
       runUntil(s, (st) => st.phase === 'play' && st.stage === wantStage && st.boss, 120000, fx, audio);

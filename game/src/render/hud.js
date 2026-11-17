@@ -1,8 +1,8 @@
 import { CREATURE_NAMES, PAL, STAGES, VIEW_H, VIEW_W, WEAPON_ORDER, bossForStage, clusterMod, clusterOf, contentStage, nextTypes } from '../config.js';
 import { UPGRADE_DEFS } from '../upgrades.js';
 import { comboMult } from '../world.js';
-import { drawCoin, drawWeaponIcon } from './icons.js';
-import { txt } from './polish.js';
+import { drawCoin, drawSkillIcon, drawWeaponIcon, heart } from './icons.js';
+import { pxBar, txt } from './polish.js';
 
 export function drawHud(ctx, state, t) {
   const p = state.player;
@@ -46,8 +46,7 @@ export function drawHud(ctx, state, t) {
     ctx.fillStyle = 'rgba(6,42,51,0.85)'; ctx.fillRect(VIEW_W / 2 - 190, 78, 380, 34);
     ctx.textAlign = 'center'; ctx.font = 'bold 14px sans-serif';
     txt(ctx, state.boss.name, VIEW_W / 2, 94, '#e8e4d8');
-    ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(VIEW_W / 2 - 180, 100, 360, 6);
-    ctx.fillStyle = '#ff5d73'; ctx.fillRect(VIEW_W / 2 - 180, 100, 360 * (state.boss.hp / state.boss.maxHp), 6);
+    pxBar(ctx, VIEW_W / 2 - 180, 100, 360, 6, state.boss.hp / state.boss.maxHp, '#ff5d73', 12);
   }
   const WABBR = { claw: 'CL', bow: 'BW', blaster: 'BL', shell: 'SH', spin: 'SP', laser: 'LZ', trident: 'TR' };
   const SABBR = { claws: 'DM', tempo: 'FR', reach: 'RG', shell: 'EN', legs: 'SW', bubbles: 'BB', magnet: 'MG' };
@@ -65,27 +64,24 @@ export function drawHud(ctx, state, t) {
     txt(ctx, lv > 0 ? WABBR[id] + lv : WABBR[id], bx + 26, by + 47, lv > 0 ? PAL.text : PAL.dim, 1);
   }
   ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'left';
-  txt(ctx, '♥', 490, 670, PAL.hp, 3);
-  txt(ctx, ` ${Math.ceil(p.hp)}/${p.maxHp}`, 490 + ctx.measureText('♥ ').width, 670, PAL.text, 3);
+  heart(ctx, 498, 663, 8, PAL.hp);
+  txt(ctx, `${Math.ceil(p.hp)}/${p.maxHp}`, 510, 670, PAL.text, 3);
   if (state.ups.shell > 0) {
     ctx.textAlign = 'right';
     txt(ctx, `Lv${state.ups.shell}`, 790, 670, PAL.gold, 3);
   }
-  ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(490, 677, 300, 14);
-  ctx.fillStyle = PAL.hp; ctx.fillRect(490, 677, 300 * (p.hp / p.maxHp), 14);
+  pxBar(ctx, 490, 677, 300, 14, p.hp / p.maxHp, PAL.hp, 12);
   ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'left';
   txt(ctx, `Lv${state.level}`, 490, 706, PAL.xp, 3);
-  ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(530, 697, 260, 8);
-  ctx.fillStyle = PAL.xp; ctx.fillRect(530, 697, 260 * Math.min(1, state.xp / state.xpNext), 8);
+  pxBar(ctx, 530, 697, 260, 8, Math.min(1, state.xp / state.xpNext), PAL.xp, 10);
   if (p.armor > 0) {
     ctx.font = 'bold 14px sans-serif';
     const num = `${p.armor}`;
     const x0 = 640 - (ctx.measureText(num).width + 16) / 2;
     ctx.fillStyle = PAL.armor;
-    ctx.beginPath();
-    ctx.moveTo(x0, 657); ctx.lineTo(x0 + 12, 657); ctx.lineTo(x0 + 12, 665);
-    ctx.quadraticCurveTo(x0 + 12, 671, x0 + 6, 674); ctx.quadraticCurveTo(x0, 671, x0, 665);
-    ctx.closePath(); ctx.fill();
+    ctx.fillRect(x0, 657, 12, 10);
+    ctx.fillRect(x0 + 2, 667, 8, 4);
+    ctx.fillRect(x0 + 4, 671, 4, 3);
     ctx.textAlign = 'left';
     txt(ctx, num, x0 + 16, 670, PAL.armor, 3);
   }
@@ -98,8 +94,7 @@ export function drawHud(ctx, state, t) {
     ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(bx, by, 52, 2);
     ctx.strokeStyle = lv > 0 ? 'rgba(127,224,195,0.6)' : 'rgba(255,255,255,0.15)';
     ctx.lineWidth = 1; ctx.strokeRect(bx, by, 52, 52);
-    ctx.font = 'bold 22px sans-serif'; ctx.textAlign = 'center';
-    txt(ctx, d.icon, bx + 26, by + 27, lv > 0 ? '#7fe0c3' : '#9fc4bd');
+    drawSkillIcon(ctx, d.id, bx + 26, by + 20, 30, lv > 0);
     ctx.font = 'bold 11px sans-serif';
     txt(ctx, lv > 0 ? SABBR[d.id] + lv : SABBR[d.id], bx + 26, by + 47, lv > 0 ? PAL.text : PAL.dim, 1);
   }

@@ -64,9 +64,9 @@ export function createRenderer(canvas) {
         for (const s of bb.slamSpots) {
           ctx.save();
           ctx.fillStyle = `rgba(255,93,115,${0.15 + 0.1 * pulse})`;
-          ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+          ctx.fillRect(s.x - s.r, s.y - s.r, s.r * 2, s.r * 2);
           ctx.strokeStyle = `rgba(255,93,115,${0.6 + 0.3 * pulse})`; ctx.lineWidth = 3;
-          ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.stroke();
+          ctx.strokeRect(s.x - s.r, s.y - s.r, s.r * 2, s.r * 2);
           ctx.restore();
         }
       }
@@ -83,7 +83,8 @@ export function createRenderer(canvas) {
           ctx.setLineDash([]);
           ctx.strokeStyle = `rgba(255,93,115,${0.45 + 0.3 * pulse})`;
           ctx.lineWidth = 2;
-          ctx.beginPath(); ctx.arc(jx, jy, 44 + pulse * 6, 0, Math.PI * 2); ctx.stroke();
+          const tr = 44 + pulse * 6;
+          ctx.strokeRect(jx - tr, jy - tr, tr * 2, tr * 2);
           ctx.font = 'bold 24px sans-serif'; ctx.textAlign = 'center';
           txt(ctx, '!', ix, iy - e.r - 10, '#ff5d73');
           ctx.restore();
@@ -101,12 +102,13 @@ export function createRenderer(canvas) {
       for (const pk of state.pickups) {
         if (pk.kind === 'heal') heart(ctx, pk.x, pk.y + Math.sin(t * 3) * 2, 13, PAL.hp);
         else if (pk.kind === 'bomb') {
-          ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(pk.x, pk.y, 13, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#ffd166';
+          ctx.fillRect(pk.x - 13, pk.y - 13, 26, 26);
           ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center';
           txt(ctx, '✹', pk.x, pk.y + 5, '#062a33');
         } else {
           ctx.strokeStyle = '#7fe0c3'; ctx.lineWidth = 3;
-          ctx.beginPath(); ctx.arc(pk.x, pk.y, 12, 0, Math.PI * 2); ctx.stroke();
+          ctx.strokeRect(pk.x - 12, pk.y - 12, 24, 24);
           ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center';
           txt(ctx, '◎', pk.x, pk.y + 5, '#7fe0c3');
         }
@@ -114,39 +116,46 @@ export function createRenderer(canvas) {
       for (const b of state.bolts) {
         if (b.kind === 'arrow') {
           const ba = Math.atan2(b.vy, b.vx);
-          ctx.strokeStyle = 'rgba(191,232,224,0.8)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
-          ctx.beginPath(); ctx.moveTo(b.x - Math.cos(ba) * 16, b.y - Math.sin(ba) * 16);
-          ctx.lineTo(b.x + Math.cos(ba) * 8, b.y + Math.sin(ba) * 8); ctx.stroke();
-          ctx.fillStyle = '#e8fffa'; ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI * 2); ctx.fill();
+          ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(ba);
+          ctx.fillStyle = 'rgba(191,232,224,0.8)';
+          ctx.fillRect(-16, -2, 24, 4);
+          ctx.fillStyle = '#e8fffa';
+          ctx.fillRect(4, -4, 8, 8);
+          ctx.restore();
         } else if (b.kind === 'pellet') {
-          ctx.fillStyle = '#7b5cff'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
-          ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.arc(b.x - 1.5, b.y - 1.5, 2, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#7b5cff';
+          ctx.fillRect(b.x - b.r, b.y - b.r, b.r * 2, b.r * 2);
+          ctx.fillStyle = 'rgba(255,255,255,0.5)';
+          ctx.fillRect(b.x - b.r, b.y - b.r, 3, 3);
         } else if (b.kind === 'homing') {
           const ba = Math.atan2(b.vy, b.vx);
-          ctx.strokeStyle = 'rgba(216,207,232,0.6)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
-          ctx.beginPath(); ctx.moveTo(b.x - Math.cos(ba) * 18, b.y - Math.sin(ba) * 18);
-          ctx.lineTo(b.x - Math.cos(ba) * 8, b.y - Math.sin(ba) * 8); ctx.stroke();
-          ctx.fillStyle = '#d8cfe8'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
-          ctx.strokeStyle = '#a894c4'; ctx.lineWidth = 2;
-          ctx.beginPath(); ctx.arc(b.x, b.y, b.r * 0.55, t * 6, t * 6 + Math.PI * 1.5); ctx.stroke();
-          ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.x - 2, b.y - 2, 2, 0, Math.PI * 2); ctx.fill();
+          ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(ba);
+          ctx.fillStyle = 'rgba(216,207,232,0.6)';
+          ctx.fillRect(-18, -1, 10, 2);
+          ctx.restore();
+          ctx.fillStyle = '#d8cfe8';
+          ctx.fillRect(b.x - b.r, b.y - b.r, b.r * 2, b.r * 2);
+          const oa = t * 6;
+          ctx.fillStyle = '#a894c4';
+          ctx.fillRect(b.x + Math.cos(oa) * b.r * 0.55 - 2, b.y + Math.sin(oa) * b.r * 0.55 - 2, 4, 4);
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(b.x - b.r, b.y - b.r, 3, 3);
         } else if (b.kind === 'harpoon') {
           const ba = Math.atan2(b.vy, b.vx);
-          const cx = Math.cos(ba), sx = Math.sin(ba);
-          ctx.strokeStyle = '#c8d8e0'; ctx.lineWidth = 3; ctx.lineCap = 'round';
-          ctx.beginPath(); ctx.moveTo(b.x - cx * 14, b.y - sx * 14);
-          ctx.lineTo(b.x + cx * 6, b.y + sx * 6); ctx.stroke();
+          ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(ba);
+          ctx.fillStyle = '#c8d8e0';
+          ctx.fillRect(-14, -2, 20, 4);
           ctx.fillStyle = '#e8f4ff';
-          ctx.beginPath();
-          ctx.moveTo(b.x + cx * 13, b.y + sx * 13);
-          ctx.lineTo(b.x - sx * 5 + cx * 4, b.y + cx * 5 + sx * 4);
-          ctx.lineTo(b.x + sx * 5 + cx * 4, b.y - cx * 5 + sx * 4);
-          ctx.closePath(); ctx.fill();
+          ctx.fillRect(6, -5, 8, 10);
+          ctx.fillRect(14, -2, 4, 4);
+          ctx.restore();
         }
       }
       for (const s of state.spits) {
-        ctx.fillStyle = s.color || '#a8e6ff'; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(s.x - 2, s.y - 2, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = s.color || '#a8e6ff';
+        ctx.fillRect(s.x - s.r, s.y - s.r, s.r * 2, s.r * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(s.x - s.r, s.y - s.r, 3, 3);
       }
       for (const e of state.enemies) {
         const ix = lerp(e.px ?? e.x, e.x), iy = lerp(e.py ?? e.y, e.y);
@@ -160,10 +169,12 @@ export function createRenderer(canvas) {
       }
       fx.draw(ctx);
       if (state.player.flash > 0 && state.phase === 'play') {
-        const vg = ctx.createRadialGradient(VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.35, VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.75);
-        vg.addColorStop(0, 'rgba(255,45,85,0)');
-        vg.addColorStop(1, `rgba(255,45,85,${state.player.flash * 1.6})`);
-        ctx.fillStyle = vg; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+        const a = state.player.flash * 0.7;
+        ctx.fillStyle = `rgba(255,45,85,${a})`;
+        ctx.fillRect(0, 0, VIEW_W, 18);
+        ctx.fillRect(0, VIEW_H - 18, VIEW_W, 18);
+        ctx.fillRect(0, 0, 18, VIEW_H);
+        ctx.fillRect(VIEW_W - 18, 0, 18, VIEW_H);
       }
       ctx.setTransform(s, 0, 0, s, oxd, oyd);
       if (state.phase === 'play' || state.phase === 'paused' || state.phase === 'levelup') drawHud(ctx, state, t);

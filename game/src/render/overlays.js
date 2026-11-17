@@ -78,7 +78,7 @@ export function drawHelp(ctx, state) {
     const b = bossForStage(BOSS_STAGES[i].stage, state.bossOrder);
     const hx = 180 + i * 158;
     ctx.fillStyle = b.color;
-    ctx.beginPath(); ctx.arc(hx + 5, 344, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillRect(hx, 339, 10, 10);
     ctx.font = 'bold 12px sans-serif';
     txt(ctx, b.name, hx + 16, 348, PAL.text);
     ctx.font = '12px sans-serif';

@@ -46,7 +46,7 @@ export function createState(rng, seed) {
   return {
     rng, seed, decor, theme, stageMix, envs, bossOrder, stageMap, sandCorner: ['tl', 'tr', 'bl', 'br'][((seed % 4) + 4) % 4], time: 0, phase: 'title', menuSel: 0,
     combo: 0, comboT: 0,
-    level: 1, xp: 0, xpNext: 14, levelChoices: null,
+    level: 1, xp: 0, xpNext: 21, levelChoices: null,
     player: {
       x: POOL.cx, y: POOL.cy + 40, px: POOL.cx, py: POOL.cy + 40,
       vx: 0, vy: 0, angle: -Math.PI / 2,

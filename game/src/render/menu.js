@@ -1,6 +1,6 @@
 import { ARMOR_PER_BOSS, PAL, VIEW_H, VIEW_W, bossForStage, clusterMod, clusterOf, envForStage } from '../config.js';
 import { REROLL_COST, cardStats } from '../cards.js';
-import { drawCoin, drawPips, drawWeaponIcon } from './icons.js';
+import { drawCoin, drawPips, drawSkillIcon, drawWeaponIcon, heart } from './icons.js';
 import { stageMenuLayout } from './layout.js';
 import { bevel, rr, txt } from './polish.js';
 
@@ -12,12 +12,10 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   ctx.save();
   if (card.bought) ctx.globalAlpha = 0.6;
   else if (poor) ctx.globalAlpha = 0.85;
-  ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 5;
-  const cg = ctx.createLinearGradient(0, y, 0, y + h);
-  cg.addColorStop(0, '#116072'); cg.addColorStop(1, '#0b4256');
-  ctx.fillStyle = cg;
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.fillRect(x + 4, y + 5, w, h);
+  ctx.fillStyle = '#0e5162';
   rr(ctx, x, y, w, h, 8); ctx.fill();
-  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
   ctx.fillStyle = 'rgba(255,255,255,0.10)'; ctx.fillRect(x + 2, y + 1, w - 4, 2);
   ctx.fillStyle = kc; ctx.fillRect(x, y, w, 6);
   ctx.strokeStyle = card.bought ? '#7fe0c3' : hovered ? PAL.gold : poor ? 'rgba(159,196,189,0.4)' : kc;
@@ -33,10 +31,8 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   ctx.font = 'bold 14px sans-serif';
   txt(ctx, `[${i + 1}]`, x + w - 24, y + 22, PAL.dim);
   if (card.kind === 'weapon' || card.kind === 'wup') drawWeaponIcon(ctx, card.wid, x + w / 2, y + 62, 48, true);
-  else {
-    ctx.font = 'bold 40px sans-serif';
-    txt(ctx, card.icon, x + w / 2, y + 78, card.kind === 'repair' ? '#ff8fb0' : PAL.xp);
-  }
+  else if (card.kind === 'repair') heart(ctx, x + w / 2, y + 62, 20, '#ff8fb0');
+  else drawSkillIcon(ctx, card.track, x + w / 2, y + 62, 48, true);
   ctx.font = 'bold 18px sans-serif';
   if (ctx.measureText(card.name).width > w - 20) ctx.font = 'bold 15px sans-serif';
   txt(ctx, card.name, x + w / 2, y + 108, PAL.text);
@@ -60,9 +56,7 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
 
 export function drawStageMenu(ctx, state, hover) {
   const L = stageMenuLayout(state);
-  const bg = ctx.createRadialGradient(640, 360, 100, 640, 360, 750);
-  bg.addColorStop(0, '#0a3542'); bg.addColorStop(1, '#041f28');
-  ctx.fillStyle = bg; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  ctx.fillStyle = '#072a35'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   ctx.textAlign = 'center';
   ctx.font = 'bold 36px sans-serif';
   txt(ctx, `★ STAGE ${state.stage} CLEAR — ${envForStage(state.stage, state.envs).name} ★`, VIEW_W / 2, 70, PAL.gold, 3);

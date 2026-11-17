@@ -66,13 +66,14 @@ export function createParticles() {
         ctx.globalAlpha = Math.max(0, p.life / p.max);
         if (p.kind === 'bubble') {
           ctx.strokeStyle = p.color; ctx.lineWidth = 1.5;
-          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.stroke();
+          ctx.strokeRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2);
         } else if (p.kind === 'ring') {
           ctx.strokeStyle = p.color; ctx.lineWidth = 2.5;
-          ctx.beginPath(); ctx.arc(p.x, p.y, p.r + (1 - p.life / p.max) * 24, 0, Math.PI * 2); ctx.stroke();
+          const rr2 = p.r + (1 - p.life / p.max) * 24;
+          ctx.strokeRect(p.x - rr2, p.y - rr2, rr2 * 2, rr2 * 2);
         } else {
           ctx.fillStyle = p.color;
-          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+          ctx.fillRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2);
         }
       }
       ctx.globalAlpha = 1;
