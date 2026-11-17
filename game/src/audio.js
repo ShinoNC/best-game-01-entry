@@ -1,34 +1,25 @@
 export function createAudio() {
   let ctx = null, master = null, musicGain = null, muted = false;
-  const CHORDS = [[131, 165, 196], [110, 131, 165]];
-  let musicOn = false, musicStep = 0;
-  // ONE master gain for all sound: mute sets it to 0 instantly, silencing
-  // even the 7s pad already in flight (old mute only blocked NEW pads).
-  function pad(freqs) {
-    if (muted) return; const c = ensure(); if (!c) return;
-    const g = c.createGain(), t0 = c.currentTime;
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.linearRampToValueAtTime(0.012, t0 + 1.5);
-    g.gain.setValueAtTime(0.012, t0 + 5);
-    g.gain.linearRampToValueAtTime(0.0001, t0 + 7);
-    g.connect(musicGain);
-    for (const f of freqs) {
-      const o = c.createOscillator(); o.type = 'sine'; o.frequency.value = f;
-      o.connect(g); o.start(t0); o.stop(t0 + 7);
+  let musicOn = false, musicBuf = null, musicSrc = null;
+  // ONE master gain for all sound: mute sets it to 0 instantly.
+  // Music is a looping MP3 (Pixabay "Sea and Beach") via musicGain.
+  function playMusic() {
+    const c = ensure(); if (!c || !musicOn || musicSrc) return;
+    if (musicBuf) {
+      musicSrc = c.createBufferSource(); musicSrc.buffer = musicBuf; musicSrc.loop = true;
+      musicSrc.connect(musicGain); musicSrc.start();
+    } else {
+      fetch('audio/sea-and-beach.mp3').then((r) => r.arrayBuffer())
+        .then((b) => c.decodeAudioData(b)).then((buf) => { musicBuf = buf; playMusic(); })
+        .catch(() => {});
     }
   }
-  function musicTick() {
-    if (!musicOn) return;
-    pad(CHORDS[musicStep % CHORDS.length]);
-    musicStep += 1;
-    setTimeout(musicTick, 6000);
-  }
-  function startMusic() { if (musicOn) return; musicOn = true; if (musicGain) musicGain.gain.value = 1; musicTick(); }
+  function startMusic() { if (musicOn) return; musicOn = true; if (musicGain) musicGain.gain.value = 0.35; playMusic(); }
   function ensure() {
     if (!ctx) {
       try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch { return null; }
       master = ctx.createGain(); master.gain.value = muted ? 0 : 1; master.connect(ctx.destination);
-      musicGain = ctx.createGain(); musicGain.gain.value = musicOn ? 1 : 0; musicGain.connect(master);
+      musicGain = ctx.createGain(); musicGain.gain.value = musicOn ? 0.35 : 0; musicGain.connect(master);
     }
     if (ctx && ctx.state === 'suspended') ctx.resume();
     return ctx;
@@ -57,7 +48,7 @@ export function createAudio() {
     unlock() { ensure(); startMusic(); },
     toggleMute() { muted = !muted; if (master) master.gain.value = muted ? 0 : 1; return muted; },
     get muted() { return muted; },
-    toggleMusic() { musicOn = !musicOn; if (musicGain) musicGain.gain.value = musicOn ? 1 : 0; if (musicOn) musicTick(); return musicOn; },
+    toggleMusic() { musicOn = !musicOn; if (musicGain) musicGain.gain.value = musicOn ? 0.35 : 0; if (musicOn) playMusic(); return musicOn; },
     get music() { return musicOn; },
     pop() { tone(880, 0.09, 'sine', 0.12, 1400); },
     coin() { tone(1320, 0.07, 'sine', 0.10, 1760); },
