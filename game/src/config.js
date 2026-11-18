@@ -85,11 +85,11 @@ export const BOSS_STAGES = [
 ];
 export const BOSS_TYPES = {
   turtle: { name: 'THE ANCIENT TURTLE', speed: 195, r: 46, color: '#8ab86a', dark: '#4a7a3e', dive: 2.4, atk: 'shell', atkEvery: 7 },
-  octopus: { name: 'THE EMERALD OCTOPUS', speed: 205, r: 52, color: '#c08497', dark: '#7a4a5e', dive: 2.8, atk: 'ink', atkEvery: 6 },
+  octopus: { name: 'THE EMERALD OCTOPUS', speed: 205, r: 52, color: '#c08497', dark: '#7a4a5e', dive: 2.8, atk: 'ink', atkEvery: 4 },
   hammerhead: { name: 'THE HAMMERHEAD', speed: 215, r: 54, color: '#7a9bb8', dark: '#4a6a8a', dive: 3.0, atk: 'line', atkEvery: 8 },
   angler: { name: 'THE ANGLER', speed: 200, r: 58, color: '#6a5a9a', dark: '#3a2d5e', dive: 2.6, atk: 'lure', atkEvery: 6 },
-  stingray: { name: 'THE CRIMSON STINGRAY', speed: 220, r: 60, color: '#c05a5a', dark: '#7a2e2e', dive: 3.2, atk: 'barbs', atkEvery: 5 },
-  kraken: { name: 'THE KRAKEN', speed: 210, r: 66, color: '#9a4a6a', dark: '#5a2438', dive: 3.0, atk: 'slam', atkEvery: 8 },
+  stingray: { name: 'THE CRIMSON STINGRAY', speed: 220, r: 60, color: '#c05a5a', dark: '#7a2e2e', dive: 3.2, atk: 'barbs', atkEvery: 3.5 },
+  kraken: { name: 'THE KRAKEN', speed: 210, r: 66, color: '#9a4a6a', dark: '#5a2438', dive: 3.0, atk: 'slam', atkEvery: 6 },
 };
 export function bossForStage(stage, order) {
   if (stage % 5 !== 0) return null;
