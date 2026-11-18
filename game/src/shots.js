@@ -149,22 +149,24 @@ export function stageShot(shot, seed, fx, audio) {
     poseBossShot(s, 'kraken');
     s.player.laserLen = 560;
     const b = s.boss; b.hp = b.maxHp; b.atkState = null; b.slamSpots = null;
-    s.player.x = 640; b.x = 250; b.y = 160;
+    s.player.x = 350; b.x = 950; b.y = 300;
+    s.enemies.forEach((e, i) => { if (!e.boss && Math.hypot(e.x - 350, e.y - 430) < 150) { e.x = 800 + i * 25; e.y = 500; } });
     s.banner = 'THE KRAKEN ARRIVES!';
     s.combo = 18; s.comboT = 3;
-    s.pet.x = 705; s.pet.y = 485;
+    s.pet.x = 300; s.pet.y = 480;
     const types = 'jelly,urchin,squid,jelly,urchin,guppy,starfish,eel'.split(',');
-    for (let i = 0; i < 110; i += 1) {
+    for (let i = 0; i < 95; i += 1) {
       const e = spawnEnemy(s, types[i % 8], i % 9 === 4);
       const a = i * 2.39996;
-      const r = i < 55 ? 30 + (i * 53) % 120 : 160 + (i * 71) % 390;
-      e.x = Math.min(1190, Math.max(90, s.player.x + Math.cos(a) * r));
-      e.y = Math.min(610, Math.max(110, s.player.y + Math.sin(a) * r * 0.85));
-      const dx = e.x - b.x, dy = e.y - b.y, d = Math.hypot(dx, dy) || 1;
+      if (i < 55) { const r = 20 + (i * 53) % 180; e.x = 750 + Math.cos(a) * r * 1.75; e.y = 400 + Math.sin(a) * r * 0.85; }
+      else { e.x = 90 + (i * 137) % 1100; e.y = 120 + (i * 211) % 480; }
+      let dx = e.x - 350, dy = e.y - 430, d = Math.hypot(dx, dy) || 1;
+      if (d < 150) { e.x = 350 + dx / d * 150; e.y = 430 + dy / d * 150; }
+      dx = e.x - b.x; dy = e.y - b.y; d = Math.hypot(dx, dy) || 1;
       if (d < 130) { e.x = b.x + dx / d * 130; e.y = b.y + dy / d * 130; }
     }
     for (let i = 0; i < 18; i += 1) s.drops.push({ x: 120 + (i * 67) % 1040, y: 130 + (i * 113) % 450, v: 1, vx: 0, vy: 0, life: 25, bob: i });
-    s.pickups.push({ x: 565, y: 525, kind: 'heal', life: 20 });
+    s.pickups.push({ x: 430, y: 500, kind: 'heal', life: 20 });
     return s;
   }
   if (shot === 'boss' || shot === 'storm') {
