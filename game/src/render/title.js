@@ -25,8 +25,8 @@ function drawAmbient(ctx, state) {
   }
   if (tt < 60) {
     const def = BOSS_TYPES[BOSS];
-    drawEnemy(ctx, { type: BOSS, x: BOSS_X0 * POOL.x1 + (tt / 60) * (POOL.x1 + 160) - 80, y: 100, r: def.r * 1.2,
-      color: def.color, dark: def.dark, hp: 1, maxHp: 1 }, tt, 0);
+    drawEnemy(ctx, { type: BOSS, x: BOSS_X0 * POOL.x1 + (tt / 60) * (POOL.x1 + 160) - 80, y: 130, r: def.r * 1.2,
+      color: def.color, dark: def.dark, hp: 1, maxHp: 1, wob: 0 }, tt, 0);
   }
   return tt;
 }

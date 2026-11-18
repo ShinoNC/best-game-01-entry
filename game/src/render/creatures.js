@@ -12,6 +12,7 @@ function drawSprite(ctx, img, x, y, w, h, rot, alpha) {
   ctx.save();
   ctx.translate(x, y);
   if (rot) ctx.rotate(rot);
+  if (w < 0) { ctx.scale(-1, 1); w = -w; }
   if (alpha < 1) ctx.globalAlpha = alpha;
   ctx.drawImage(img, -w / 2, -h / 2, w, h);
   ctx.restore();
