@@ -24,7 +24,7 @@ function noteCoins(state) {
   if (state.coins > state.stats.maxCoins) state.stats.maxCoins = state.coins;
 }
 function dropCoins(state, e) {
-  const n = Math.round(e.coins * 1.5 * modOf(state, 'coin') * (1 + 0.15 * (state.ups.gold || 0)));
+  const n = Math.round(e.coins * 1.5 * modOf(state, 'coin') * (1 + 0.05 * (state.ups.magnet || 0)));
   for (let i = 0; i < n; i += 1) {
     if (!state.rng.chance(0.85)) continue;
     state.drops.push({
@@ -177,12 +177,21 @@ export function stepWorld(state, input, dt, fx, audio) {
   for (let i = state.enemies.length - 1; i >= 0; i -= 1) {
     if (state.enemies[i].hp <= 0) { killEnemy(state, state.enemies[i], fx, audio); state.enemies.splice(i, 1); }
   }
+  if (state.ups.magnet) {
+    const pet = state.pet; let t = null, td = p.magnet;
+    for (const pe of state.drops) { const dd = Math.hypot(pe.x - p.x, pe.y - p.y); if (dd < td) { td = dd; t = pe; } }
+    const tx = t ? t.x : p.x - 50, ty = t ? t.y : p.y + 40;
+    const d = Math.hypot(tx - pet.x, ty - pet.y);
+    if (d > 24) { pet.x += ((tx - pet.x) / d) * 380 * dt; pet.y += ((ty - pet.y) / d) * 380 * dt; pet.angle = Math.atan2(ty - pet.y, tx - pet.x); }
+  }
   for (let i = state.drops.length - 1; i >= 0; i -= 1) {
     const pe = state.drops[i]; pe.life -= dt; pe.bob += dt * 3;
     pe.x += pe.vx * dt; pe.y += pe.vy * dt; pe.vx *= 0.96; pe.vy *= 0.96;
     const d = Math.hypot(p.x - pe.x, p.y - pe.y);
-    if (d < p.magnet) { pe.x += ((p.x - pe.x) / (d || 1)) * 340 * dt; pe.y += ((p.y - pe.y) / (d || 1)) * 340 * dt; }
-    if (d < p.radius + 10) {
+    const pet = state.ups.magnet ? state.pet : p;
+    const pd = Math.hypot(pet.x - pe.x, pet.y - pe.y);
+    if (d < p.magnet) { pe.x += ((pet.x - pe.x) / (pd || 1)) * 340 * dt; pe.y += ((pet.y - pe.y) / (pd || 1)) * 340 * dt; }
+    if (d < p.radius + 10 || pd < 18) {
       state.drops.splice(i, 1);
       state.coins += pe.v; state.coinsEarned += pe.v; state.score += pe.v * 2;
       noteCoins(state);
@@ -197,7 +206,6 @@ export function stepWorld(state, input, dt, fx, audio) {
         fx.burst(p.x, p.y, '#ffd166', 30, 320); fx.shake(0.5); audio.die();
         for (const e of state.enemies) if (!e.shelled && Math.hypot(e.x - p.x, p.y - p.y) < 180) { e.hp -= 70; e.flash = 0.15; }
       }
-      if (pk.kind === 'magnet') { for (const pe of state.drops) { pe.x = p.x; pe.y = p.y; } }
       state.pickups.splice(i, 1);
     } else if (pk.life <= 0) state.pickups.splice(i, 1);
   }

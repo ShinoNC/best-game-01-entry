@@ -84,8 +84,7 @@ export function drawHelp(ctx, state) {
   txt(ctx, 'Coins buy cards after every stage.', px0 + 40, 419, PAL.text);
   txt(ctx, 'Slain foes grant XP. Level up, pick 1 of 3 upgrades.', px0 + 40, 436, PAL.text);
   txt(ctx, 'Archers shoot from stage 4 — never stand still.', px0 + 40, 453, PAL.text);
-  txt(ctx, `ARMOR absorbs damage before HP. Clear a boss to gain +${ARMOR_PER_BOSS} ARMOR. Armor does not heal.`, px0 + 40, 470, PAL.text);
-  txt(ctx, 'Stages go on forever — foes grow each loop.', px0 + 40, 487, PAL.text);
+  txt(ctx, `ARMOR absorbs damage first. Boss kill: +${ARMOR_PER_BOSS} ARMOR. No heal.`, px0 + 40, 470, PAL.text);
   ctx.font = px(9);
   txt(ctx, 'EFFECTS — ONE PER 5 STAGES', px0 + 40, 508, PAL.gold);
   ctx.font = vt(15);

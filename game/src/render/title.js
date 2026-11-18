@@ -88,5 +88,5 @@ export function drawTitle(ctx, state) {
   ctx.textAlign = 'right';
   ctx.font = px(10);
   ctx.fillStyle = 'rgba(255,255,255,0.7)';
-  ctx.fillText('v1.1', POOL.x1 - 12, 708);
+  ctx.fillText('v1.2', POOL.x1 - 12, 708);
 }

@@ -8,8 +8,7 @@ const CHOICE_POOL = [
   { id: 'reach', name: 'LONGER REACH', desc: 'RANGE +10%' },
   { id: 'legs', name: 'SWIFT LEGS', desc: 'SPEED +6%' },
   { id: 'bubbles', name: 'BUBBLE BURST', desc: '+4 BURST DMG' },
-  { id: 'magnet', name: 'COIN MAGNET', desc: 'PICKUP +22%' },
-  { id: 'gold', name: 'GOLDEN TOUCH', desc: '+15% COINS', max: 5 },
+  { id: 'magnet', name: 'PET CRAB', desc: 'PET FETCHES +5% COINS' },
   { id: 'heal', name: 'SHELL MEND', desc: 'HEAL +30 HP NOW' },
 ];
 export function rollLevelChoices(state) {

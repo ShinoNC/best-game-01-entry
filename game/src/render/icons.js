@@ -180,25 +180,16 @@ aabba..aabba
 .kkkkkkkk...
 .kabbbbbbk..
 .kkkkkkkk...` },
-  magnet: { p: { a: '#ffffff', b: '#ff5d73', c: '#c22e44' }, rows: `..kk....kk..
-.kaaak.kaaak
-.kbbak.kbbak
-.kbbak.kbbak
-.kbbak.kbbak
-.kbbak.kbbak
-.kbbak.kbbak
-..kbbk.kbbk.
-..kbbbbbbk..
-...kkkkkk...` },
-  gold: { p: GOLD2, rows: `....kkkk....
-...kaaaak...
-..kabbbbak..
-..kabccak..
-..kacccck..
-..kabccak..
-..kabbbbak..
-...kaaaak...
-....kkkk....` },
+  magnet: { p: { a: '#bfe8e0', b: '#5fb8d8', c: '#2a7a9a' }, rows: `...k....k...
+..kaa..kaa..
+.kk......kk.
+.kbb....kbb.
+..kkkkkkkk..
+.kabbbbbbak.
+.kabbbbbbak.
+..k.kkkk.k..
+.k..k..k..k.
+............` },
 };
 export function drawWeaponIcon(ctx, id, x, y, s, owned) {
   const d = WEAPONS[id];

@@ -119,11 +119,6 @@ export function createRenderer(canvas) {
           ctx.fillRect(pk.x - 2, pk.y - 9, 4, 18); ctx.fillRect(pk.x - 9, pk.y - 2, 18, 4);
           ctx.fillRect(pk.x - 7, pk.y - 7, 4, 4); ctx.fillRect(pk.x + 3, pk.y - 7, 4, 4);
           ctx.fillRect(pk.x - 7, pk.y + 3, 4, 4); ctx.fillRect(pk.x + 3, pk.y + 3, 4, 4);
-        } else {
-          ctx.fillStyle = '#7fe0c3';
-          ctx.fillRect(pk.x - 12, pk.y - 12, 24, 4); ctx.fillRect(pk.x - 12, pk.y + 8, 24, 4);
-          ctx.fillRect(pk.x - 12, pk.y - 8, 4, 16); ctx.fillRect(pk.x + 8, pk.y - 8, 4, 16);
-          ctx.fillRect(pk.x - 4, pk.y - 4, 8, 8);
         }
       }
       for (const b of state.bolts) {
@@ -192,6 +187,11 @@ export function createRenderer(canvas) {
         drawCrab(ctx, { ...p, x: lerp(p.px ?? p.x, p.x), y: lerp(p.py ?? p.y, p.y) }, t,
           weaponStatsFor(state, 'claw'),
           state.weapons.spin > 0 ? weaponStatsFor(state, 'spin') : null);
+        if (state.ups.magnet) {
+          ctx.save(); ctx.filter = 'hue-rotate(180deg)';
+          drawCrab(ctx, state.pet, t, null, null);
+          ctx.restore();
+        }
       }
       fx.draw(ctx);
       if (state.player.flash > 0 && state.phase === 'play') {
