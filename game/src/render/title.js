@@ -21,11 +21,11 @@ function drawAmbient(ctx, state) {
       hp: 1, maxHp: 1, flash: 0, wob: a.wob + tt * 0.5, elite: false }, tt, Math.atan2(a.vy, a.vx));
     ctx.restore();
   }
-  const bt = tt % 18;
-  if (bt < 9) {
-    const ty = Object.keys(BOSS_TYPES)[Math.floor(tt / 18) % 6];
+  const bt = tt % 30;
+  if (bt < 20) {
+    const ty = Object.keys(BOSS_TYPES)[Math.floor(tt / 30) % 6];
     const def = BOSS_TYPES[ty];
-    drawEnemy(ctx, { type: ty, x: (bt / 9) * (POOL.x1 + 160) - 80, y: 70, r: def.r * 0.55,
+    drawEnemy(ctx, { type: ty, x: (bt / 20) * (POOL.x1 + 160) - 80, y: 70, r: def.r * 0.55,
       color: def.color, dark: def.dark, hp: 1, maxHp: 1 }, tt, 0);
   }
   return tt;
