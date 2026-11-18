@@ -192,7 +192,6 @@ function continueRun(slot, s) {
     speed: s.speed, magnet: s.magnet, shellTier: s.shellTier || 0 });
   state.weapons = { ...state.weapons, ...s.weapons };
   state.ups = { ...state.ups, ...s.ups };
-  state.stats = { ...state.stats, ...(s.stats || {}) };
   state.rerolls = s.rerolls || 0;
   if (s.phase === 'stageclear') {
     state.hand = s.hand || [];
@@ -202,7 +201,7 @@ function continueRun(slot, s) {
   } else {
     state.stageSpawned = 0; state.stageEliteDone = false;
     state.spits = []; state.spawnT = 0.8; state.hand = [];
-    state.stageTaken = 0; state.bossSpawned = false; state.boss = null;
+    state.bossSpawned = false; state.boss = null;
     state.phase = 'play';
     state.banner = `STAGE ${s.stage} — SLAY THEM ALL`; state.bannerT = 3;
     status.textContent = `Stage ${s.stage} — the tide waits for no crab.`;

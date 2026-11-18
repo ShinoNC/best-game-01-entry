@@ -2,7 +2,7 @@ import { ELITE, ENEMIES, POOL, SPIT, STAGES, bossForStage, contentStage, dmgScal
 let nextId = 1;
 export function hurtEnemy(state, e, dmg) {
   if (e.shelled) return false;
-  e.hp -= dmg; e.flash = 0.12; state.stats.damage += dmg;
+  e.hp -= dmg; e.flash = 0.12;
   return true;
 }
 export function spawnEnemy(state, type, elite, fx) {
@@ -245,7 +245,6 @@ export function onEnemyKilled(state, e, fx) {
   }
   if (e.boss) {
     state.boss = null;
-    state.stats.bossesDown = (state.stats.bossesDown || 0) + 1;
     state.banner = `${e.name} IS DRIVEN OFF! +${e.score}`;
     state.bannerT = 3;
   }

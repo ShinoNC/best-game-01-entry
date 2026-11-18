@@ -20,9 +20,6 @@ export function usePotion(state, fx, audio) {
   if (audio.heal) audio.heal();
   return true;
 }
-function noteCoins(state) {
-  if (state.coins > state.stats.maxCoins) state.stats.maxCoins = state.coins;
-}
 function dropCoins(state, e) {
   const n = Math.round(e.coins * 1.5 * modOf(state, 'coin') * (1 + 0.05 * (state.ups.magnet || 0)));
   for (let i = 0; i < n; i += 1) {
@@ -39,7 +36,6 @@ function dropCoins(state, e) {
 function killEnemy(state, e, fx, audio) {
   state.kills += 1;
   state.combo += 1; state.comboT = COMBO_WINDOW;
-  if (state.combo > state.stats.bestCombo) state.stats.bestCombo = state.combo;
   const gained = e.score * comboMult(state);
   state.score += gained;
   fx.burst(e.x, e.y, e.color, e.elite ? 24 : 14, e.elite ? 260 : 190);
@@ -67,7 +63,7 @@ export function nextStage(state, audio) {
   state.spits.length = 0;
   state.spawnT = 0.8;
   state.hand = []; state.rerolls = 0; state.clearBonus = 0; state.menuMsg = ''; state.menuMsgT = 0;
-  state.stageTaken = 0; state.combo = 0; state.comboT = 0;
+  state.combo = 0; state.comboT = 0;
   state.bossSpawned = false; state.boss = null;
   state.phase = 'play';
   const boss = bossForStage(state.stage, state.bossOrder);
@@ -93,7 +89,6 @@ export function stepWorld(state, input, dt, fx, audio) {
     if (state.stageClearT <= 0) {
       state.clearBonus = 40 + state.stage * 7;
       state.coins += state.clearBonus; state.coinsEarned += state.clearBonus;
-      noteCoins(state);
       state.score += state.clearBonus * 2;
       state.hand = drawHand(state);
       state.rerolls = 0; state.menuMsg = ''; state.menuMsgT = 0;
@@ -178,8 +173,9 @@ export function stepWorld(state, input, dt, fx, audio) {
     if (state.enemies[i].hp <= 0) { killEnemy(state, state.enemies[i], fx, audio); state.enemies.splice(i, 1); }
   }
   if (state.ups.magnet) {
-    const pet = state.pet; let t = null, td = p.magnet;
-    for (const pe of state.drops) { const dd = Math.hypot(pe.x - p.x, pe.y - p.y); if (dd < td) { td = dd; t = pe; } }
+    const pet = state.pet; let t = null, td = p.magnet * 2;
+    if (p.hp < p.maxHp) for (const pk of state.pickups) { if (pk.kind === 'heal') { const dd = Math.hypot(pk.x - p.x, pk.y - p.y); if (dd < td) { td = dd; t = pk; } } }
+    if (!t) for (const pe of state.drops) { const dd = Math.hypot(pe.x - p.x, pe.y - p.y); if (dd < td) { td = dd; t = pe; } }
     const tx = t ? t.x : p.x - 50, ty = t ? t.y : p.y + 40;
     const d = Math.hypot(tx - pet.x, ty - pet.y);
     if (d > 24) { pet.x += ((tx - pet.x) / d) * 380 * dt; pet.y += ((ty - pet.y) / d) * 380 * dt; pet.angle = Math.atan2(ty - pet.y, tx - pet.x); }
@@ -194,13 +190,12 @@ export function stepWorld(state, input, dt, fx, audio) {
     if (d < p.radius + 10 || pd < 18) {
       state.drops.splice(i, 1);
       state.coins += pe.v; state.coinsEarned += pe.v; state.score += pe.v * 2;
-      noteCoins(state);
       audio.coin();
     } else if (pe.life <= 0) state.drops.splice(i, 1);
   }
   for (let i = state.pickups.length - 1; i >= 0; i -= 1) {
     const pk = state.pickups[i]; pk.life -= dt;
-    if (Math.hypot(p.x - pk.x, p.y - pk.y) < p.radius + 16) {
+    if (Math.hypot(p.x - pk.x, p.y - pk.y) < p.radius + 16 || (pk.kind === 'heal' && state.ups.magnet && Math.hypot(state.pet.x - pk.x, state.pet.y - pk.y) < 18)) {
       if (pk.kind === 'heal') { p.hp = Math.min(p.maxHp, p.hp + 25); fx.text(p.x, p.y - 30, '+25 ♥', '#ff8fb0'); audio.heal(); }
       if (pk.kind === 'bomb') {
         fx.burst(p.x, p.y, '#ffd166', 30, 320); fx.shake(0.5); audio.die();
@@ -213,14 +208,12 @@ export function stepWorld(state, input, dt, fx, audio) {
       && state.stageClearT <= 0) {
     state.stageClearT = 1.2;
     state.score += 100 + state.stage * 50;
-    if (state.stageTaken === 0) state.stats.cleanStage = true;
     state.combo = 0; state.comboT = 0;
     let vacuumedCoins = 0;
     for (const pe of state.drops) {
       state.coins += pe.v; state.coinsEarned += pe.v; state.score += pe.v * 2; vacuumedCoins += pe.v;
     }
     state.drops.length = 0;
-    noteCoins(state);
     if (vacuumedCoins > 0) audio.coin();
     const clearedBoss = bossForStage(state.stage, state.bossOrder);
     if (clearedBoss) state.player.armor += ARMOR_PER_BOSS;

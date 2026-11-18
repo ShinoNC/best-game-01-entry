@@ -198,7 +198,7 @@ export function stageShot(shot, seed, fx, audio) {
     if (best) { fx.clear(); return best; }
     const s = createStateFromSeed(seed); s.phase = 'play';
     runUntil(s, (st) => st.phase === 'over', 120000, fx, audio);
-    if (s.phase === 'play') { s.phase = 'over'; s.result = 'lost'; s.player.hp = 0; }
+    if (s.phase === 'play') { s.phase = 'over'; s.player.hp = 0; }
     fx.clear();
     return s;
   }

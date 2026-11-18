@@ -23,7 +23,6 @@ export function saveRun(state) {
       weapons: { ...state.weapons }, ups: { ...state.ups },
       hand: state.phase === 'stageclear' ? state.hand : [],
       rerolls: state.rerolls, clearBonus: state.clearBonus,
-      stats: { ...state.stats },
       playedAt: Date.now(),
     }));
   } catch { /* storage full or blocked: run continues unsaved */ }

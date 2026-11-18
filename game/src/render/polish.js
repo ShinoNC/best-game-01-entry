@@ -2,10 +2,6 @@ export const PXF = '"Press Start 2P", monospace';
 export const VTF = '"VT323", monospace';
 export function px(n) { return `${n}px ${PXF}`; }
 export function vt(n) { return `${n}px ${VTF}`; }
-export function rr(ctx, x, y, w, h) {
-  ctx.beginPath(); ctx.rect(x, y, w, h);
-  ctx.closePath();
-}
 export function stepFill(ctx, x, y, w, h) {
   ctx.fillRect(x + 4, y, w - 8, h);
   ctx.fillRect(x, y + 4, w, h - 8);

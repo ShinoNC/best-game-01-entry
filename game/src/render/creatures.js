@@ -1,6 +1,6 @@
 import { PAL } from '../config.js';
 import { imgFor } from '../sprites.js';
-import {txt, px, vt} from './polish.js';
+import {txt, px} from './polish.js';
 const SIDE = { eel: 1, archer: 1, angler: 1 };
 const DRAW = {
   guppy: 3.0, jelly: 3.4, eel: 3.0, squid: 3.0, archer: 3.2, starfish: 2.8,

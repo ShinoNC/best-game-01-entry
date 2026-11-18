@@ -151,7 +151,6 @@ export function updatePlayer(state, input, dt, fx, audio) {
     p.dashCd = PLAYER.dashCd; p.dashT = PLAYER.dashTime;
     p.dashVx = mv.x * PLAYER.dashSpeed; p.dashVy = mv.y * PLAYER.dashSpeed;
     p.iframes = Math.max(p.iframes, 0.3);
-    state.stats.dashes += 1;
     fx.bubbles(p.x, p.y, 8); audio.dash();
   }
   const face = nearestEnemy(state, p.x, p.y, 560);
@@ -176,8 +175,6 @@ export function hurtPlayer(state, dmg, fx, audio) {
   p.armor -= absorbed;
   const toHp = real - absorbed;
   p.hp -= toHp; p.iframes = PLAYER.iframes; p.flash = 0.25;
-  state.stats.taken += real;
-  state.stageTaken += real;
   for (const e of state.enemies) {
     const d = Math.hypot(e.x - p.x, e.y - p.y);
     if (d < 60 + e.r && !e.boss) {
@@ -188,5 +185,5 @@ export function hurtPlayer(state, dmg, fx, audio) {
   fx.shake(0.15); fx.text(p.x, p.y - 30, toHp > 0 ? `-${toHp}` : 'BLOCKED', toHp > 0 ? PAL.hp : PAL.armor, true);
   fx.burst(p.x, p.y, PAL.hp, 8, 160);
   audio.hurt();
-  if (p.hp <= 0) { p.hp = 0; state.phase = 'over'; state.result = 'lost'; audio.lose(); }
+  if (p.hp <= 0) { p.hp = 0; state.phase = 'over'; audio.lose(); }
 }

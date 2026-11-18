@@ -2,7 +2,7 @@ import { POOL, ARMOR_PER_BOSS, PAL, VIEW_H, bossForStage, clusterMod, clusterOf,
 import { REROLL_COST, cardStats } from '../cards.js';
 import { drawCoin, drawPips, drawPotion, drawSkillIcon, drawWeaponIcon, heart } from './icons.js';
 import { stageMenuLayout } from './layout.js';
-import {bevel, pxFrame, pxPanel, txt, px, vt} from './polish.js';
+import {bevel, pxFrame, pxPanel, txt, px} from './polish.js';
 const KIND_COLOR = { skill: '#7fe0c3', wup: '#ffd166', weapon: '#c9a7ff', repair: '#ff8fb0', potion: '#ff5d73' };
 function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   const poor = !card.bought && state.coins < card.price;

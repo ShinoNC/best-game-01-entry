@@ -1,7 +1,7 @@
 import { POOL, CREATURE_ORDER, ENEMIES, PAL } from '../config.js';
 import { drawCrab, drawEnemy } from './creatures.js';
 import { MENU_ITEMS, titleLayout } from './layout.js';
-import {bevel, logoText, pxPanel, txt, px, vt} from './polish.js';
+import {bevel, logoText, pxPanel, txt, px} from './polish.js';
 const AMBIENT = [];
 for (let i = 0; i < 24; i += 1) {
   AMBIENT.push({ type: CREATURE_ORDER[i % CREATURE_ORDER.length],

@@ -96,7 +96,6 @@ export function buyCard(state, card) {
   if (!card || card.bought) return 'bought';
   if (state.coins < card.price) return 'poor';
   state.coins -= card.price;
-  state.stats.spent += card.price;
   if (card.kind === 'weapon' || card.kind === 'wup') {
     state.weapons[card.wid] = card.toLevel;
   } else if (card.kind === 'skill') {
@@ -113,8 +112,6 @@ export function buyCard(state, card) {
 export function rerollHand(state) {
   if (state.coins < REROLL_COST) return false;
   state.coins -= REROLL_COST;
-  state.stats.spent += REROLL_COST;
-  state.stats.rerolls += 1;
   state.rerolls += 1;
   state.hand = drawHand(state);
   return true;
