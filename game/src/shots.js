@@ -149,15 +149,19 @@ export function stageShot(shot, seed, fx, audio) {
     poseBossShot(s, 'kraken');
     s.player.laserLen = 560;
     const b = s.boss; b.hp = Math.round(b.maxHp * 0.35);
+    s.player.x = 640; b.x = 900; b.y = 300;
+    for (const c of b.slamSpots) c.x += 160;
     s.combo = 18; s.comboT = 3;
-    s.pet.x = 545; s.pet.y = 485;
+    s.pet.x = 705; s.pet.y = 485;
     const types = 'squid,jelly,guppy,urchin,starfish,eel,mini'.split(',');
-    for (let i = 0; i < 48; i += 1) {
-      const e = spawnEnemy(s, types[i % 7], i % 11 === 5);
-      e.x = 90 + (i % 8) * 150 + (i * 37) % 70 - 35;
-      e.y = 115 + (i / 8 | 0) * 95 + (i * 53) % 60 - 30;
-      const dx = e.x - 830, dy = e.y - 280, d = Math.hypot(dx, dy) || 1;
-      if (d < 165) { e.x = 830 + dx / d * 165; e.y = 280 + dy / d * 165; }
+    for (let i = 0; i < 70; i += 1) {
+      const e = spawnEnemy(s, types[i % 7], i % 13 === 6);
+      const a = i * 2.39996;
+      const r = i < 40 ? 30 + (i * 53) % 110 : 160 + (i * 71) % 390;
+      e.x = Math.min(1190, Math.max(90, s.player.x + Math.cos(a) * r));
+      e.y = Math.min(610, Math.max(110, s.player.y + Math.sin(a) * r * 0.85));
+      const dx = e.x - b.x, dy = e.y - b.y, d = Math.hypot(dx, dy) || 1;
+      if (d < 130) { e.x = b.x + dx / d * 130; e.y = b.y + dy / d * 130; }
     }
     for (let i = 0; i < 12; i += 1) {
       const a = i * Math.PI / 6;
