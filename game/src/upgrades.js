@@ -5,7 +5,7 @@ export const UPGRADE_DEFS = [
   { id: 'reach', name: 'LONGER REACH', stat: 'LONGER RANGE' },
   { id: 'legs', name: 'SWIFT LEGS', stat: 'SPEED +6%' },
   { id: 'bubbles', name: 'BUBBLE BURST', stat: '+4 BURST DMG' },
-  { id: 'magnet', name: 'PET CRAB', stat: 'PET +5% COINS' },
+  { id: 'magnet', name: 'PET CRAB', stat: 'PET RANGE +5% COINS' },
 ];
 export function applyUpgrade(state, id) {
   const p = state.player, u = state.ups;
