@@ -132,8 +132,6 @@ export function drawSlots(ctx, state) {
   ctx.textAlign = 'center';
   ctx.font = px(19);
   txt(ctx, 'CHOOSE A SAVE SLOT', POOL.cx, 105, PAL.gold);
-  ctx.font = vt(20);
-  txt(ctx, 'Pick a slot to continue — or an empty slot to start fresh.', POOL.cx, 132, PAL.dim);
   for (let i = 0; i < SLOT_COUNT; i += 1) {
     const c = L.cards[i];
     const s = loadSlot(i);

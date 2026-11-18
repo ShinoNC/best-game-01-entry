@@ -84,7 +84,7 @@ export function drawTitle(ctx, state) {
   }
   const bs = (state.meta || {}).bestScore || 0, s = TL.settings, y = s.y + s.h + 16;
   bevel(ctx, s.x, y, s.w, s.h, 10, '#11566b', '#062a33', PAL.foam, 2);
-  txt(ctx, `★ TOP SCORE ${bs.toLocaleString('en-US')}`, POOL.cx, y + 30, PAL.gold);
+  txt(ctx, `TOP SCORE ${bs.toLocaleString('en-US')}`, POOL.cx, y + 30, PAL.gold);
   ctx.textAlign = 'right';
   ctx.font = px(10);
   ctx.fillStyle = 'rgba(255,255,255,0.7)';
