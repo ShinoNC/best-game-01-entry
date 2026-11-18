@@ -58,7 +58,7 @@ export function drawHelp(ctx, state) {
     const def = ENEMIES[type];
     const cx = px0 + 70 + i * 145;
     drawEnemy(ctx, { type, x: cx, y: 260, r: 13, color: def.color, dark: def.dark,
-      hp: 1, maxHp: 1, flash: 0, wob: 0.5, elite: false }, 0, Math.PI / 2);
+      hp: 1, maxHp: 1, flash: 0, wob: 0.5, elite: false }, 0, 0);
     ctx.font = px(8); ctx.textAlign = 'center';
     txt(ctx, CREATURE_NAMES[type], cx, 288, PAL.text);
     ctx.font = vt(15);
