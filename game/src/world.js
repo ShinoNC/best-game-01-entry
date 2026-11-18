@@ -173,7 +173,7 @@ export function stepWorld(state, input, dt, fx, audio) {
     if (state.enemies[i].hp <= 0) { killEnemy(state, state.enemies[i], fx, audio); state.enemies.splice(i, 1); }
   }
   if (state.ups.magnet) {
-    const pet = state.pet; let t = null, td = p.magnet * 4;
+    const pet = state.pet; let t = null, td = p.magnet * 5;
     if (p.hp < p.maxHp) for (const pk of state.pickups) { if (pk.kind === 'heal') { const dd = Math.hypot(pk.x - p.x, pk.y - p.y); if (dd < td) { td = dd; t = pk; } } }
     if (!t) for (const pe of state.drops) { const dd = Math.hypot(pe.x - p.x, pe.y - p.y); if (dd < td) { td = dd; t = pe; } }
     const tx = t ? t.x : p.x - 50, ty = t ? t.y : p.y + 40;
@@ -209,12 +209,7 @@ export function stepWorld(state, input, dt, fx, audio) {
     state.stageClearT = 1.2;
     state.score += 100 + state.stage * 50;
     state.combo = 0; state.comboT = 0;
-    let vacuumedCoins = 0;
-    for (const pe of state.drops) {
-      state.coins += pe.v; state.coinsEarned += pe.v; state.score += pe.v * 2; vacuumedCoins += pe.v;
-    }
     state.drops.length = 0;
-    if (vacuumedCoins > 0) audio.coin();
     const clearedBoss = bossForStage(state.stage, state.bossOrder);
     if (clearedBoss) state.player.armor += ARMOR_PER_BOSS;
     if (clearedBoss) {
