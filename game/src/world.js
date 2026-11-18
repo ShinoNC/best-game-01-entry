@@ -195,7 +195,7 @@ export function stepWorld(state, input, dt, fx, audio) {
   }
   for (let i = state.pickups.length - 1; i >= 0; i -= 1) {
     const pk = state.pickups[i]; pk.life -= dt;
-    if (Math.hypot(p.x - pk.x, p.y - pk.y) < p.radius + 16 || (pk.kind === 'heal' && state.ups.magnet && Math.hypot(state.pet.x - pk.x, state.pet.y - pk.y) < 18)) {
+    if (Math.hypot(p.x - pk.x, p.y - pk.y) < p.radius + 16 || (pk.kind === 'heal' && state.ups.magnet && Math.hypot(state.pet.x - pk.x, state.pet.y - pk.y) < 30)) {
       if (pk.kind === 'heal') { p.hp = Math.min(p.maxHp, p.hp + 25); fx.text(p.x, p.y - 30, '+25 ♥', '#ff8fb0'); audio.heal(); }
       if (pk.kind === 'bomb') {
         fx.burst(p.x, p.y, '#ffd166', 30, 320); fx.shake(0.5); audio.die();

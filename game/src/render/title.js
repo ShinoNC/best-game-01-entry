@@ -9,6 +9,7 @@ for (let i = 0; i < 24; i += 1) {
     vx: (Math.random() - 0.5) * 24, vy: (Math.random() - 0.5) * 16, wob: Math.random() * 6.28,
     dep: 0.55 + Math.random() * 0.45 });
 }
+const BOSS = Object.keys(BOSS_TYPES)[Math.floor(Math.random() * 6)];
 function drawAmbient(ctx, state) {
   ctx.fillStyle = 'rgba(6,42,51,0.28)'; ctx.fillRect(0, 0, POOL.x1, 720);
   const tt = state.shotMode ? 2.5 : performance.now() / 1000;
@@ -21,11 +22,9 @@ function drawAmbient(ctx, state) {
       hp: 1, maxHp: 1, flash: 0, wob: a.wob + tt * 0.5, elite: false }, tt, Math.atan2(a.vy, a.vx));
     ctx.restore();
   }
-  const bt = tt % 30;
-  if (bt < 20) {
-    const ty = Object.keys(BOSS_TYPES)[Math.floor(tt / 30) % 6];
-    const def = BOSS_TYPES[ty];
-    drawEnemy(ctx, { type: ty, x: (bt / 20) * (POOL.x1 + 160) - 80, y: 70, r: def.r * 0.55,
+  if (tt < 60) {
+    const def = BOSS_TYPES[BOSS];
+    drawEnemy(ctx, { type: BOSS, x: (tt / 60) * (POOL.x1 + 160) - 80, y: 70, r: def.r * 0.55,
       color: def.color, dark: def.dark, hp: 1, maxHp: 1 }, tt, 0);
   }
   return tt;
@@ -37,8 +36,11 @@ function drawPatrolCrab(ctx, state, tt) {
   drawCrab(ctx, { ...state.player, x: cx, y: 652, radius: 38,
     angle: fwd ? 0 : Math.PI, moving: 1,
     iframes: 0, flash: 0, swing: 0, spin: 0 }, tt, null, null);
+  const px = POOL.cx + Math.sin(tt * 0.23) * 350 + Math.sin(tt * 0.61) * 120;
+  const py = 640 + Math.sin(tt * 0.41) * 25;
+  const pv = 80.5 * Math.cos(tt * 0.23) + 73.2 * Math.cos(tt * 0.61);
   ctx.save(); ctx.filter = 'hue-rotate(180deg)';
-  drawCrab(ctx, { x: cx + (fwd ? -60 : 60), y: 652, radius: 19, angle: fwd ? 0 : Math.PI, moving: 1 }, tt, null, null);
+  drawCrab(ctx, { x: px, y: py, radius: 19, angle: pv >= 0 ? 0 : Math.PI, moving: 1 }, tt, null, null);
   ctx.restore();
 }
 export function drawTitle(ctx, state) {
