@@ -2,7 +2,7 @@ import { POOL } from './config.js';
 import { createRandom } from './random.js';
 import { createState } from './state.js';
 import { nextStage, stepWorld } from './world.js';
-import { autoBuy } from './cards.js';
+import { autoBuy, drawHand } from './cards.js';
 import { applyLevelChoice, rollLevelChoices } from './level.js';
 import { spawnEnemy } from './enemies.js';
 function autopilotInput(state) {
@@ -139,13 +139,31 @@ export function stageShot(shot, seed, fx, audio) {
   if (shot === 'kraken') {
     const s = createStateFromSeed(seed); s.phase = 'play';
     s.stage = 30; s.stageSpawned = 51; s.spawnT = 999;
-    s.level = 12; s.xp = 200; s.xpNext = 350; s.coins = 412; s.score = 184200; s.kills = 512;
+    s.level = 12; s.xp = 200; s.xpNext = 350; s.coins = 412; s.score = 246800; s.kills = 640;
     s.weapons = { claw: 6, bow: 4, blaster: 3, shell: 3, spin: 4, laser: 3, trident: 2 };
     s.ups = { claws: 3, tempo: 2, reach: 2, shell: 1, legs: 2, bubbles: 1, magnet: 2 };
     s.player.maxHp = 155; s.player.hp = 128; s.player.armor = 120;
     s.potions = 2;
     for (let i = 0; i < 5; i += 1) stepWorld(s, autopilotInput(s), 1 / 60, fx, audio);
-    if (s.boss) return poseBossShot(s, 'kraken');
+    if (!s.boss) return s;
+    poseBossShot(s, 'kraken');
+    const b = s.boss; b.hp = Math.round(b.maxHp * 0.35);
+    s.combo = 18; s.comboT = 3;
+    s.pet.x = 545; s.pet.y = 485;
+    const types = 'squid,jelly,guppy,urchin,starfish,eel,squid,jelly,guppy,starfish,eel,mini'.split(',');
+    for (let i = 0; i < 12; i += 1) {
+      const e = spawnEnemy(s, types[i], i === 3);
+      const a = i * 2.4, r = 170 + (i % 4) * 85;
+      e.x = Math.min(1200, Math.max(80, 480 + Math.cos(a) * r));
+      e.y = Math.min(600, Math.max(110, 430 + Math.sin(a) * r * 0.7));
+    }
+    for (let i = 0; i < 12; i += 1) {
+      const a = i * Math.PI / 6;
+      s.spits.push({ x: b.x + Math.cos(a) * 150, y: b.y + Math.sin(a) * 150,
+        vx: Math.cos(a) * 180, vy: Math.sin(a) * 180, dmg: b.dmg, r: 6, life: 2.5, color: '#ff5d73' });
+    }
+    for (let i = 0; i < 18; i += 1) s.drops.push({ x: 120 + (i * 67) % 1040, y: 130 + (i * 113) % 450, v: 1, vx: 0, vy: 0, life: 25, bob: i });
+    s.pickups.push({ x: 565, y: 525, kind: 'heal', life: 20 });
     return s;
   }
   if (shot === 'boss' || shot === 'storm') {
@@ -171,22 +189,16 @@ export function stageShot(shot, seed, fx, audio) {
     return s;
   }
   if (shot === 'stageclear') {
-    const pose = (s) => { s.player.x = 200; s.player.y = 620; s.player.angle = 0; s.coins = Math.max(s.coins, 150); fx.clear(); return s; };
-    for (const wantStage of [15, 10, 3]) {
-      let fallback = null;
-      for (let trySeed = seed; trySeed < seed + 6; trySeed += 1) {
-        const s = createStateFromSeed(trySeed); s.phase = 'play';
-        runUntil(s, (st) => st.phase === 'stageclear' && st.stage === wantStage, 60000, fx, audio);
-        if (s.phase === 'stageclear' && s.stage === wantStage && s.hand && s.hand.length >= 3) {
-          if (!fallback) fallback = s;
-          if (s.hand.some((c) => c.kind === 'weapon')) return pose(s);
-        }
-      }
-      if (fallback) return pose(fallback);
-    }
-    const s = createStateFromSeed(seed); s.phase = 'play';
-    runUntil(s, (st) => st.phase === 'stageclear', 20000, fx, audio);
-    return pose(s);
+    const s = createStateFromSeed(seed); s.phase = 'stageclear';
+    s.stage = 15; s.level = 12; s.xp = 200; s.xpNext = 350; s.coins = 540; s.score = 186400; s.kills = 480;
+    s.weapons = { claw: 6, bow: 5, blaster: 4, shell: 4, spin: 5, laser: 4, trident: 0 };
+    s.ups = { claws: 3, tempo: 2, reach: 2, shell: 1, legs: 2, bubbles: 1, magnet: 2 };
+    s.player.maxHp = 165; s.player.hp = 165; s.player.armor = 90;
+    s.potions = 3;
+    s.hand = drawHand(s);
+    for (let i = 0; i < 20 && !s.hand.some((c) => c.kind === 'weapon'); i += 1) s.hand = drawHand(s);
+    fx.clear();
+    return s;
   }
   if (shot === 'levelup') {
     const s = createStateFromSeed(seed); s.phase = 'play';
@@ -199,19 +211,14 @@ export function stageShot(shot, seed, fx, audio) {
     return s;
   }
   if (shot === 'end') {
-    let best = null;
-    for (let trySeed = seed; trySeed < seed + 10; trySeed += 1) {
-      const s = createStateFromSeed(trySeed); s.phase = 'play';
-      runUntil(s, (st) => st.phase === 'over', 120000, fx, audio);
-      if (s.phase === 'over') {
-        if (s.stage >= 15 && s.level >= 8) { fx.clear(); return s; }
-        if (!best || s.stage > best.stage) best = s;
-      }
+    const s = createStateFromSeed(seed); s.phase = 'over';
+    s.stage = 22; s.level = 16; s.time = 505; s.score = 312400; s.kills = 720;
+    s.player.hp = 0;
+    const types = 'jelly,guppy,starfish,eel,squid,urchin,jelly,guppy'.split(',');
+    for (let i = 0; i < 8; i += 1) {
+      const e = spawnEnemy(s, types[i], false);
+      e.x = 100 + i * 140; e.y = 150 + (i % 3) * 180;
     }
-    if (best) { fx.clear(); return best; }
-    const s = createStateFromSeed(seed); s.phase = 'play';
-    runUntil(s, (st) => st.phase === 'over', 120000, fx, audio);
-    if (s.phase === 'play') { s.phase = 'over'; s.player.hp = 0; }
     fx.clear();
     return s;
   }
