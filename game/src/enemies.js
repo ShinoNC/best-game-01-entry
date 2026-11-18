@@ -118,8 +118,8 @@ function bossAttack(state, e, dt, nx, ny, fx) {
           vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, dmg: e.dmg, r, life, color });
       }
     };
-    if (e.atk === 'ink') fan([-0.35, 0, 0.35], 200, 10, 2.5, '#5e2a84');
-    else if (e.atk === 'barbs') fan([-0.5, -0.25, 0, 0.25, 0.5], 330, 4, 2, '#ff5d5d');
+    if (e.atk === 'ink') fan([-0.5, -0.25, 0, 0.25, 0.5], 200, 10, 2.5, '#5e2a84');
+    else if (e.atk === 'barbs') fan([-0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6], 330, 4, 2, '#ff5d5d');
     else if (e.atk === 'slam') {
       for (const s of e.slamSpots) {
         state.spits.push({ x: s.x, y: s.y, vx: 0, vy: 0, dmg: e.dmg, r: s.r, life: 0.15, color: '#ff5d73' });
@@ -127,14 +127,14 @@ function bossAttack(state, e, dt, nx, ny, fx) {
       }
       e.slamSpots = null;
       if (fx) fx.shake(0.4);
-      for (let i = 0; i < 8; i += 1) {
-        const a = i * Math.PI / 4;
+      for (let i = 0; i < 12; i += 1) {
+        const a = i * Math.PI / 6;
         state.spits.push({ x: e.x + Math.cos(a) * e.r, y: e.y + Math.sin(a) * e.r,
           vx: Math.cos(a) * 180, vy: Math.sin(a) * 180, dmg: e.dmg, r: 6, life: 2.5, color: '#ff5d73' });
       }
-    } else if (e.atk === 'shell') { fan([-0.4, 0, 0.4], 220, 8, 2, '#8ab86a'); e.atkState = 'retreat'; e.atkPhaseT = 2; e.shelled = true; return true; }
-    else if (e.atk === 'line') { fan([-0.3, 0, 0.3], 300, 6, 2, '#7a9bb8'); e.atkState = 'charge'; e.atkPhaseT = 1.2; e.dmgMul = 1.5; return true; }
-    else if (e.atk === 'lure') { fan([-0.35, 0, 0.35], 260, 8, 2, '#ffd166'); e.atkState = 'dash'; e.atkPhaseT = 0.6; return true; }
+    } else if (e.atk === 'shell') { fan([-0.5, -0.25, 0, 0.25, 0.5], 220, 8, 2, '#8ab86a'); e.atkState = 'retreat'; e.atkPhaseT = 2; e.shelled = true; return true; }
+    else if (e.atk === 'line') { fan([-0.4, -0.2, 0, 0.2, 0.4], 300, 6, 2, '#7a9bb8'); e.atkState = 'charge'; e.atkPhaseT = 1.2; e.dmgMul = 1.5; return true; }
+    else if (e.atk === 'lure') { fan([-0.5, -0.25, 0, 0.25, 0.5], 260, 8, 2, '#ffd166'); e.atkState = 'dash'; e.atkPhaseT = 0.6; return true; }
     e.atkState = null; e.atkT = e.atkEvery; e.state = 'rest'; e.diveT = 2;
     return true;
   }
