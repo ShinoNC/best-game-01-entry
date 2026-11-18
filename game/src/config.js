@@ -60,7 +60,7 @@ export const PAL = {
 };
 export const PLAYER = {
   radius: 30, speed: 245, hp: 100,
-  dashCd: 2.0, dashSpeed: 640, dashTime: 0.25, magnet: 75, iframes: 0.5,
+  dashCd: 1.5, dashSpeed: 640, dashTime: 0.25, magnet: 75, iframes: 0.5,
 };
 export const ENEMIES = {
   guppy:    { hp: 10, speed: 102, dmg: 4,  r: 10, score: 10, coins: 1, xp: 2, color: '#ffd166', dark: '#c9962e' },
