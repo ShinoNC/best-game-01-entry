@@ -72,6 +72,43 @@ function runUntil(state, pred, maxSteps, fx, audio) {
   }
   return pred(state);
 }
+function poseBossShot(s, shot) {
+  const b = s.boss;
+  s.player.x = 480; s.player.y = 430; s.player.angle = -0.5;
+  b.x = 830; b.y = 280;
+  b.state = 'dive'; b.diveT = 0.4;
+  b.hp = Math.min(b.hp, b.maxHp * 0.7);
+  if (shot === 'storm' || shot === 'kraken') {
+    s.player.armor = Math.max(s.player.armor, 60);
+    b.atkState = 'tele'; b.atkPhaseT = 0.9;
+    b.slamSpots = [
+      { x: s.player.x + 70, y: s.player.y - 40, r: 55 },
+      { x: s.player.x - 80, y: s.player.y + 55, r: 55 },
+      { x: s.player.x + 140, y: s.player.y + 90, r: 55 },
+    ];
+  }
+  for (let i = 0; i < 3; i += 1) {
+    const g = spawnEnemy(s, 'squid', false);
+    const a = 0.6 + i * 2.0;
+    g.x = Math.min(1160, Math.max(120, s.player.x + Math.cos(a) * 220));
+    g.y = Math.min(600, Math.max(170, s.player.y + Math.sin(a) * 150));
+    g.state = 'circle'; g.diveT = 0.4;
+  }
+  if (s.weapons.laser > 0) {
+    s.player.laser = 0.15; s.player.laserLen = 420;
+    s.player.laserBeams = s.weapons.laser >= 5 ? 2 : 1;
+  }
+  if (s.weapons.spin > 0) s.player.spin = 0.15;
+  const ar = spawnEnemy(s, 'archer', false);
+  ar.x = Math.min(1160, Math.max(120, s.player.x - 280));
+  ar.y = Math.min(600, Math.max(170, s.player.y - 90));
+  ar.windup = 0.2; ar.lungeCd = 2;
+  s.spits.push({ x: (ar.x + s.player.x) / 2, y: (ar.y + s.player.y) / 2,
+    vx: 200, vy: 60, dmg: ar.dmg, r: 6, life: 2 });
+  s.banner = `${b.name} — DRIVE IT OFF!`;
+  s.bannerT = 2.5;
+  return s;
+}
 export function stageShot(shot, seed, fx, audio) {
   audio = new Proxy({}, { get: () => () => {} });
   if (shot === 'start') {
@@ -99,48 +136,24 @@ export function stageShot(shot, seed, fx, audio) {
     }
     return s;
   }
+  if (shot === 'kraken') {
+    const s = createStateFromSeed(seed); s.phase = 'play';
+    s.stage = 30; s.stageSpawned = 51; s.spawnT = 999;
+    s.level = 12; s.xp = 200; s.xpNext = 350; s.coins = 412; s.score = 184200; s.kills = 512;
+    s.weapons = { claw: 6, bow: 4, blaster: 3, shell: 3, spin: 4, laser: 3, trident: 2 };
+    s.ups = { claws: 3, tempo: 2, reach: 2, shell: 1, legs: 2, bubbles: 1, magnet: 2 };
+    s.player.maxHp = 155; s.player.hp = 128; s.player.armor = 120;
+    s.potions = 2;
+    for (let i = 0; i < 5; i += 1) stepWorld(s, autopilotInput(s), 1 / 60, fx, audio);
+    if (s.boss) return poseBossShot(s, 'kraken');
+    return s;
+  }
   if (shot === 'boss' || shot === 'storm') {
     const wantStage = shot === 'storm' ? 15 : 5;
     for (let trySeed = seed; trySeed < seed + 8; trySeed += 1) {
       const s = createStateFromSeed(trySeed); s.phase = 'play';
       runUntil(s, (st) => st.phase === 'play' && st.stage === wantStage && st.boss, 120000, fx, audio);
-      if (s.phase === 'play' && s.boss && s.stage === wantStage) {
-        const b = s.boss;
-        s.player.x = 480; s.player.y = 430; s.player.angle = -0.5;
-        b.x = 830; b.y = 280;
-        b.state = 'dive'; b.diveT = 0.4;
-        b.hp = Math.min(b.hp, b.maxHp * 0.7);
-        if (shot === 'storm') {
-          s.player.armor = Math.max(s.player.armor, 60);
-          b.atkState = 'tele'; b.atkPhaseT = 0.9;
-          b.slamSpots = [
-            { x: s.player.x + 70, y: s.player.y - 40, r: 55 },
-            { x: s.player.x - 80, y: s.player.y + 55, r: 55 },
-            { x: s.player.x + 140, y: s.player.y + 90, r: 55 },
-          ];
-        }
-        for (let i = 0; i < 3; i += 1) {
-          const g = spawnEnemy(s, 'squid', false);
-          const a = 0.6 + i * 2.0;
-          g.x = Math.min(1160, Math.max(120, s.player.x + Math.cos(a) * 220));
-          g.y = Math.min(600, Math.max(170, s.player.y + Math.sin(a) * 150));
-          g.state = 'circle'; g.diveT = 0.4;
-        }
-        if (s.weapons.laser > 0) {
-          s.player.laser = 0.15; s.player.laserLen = 420;
-          s.player.laserBeams = s.weapons.laser >= 5 ? 2 : 1;
-        }
-        if (s.weapons.spin > 0) s.player.spin = 0.15;
-        const ar = spawnEnemy(s, 'archer', false);
-        ar.x = Math.min(1160, Math.max(120, s.player.x - 280));
-        ar.y = Math.min(600, Math.max(170, s.player.y - 90));
-        ar.windup = 0.2; ar.lungeCd = 2;
-        s.spits.push({ x: (ar.x + s.player.x) / 2, y: (ar.y + s.player.y) / 2,
-          vx: 200, vy: 60, dmg: ar.dmg, r: 6, life: 2 });
-        s.banner = `${b.name} — DRIVE IT OFF!`;
-        s.bannerT = 2.5;
-        return s;
-      }
+      if (s.phase === 'play' && s.boss && s.stage === wantStage) return poseBossShot(s, shot);
     }
     const s = createStateFromSeed(seed); s.phase = 'play';
     runUntil(s, (st) => st.phase === 'play' && st.stage >= 12 && st.enemies.length >= 10, 60000, fx, audio);
