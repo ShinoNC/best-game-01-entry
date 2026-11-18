@@ -1,4 +1,4 @@
-import { POOL, CREATURE_ORDER, ENEMIES, PAL } from '../config.js';
+import { POOL, CREATURE_ORDER, ENEMIES, BOSS_TYPES, PAL } from '../config.js';
 import { drawCrab, drawEnemy } from './creatures.js';
 import { MENU_ITEMS, titleLayout } from './layout.js';
 import {bevel, logoText, pxPanel, txt, px} from './polish.js';
@@ -21,14 +21,25 @@ function drawAmbient(ctx, state) {
       hp: 1, maxHp: 1, flash: 0, wob: a.wob + tt * 0.5, elite: false }, tt, Math.atan2(a.vy, a.vx));
     ctx.restore();
   }
+  const bt = tt % 18;
+  if (bt < 9) {
+    const ty = Object.keys(BOSS_TYPES)[Math.floor(tt / 18) % 6];
+    const def = BOSS_TYPES[ty];
+    drawEnemy(ctx, { type: ty, x: (bt / 9) * (POOL.x1 + 160) - 80, y: 70, r: def.r * 0.55,
+      color: def.color, dark: def.dark, hp: 1, maxHp: 1 }, tt, 0);
+  }
   return tt;
 }
 function drawPatrolCrab(ctx, state, tt) {
   const span = 1280 - 2 * 90, cyc = (tt * 50) % (span * 2);
   const cx = 90 + (cyc < span ? cyc : span * 2 - cyc);
+  const fwd = cyc < span;
   drawCrab(ctx, { ...state.player, x: cx, y: 652, radius: 38,
-    angle: cyc < span ? 0 : Math.PI, moving: 1,
+    angle: fwd ? 0 : Math.PI, moving: 1,
     iframes: 0, flash: 0, swing: 0, spin: 0 }, tt, null, null);
+  ctx.save(); ctx.filter = 'hue-rotate(180deg)';
+  drawCrab(ctx, { x: cx + (fwd ? -60 : 60), y: 652, radius: 19, angle: fwd ? 0 : Math.PI, moving: 1 }, tt, null, null);
+  ctx.restore();
 }
 export function drawTitle(ctx, state) {
   const tt = drawAmbient(ctx, state);
