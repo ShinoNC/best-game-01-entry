@@ -68,7 +68,7 @@ export const ENEMIES = {
   starfish: { hp: 32, speed: 72,  dmg: 6,  r: 15, score: 20, coins: 2, xp: 3, color: '#ff8fb0', dark: '#d65d7e' },
   eel:      { hp: 18, speed: 152, dmg: 8,  r: 12, score: 30, coins: 2, xp: 5, color: '#7fe0c3', dark: '#3fae8c' },
   squid:     { hp: 28, speed: 176, dmg: 8,  r: 14, score: 40, coins: 2, xp: 5, color: '#ff8a5c', dark: '#c75a30' },
-  archer:   { hp: 20, speed: 95,  dmg: 3,  r: 13, score: 35, coins: 2, xp: 6, color: '#7fd4e0', dark: '#3a8ea8' },
+  archer:   { hp: 20, speed: 95,  dmg: 3,  r: 16, score: 35, coins: 2, xp: 6, color: '#7fd4e0', dark: '#3a8ea8' },
   mini:     { hp: 8,  speed: 118, dmg: 5,  r: 8,  score: 5,  coins: 1, xp: 2, color: '#ff8fb0', dark: '#d65d7e' },
 };
 export const BOSS_XP = 40;
