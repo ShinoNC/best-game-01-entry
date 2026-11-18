@@ -140,13 +140,14 @@ export function stageShot(shot, seed, fx, audio) {
     const s = createStateFromSeed(seed); s.phase = 'play';
     s.stage = 30; s.stageSpawned = 51; s.spawnT = 999;
     s.level = 12; s.xp = 200; s.xpNext = 350; s.coins = 412; s.score = 246800; s.kills = 640;
-    s.weapons = { claw: 6, bow: 4, blaster: 3, shell: 3, spin: 4, laser: 3, trident: 2 };
+    s.weapons = { claw: 6, bow: 4, blaster: 3, shell: 3, spin: 4, laser: 5, trident: 2 };
     s.ups = { claws: 3, tempo: 2, reach: 2, shell: 1, legs: 2, bubbles: 1, magnet: 2 };
     s.player.maxHp = 155; s.player.hp = 128; s.player.armor = 120;
     s.potions = 2;
     for (let i = 0; i < 5; i += 1) stepWorld(s, autopilotInput(s), 1 / 60, fx, audio);
     if (!s.boss) return s;
     poseBossShot(s, 'kraken');
+    s.player.laserLen = 560;
     const b = s.boss; b.hp = Math.round(b.maxHp * 0.35);
     s.combo = 18; s.comboT = 3;
     s.pet.x = 545; s.pet.y = 485;
