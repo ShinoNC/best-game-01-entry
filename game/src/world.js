@@ -173,7 +173,7 @@ export function stepWorld(state, input, dt, fx, audio) {
     if (state.enemies[i].hp <= 0) { killEnemy(state, state.enemies[i], fx, audio); state.enemies.splice(i, 1); }
   }
   if (state.ups.magnet) {
-    const pet = state.pet; let t = null, td = p.magnet * 2;
+    const pet = state.pet; let t = null, td = p.magnet * 3;
     if (p.hp < p.maxHp) for (const pk of state.pickups) { if (pk.kind === 'heal') { const dd = Math.hypot(pk.x - p.x, pk.y - p.y); if (dd < td) { td = dd; t = pk; } } }
     if (!t) for (const pe of state.drops) { const dd = Math.hypot(pe.x - p.x, pe.y - p.y); if (dd < td) { td = dd; t = pe; } }
     const tx = t ? t.x : p.x - 50, ty = t ? t.y : p.y + 40;
@@ -187,7 +187,7 @@ export function stepWorld(state, input, dt, fx, audio) {
     const pet = state.ups.magnet ? state.pet : p;
     const pd = Math.hypot(pet.x - pe.x, pet.y - pe.y);
     if (d < p.magnet) { pe.x += ((pet.x - pe.x) / (pd || 1)) * 340 * dt; pe.y += ((pet.y - pe.y) / (pd || 1)) * 340 * dt; }
-    if (d < p.radius + 10 || pd < 18) {
+    if (d < p.radius + 10 || pd < 30) {
       state.drops.splice(i, 1);
       state.coins += pe.v; state.coinsEarned += pe.v; state.score += pe.v * 2;
       audio.coin();

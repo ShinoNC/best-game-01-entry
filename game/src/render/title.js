@@ -10,6 +10,7 @@ for (let i = 0; i < 24; i += 1) {
     dep: 0.55 + Math.random() * 0.45 });
 }
 const BOSS = Object.keys(BOSS_TYPES)[Math.floor(Math.random() * 6)];
+const BOSS_X0 = Math.random() * 0.6;
 function drawAmbient(ctx, state) {
   ctx.fillStyle = 'rgba(6,42,51,0.28)'; ctx.fillRect(0, 0, POOL.x1, 720);
   const tt = state.shotMode ? 2.5 : performance.now() / 1000;
@@ -24,7 +25,7 @@ function drawAmbient(ctx, state) {
   }
   if (tt < 60) {
     const def = BOSS_TYPES[BOSS];
-    drawEnemy(ctx, { type: BOSS, x: (tt / 60) * (POOL.x1 + 160) - 80, y: 100, r: def.r * 1.2,
+    drawEnemy(ctx, { type: BOSS, x: BOSS_X0 * POOL.x1 + (tt / 60) * (POOL.x1 + 160) - 80, y: 100, r: def.r * 1.2,
       color: def.color, dark: def.dark, hp: 1, maxHp: 1 }, tt, 0);
   }
   return tt;
