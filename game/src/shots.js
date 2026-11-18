@@ -1,9 +1,8 @@
 import { POOL } from './config.js';
 import { createRandom } from './random.js';
 import { createState } from './state.js';
-import { nextStage, stepWorld } from './world.js';
-import { autoBuy, drawHand } from './cards.js';
-import { applyLevelChoice, rollLevelChoices } from './level.js';
+import { stepWorld } from './world.js';
+import { drawHand } from './cards.js';
 import { spawnEnemy } from './enemies.js';
 function autopilotInput(state) {
   const p = state.player;
@@ -50,43 +49,10 @@ function autopilotInput(state) {
     wasPressed: () => false,
   };
 }
-function runUntil(state, pred, maxSteps, fx, audio) {
-  let steps = 0;
-  while (steps < maxSteps) {
-    if (pred(state)) return true;
-    if (state.phase === 'over') return pred(state);
-    if (state.phase === 'levelup') {
-      applyLevelChoice(state, (state.levelChoices || [])[0]);
-      state.pendingLevels = Math.max(0, (state.pendingLevels || 1) - 1);
-      if (state.pendingLevels > 0) state.levelChoices = rollLevelChoices(state);
-      else { state.levelChoices = null; state.phase = 'play'; }
-    } else if (state.phase === 'stageclear') {
-      autoBuy(state);
-      nextStage(state, audio);
-    } else if (state.phase === 'play') {
-      stepWorld(state, autopilotInput(state), 1 / 60, fx, audio);
-    } else {
-      return pred(state);
-    }
-    steps += 1;
-  }
-  return pred(state);
-}
-function poseBossShot(s, shot) {
+function poseBossShot(s) {
   const b = s.boss;
   s.player.x = 480; s.player.y = 430; s.player.angle = -0.5;
-  b.x = 830; b.y = 280;
   b.state = 'dive'; b.diveT = 0.4;
-  b.hp = Math.min(b.hp, b.maxHp * 0.7);
-  if (shot === 'storm' || shot === 'kraken') {
-    s.player.armor = Math.max(s.player.armor, 60);
-    b.atkState = 'tele'; b.atkPhaseT = 0.9;
-    b.slamSpots = [
-      { x: s.player.x + 70, y: s.player.y - 40, r: 55 },
-      { x: s.player.x - 80, y: s.player.y + 55, r: 55 },
-      { x: s.player.x + 140, y: s.player.y + 90, r: 55 },
-    ];
-  }
   for (let i = 0; i < 3; i += 1) {
     const g = spawnEnemy(s, 'squid', false);
     const a = 0.6 + i * 2.0;
@@ -95,7 +61,7 @@ function poseBossShot(s, shot) {
     g.state = 'circle'; g.diveT = 0.4;
   }
   if (s.weapons.laser > 0) {
-    s.player.laser = 0.15; s.player.laserLen = 420;
+    s.player.laser = 0.15; s.player.laserLen = 560;
     s.player.laserBeams = s.weapons.laser >= 5 ? 2 : 1;
   }
   if (s.weapons.spin > 0) s.player.spin = 0.15;
@@ -105,36 +71,12 @@ function poseBossShot(s, shot) {
   ar.windup = 0.2; ar.lungeCd = 2;
   s.spits.push({ x: (ar.x + s.player.x) / 2, y: (ar.y + s.player.y) / 2,
     vx: 200, vy: 60, dmg: ar.dmg, r: 6, life: 2 });
-  s.banner = `${b.name} — DRIVE IT OFF!`;
-  s.bannerT = 2.5;
   return s;
 }
 export function stageShot(shot, seed, fx, audio) {
   audio = new Proxy({}, { get: () => () => {} });
   if (shot === 'start') {
     return createStateFromSeed(seed);
-  }
-  if (shot === 'play') {
-    const s = createStateFromSeed(seed); s.phase = 'play';
-    runUntil(s, (st) => st.time >= 120, 12000, fx, audio);
-    return s;
-  }
-  if (shot === 'elite') {
-    const s = createStateFromSeed(seed); s.phase = 'play';
-    runUntil(s, (st) => st.phase === 'play' && st.stage >= 12 && st.enemies.length >= 10, 60000, fx, audio);
-    if (s.phase === 'play') {
-      let elite = s.enemies.find((e) => e.elite);
-      if (!elite) elite = spawnEnemy(s, 'urchin', true);
-      elite.x = Math.min(1030, Math.max(250, s.player.x - 200));
-      elite.y = Math.min(560, Math.max(200, s.player.y + 120));
-      s.banner = '★ ELITE URCHIN — big coins!'; s.bannerT = 2.5;
-      if (s.weapons.laser > 0) {
-        s.player.laser = 0.15; s.player.laserLen = 420;
-        s.player.laserBeams = s.weapons.laser >= 5 ? 2 : 1;
-      }
-      if (s.weapons.spin > 0) s.player.spin = 0.15;
-    }
-    return s;
   }
   if (shot === 'kraken') {
     const s = createStateFromSeed(seed); s.phase = 'play';
@@ -146,8 +88,7 @@ export function stageShot(shot, seed, fx, audio) {
     s.potions = 2;
     for (let i = 0; i < 5; i += 1) stepWorld(s, autopilotInput(s), 1 / 60, fx, audio);
     if (!s.boss) return s;
-    poseBossShot(s, 'kraken');
-    s.player.laserLen = 560;
+    poseBossShot(s);
     const b = s.boss; b.hp = b.maxHp; b.atkState = null; b.slamSpots = null;
     s.player.x = 350; b.x = 950; b.y = 300;
     s.enemies.forEach((e, i) => { if (!e.boss && Math.hypot(e.x - 350, e.y - 430) < 150) { e.x = 800 + i * 25; e.y = 500; } });
@@ -169,28 +110,6 @@ export function stageShot(shot, seed, fx, audio) {
     s.pickups.push({ x: 430, y: 500, kind: 'heal', life: 20 });
     return s;
   }
-  if (shot === 'boss' || shot === 'storm') {
-    const wantStage = shot === 'storm' ? 15 : 5;
-    for (let trySeed = seed; trySeed < seed + 8; trySeed += 1) {
-      const s = createStateFromSeed(trySeed); s.phase = 'play';
-      runUntil(s, (st) => st.phase === 'play' && st.stage === wantStage && st.boss, 120000, fx, audio);
-      if (s.phase === 'play' && s.boss && s.stage === wantStage) return poseBossShot(s, shot);
-    }
-    const s = createStateFromSeed(seed); s.phase = 'play';
-    runUntil(s, (st) => st.phase === 'play' && st.stage >= 12 && st.enemies.length >= 10, 60000, fx, audio);
-    return s;
-  }
-  if (shot.startsWith('band')) {
-    const target = parseInt(shot.slice(4), 10) || 1;
-    for (let trySeed = seed; trySeed < seed + 8; trySeed += 1) {
-      const s = createStateFromSeed(trySeed); s.phase = 'play';
-      runUntil(s, (st) => st.phase === 'play' && st.stage >= target && st.enemies.length >= 8, 120000, fx, audio);
-      if (s.phase === 'play' && s.stage >= target) return s;
-    }
-    const s = createStateFromSeed(seed); s.phase = 'play';
-    runUntil(s, (st) => st.phase === 'play' && st.stage >= 12 && st.enemies.length >= 10, 60000, fx, audio);
-    return s;
-  }
   if (shot === 'stageclear') {
     const s = createStateFromSeed(seed); s.phase = 'stageclear';
     s.stage = 15; s.level = 12; s.xp = 200; s.xpNext = 350; s.coins = 540; s.score = 186400; s.kills = 480;
@@ -201,16 +120,6 @@ export function stageShot(shot, seed, fx, audio) {
     s.hand = drawHand(s);
     for (let i = 0; i < 20 && !s.hand.some((c) => c.kind === 'weapon'); i += 1) s.hand = drawHand(s);
     fx.clear();
-    return s;
-  }
-  if (shot === 'levelup') {
-    const s = createStateFromSeed(seed); s.phase = 'play';
-    runUntil(s, (st) => st.phase === 'levelup', 20000, fx, audio);
-    if (s.phase !== 'levelup') {
-      s.levelChoices = rollLevelChoices(s);
-      s.pendingLevels = 1;
-      s.phase = 'levelup';
-    }
     return s;
   }
   if (shot === 'end') {
