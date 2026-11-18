@@ -132,9 +132,9 @@ function bossAttack(state, e, dt, nx, ny, fx) {
         state.spits.push({ x: e.x + Math.cos(a) * e.r, y: e.y + Math.sin(a) * e.r,
           vx: Math.cos(a) * 180, vy: Math.sin(a) * 180, dmg: e.dmg, r: 6, life: 2.5, color: '#ff5d73' });
       }
-    } else if (e.atk === 'shell') { e.atkState = 'retreat'; e.atkPhaseT = 2; e.shelled = true; return true; }
-    else if (e.atk === 'line') { e.atkState = 'charge'; e.atkPhaseT = 1.2; e.dmgMul = 1.5; return true; }
-    else if (e.atk === 'lure') { e.atkState = 'dash'; e.atkPhaseT = 0.6; return true; }
+    } else if (e.atk === 'shell') { fan([-0.4, 0, 0.4], 220, 8, 2, '#8ab86a'); e.atkState = 'retreat'; e.atkPhaseT = 2; e.shelled = true; return true; }
+    else if (e.atk === 'line') { fan([-0.3, 0, 0.3], 300, 6, 2, '#7a9bb8'); e.atkState = 'charge'; e.atkPhaseT = 1.2; e.dmgMul = 1.5; return true; }
+    else if (e.atk === 'lure') { fan([-0.35, 0, 0.35], 260, 8, 2, '#ffd166'); e.atkState = 'dash'; e.atkPhaseT = 0.6; return true; }
     e.atkState = null; e.atkT = e.atkEvery; e.state = 'rest'; e.diveT = 2;
     return true;
   }
