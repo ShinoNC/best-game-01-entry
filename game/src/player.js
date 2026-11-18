@@ -142,7 +142,8 @@ export function updatePlayer(state, input, dt, fx, audio) {
     p.x += s.vx * dt; p.y += s.vy * dt;
     fx.bubbles(p.x, p.y, 1);
   } else if (mv.x || mv.y) {
-    const s = slideAtEdge(p, mv.x * p.speed, mv.y * p.speed);
+    const sp = p.speed * modOf(state, 'spd');
+    const s = slideAtEdge(p, mv.x * sp, mv.y * sp);
     p.x += s.vx * dt; p.y += s.vy * dt;
     p.angle = Math.atan2(mv.y, mv.x);
   }

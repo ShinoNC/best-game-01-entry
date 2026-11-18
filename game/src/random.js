@@ -8,7 +8,6 @@ export function createRandom(seed) {
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     },
     range(min, max) { return min + this.next() * (max - min); },
-    int(min, max) { return Math.floor(this.range(min, max + 1)); },
     pick(arr) { return arr[Math.floor(this.next() * arr.length)]; },
     chance(p) { return this.next() < p; },
     angle() { return this.next() * Math.PI * 2; },

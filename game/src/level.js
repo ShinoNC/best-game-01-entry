@@ -1,4 +1,4 @@
-import { UPGRADE_DEFS, applyUpgrade } from './upgrades.js';
+import { applyUpgrade } from './upgrades.js';
 export function xpNeed(level) {
   return 30 + level * 20 + level * level * 2;
 }
@@ -44,4 +44,3 @@ export function gainXp(state, amount) {
   }
   return gained;
 }
-export { UPGRADE_DEFS };

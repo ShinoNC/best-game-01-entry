@@ -22,7 +22,7 @@ export function spawnEnemy(state, type, elite, fx) {
   const hp = Math.round(def.hp * hpScale(st) * (elite ? ELITE.hpMul : 1) * modOf(state, 'ehp'));
   const e = {
     id: nextId += 1, type, x, y, hp, maxHp: hp, r: def.r * (elite ? ELITE.sizeMul : 1),
-    speed: def.speed * speedScale(st) * modOf(state, 'espd') * state.rng.range(0.9, 1.1), dmg: Math.round(def.dmg * dmgScale(st) * (elite ? ELITE.dmgMul : 1)),
+    speed: def.speed * speedScale(st) * state.rng.range(0.9, 1.1), dmg: Math.round(def.dmg * dmgScale(st) * (elite ? ELITE.dmgMul : 1)),
     score: elite ? ELITE.score : def.score,
     coins: elite ? ELITE.coins : def.coins,
     color: def.color, dark: def.dark, elite: !!elite,
@@ -49,7 +49,7 @@ function spawnBoss(state, fx, audio) {
   b.boss = true;
   b.name = def.name;
   b.hp = Math.round(def.hp * modOf(state, 'ehp')); b.maxHp = b.hp; b.r = def.r;
-  b.speed = def.speed * modOf(state, 'espd'); b.dmg = Math.round(def.dmg); b.score = def.score;
+  b.speed = def.speed; b.dmg = Math.round(def.dmg); b.score = def.score;
   b.coins = def.coins;
   b.color = def.color;
   b.dark = def.dark;

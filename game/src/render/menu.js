@@ -1,9 +1,9 @@
 import { POOL, ARMOR_PER_BOSS, PAL, VIEW_H, bossForStage, clusterMod, clusterOf, envForStage } from '../config.js';
 import { REROLL_COST, cardStats } from '../cards.js';
-import { drawCoin, drawPips, drawPotion, drawSkillIcon, drawWeaponIcon, heart } from './icons.js';
+import { drawCoin, drawPips, drawPotion, drawWeaponIcon, heart } from './icons.js';
 import { stageMenuLayout } from './layout.js';
 import {bevel, pxFrame, pxPanel, txt, px} from './polish.js';
-const KIND_COLOR = { skill: '#7fe0c3', wup: '#ffd166', weapon: '#c9a7ff', repair: '#ff8fb0', potion: '#ff5d73' };
+const KIND_COLOR = { wup: '#ffd166', weapon: '#c9a7ff', repair: '#ff8fb0', potion: '#ff5d73' };
 function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   const poor = !card.bought && state.coins < card.price;
   const kc = KIND_COLOR[card.kind] || PAL.dim;
@@ -25,7 +25,6 @@ function drawMenuCard(ctx, card, x, y, w, h, i, state, hovered) {
   if (card.kind === 'weapon' || card.kind === 'wup') drawWeaponIcon(ctx, card.wid, x + w / 2, y + 62, 48, true);
   else if (card.kind === 'repair') heart(ctx, x + w / 2, y + 62, 20, '#ff8fb0');
   else if (card.kind === 'potion') drawPotion(ctx, x + w / 2, y + 62, 48);
-  else drawSkillIcon(ctx, card.track, x + w / 2, y + 62, 48, true);
   ctx.font = px(11);
   if (ctx.measureText(card.name).width > w - 20) ctx.font = px(9);
   txt(ctx, card.name, x + w / 2, y + 108, PAL.text);

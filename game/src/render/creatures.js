@@ -1,7 +1,7 @@
 import { PAL } from '../config.js';
 import { imgFor } from '../sprites.js';
 import {txt, px} from './polish.js';
-const SIDE = { eel: 1, archer: 1, angler: 1 };
+const SIDE = { eel: 1, archer: 1 };
 const TOP = { turtle: 1, hammerhead: 1 };
 const DRAW = {
   guppy: 3.0, jelly: 3.4, eel: 3.0, squid: 3.0, archer: 3.2, starfish: 2.8,
@@ -100,7 +100,7 @@ export function drawCrab(ctx, p, t, clawStats, spinStats) {
 }
 export function drawEnemy(ctx, e, t, ang) {
   const face = ang ?? 0;
-  const img = imgFor(e.type);
+  const img = t % 1 < 0.5 ? imgFor(e.type + '2') || imgFor(e.type) : imgFor(e.type);
   const k = DRAW[e.type] || 2.8;
   const size = e.r * k;
   const flash = e.flash > 0;

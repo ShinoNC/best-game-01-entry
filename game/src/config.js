@@ -1,4 +1,4 @@
-export const STAGE_COUNT = 30;
+const STAGE_COUNT = 30;
 export const ARMOR_PER_BOSS = 30;
 export const MODIFIERS = [
   { n: 'SWARM TIDE', d: 'foes swarm · +50% coins', spawn: 0.8, coin: 1.5 },
@@ -8,8 +8,8 @@ export const MODIFIERS = [
   { n: 'THICK HIDE', d: 'take 25% less damage', taken: 0.75 },
   { n: 'HIGH RISK', d: '+25% damage · take 15% more', dmg: 1.25, taken: 1.15 },
 ];
-export function loopOf(stage) { return Math.floor((stage - 1) / STAGE_COUNT); }
-export function templateStage(stage) { return ((stage - 1) % STAGE_COUNT) + 1; }
+function loopOf(stage) { return Math.floor((stage - 1) / STAGE_COUNT); }
+function templateStage(stage) { return ((stage - 1) % STAGE_COUNT) + 1; }
 export function clusterOf(stage) { return Math.floor((stage - 1) / 5); }
 export function clusterMod(state, stage) {
   const c = clusterOf(stage || state.stage);
@@ -29,7 +29,7 @@ export function contentStage(state, pos) {
 export const VIEW_W = 1280;
 export const VIEW_H = 720;
 export const POOL = { x0: 0, y0: 72, x1: 1280, y1: 648, cx: 640, cy: 360, rx: 640, ry: 288 };
-export const ENV_BANDS = [
+const ENV_BANDS = [
   { rays: 1, rain: 0, glow: 0 }, { rays: 0.8, rain: 0, glow: 0 }, { rays: 0.4, rain: 0, glow: 0 },
   { rays: 0.15, rain: 0, glow: 0 }, { rays: 0, rain: 0, glow: 0 }, { rays: 0, rain: 1, glow: 1 },
 ];
@@ -55,7 +55,6 @@ export function sandRect(corner) {
 }
 export const PAL = {
   deep: '#062a33', foam: '#bfe8e0', crab: '#ff7a3c', crabDark: '#d94f1e',
-  shell0: '#8a6f4d', shell1: '#b08954', shell2: '#4fa8a0', shell3: '#e8b64c',
   gold: '#ffd166', hp: '#ff5d73', xp: '#7fe0c3', text: '#f4f9ff', dim: '#9fc4bd', armor: '#8fb8c9',
 };
 export const PLAYER = {
@@ -171,13 +170,13 @@ export function dmgScale(stage) {
 export function speedScale(stage) { return 1 + (templateStage(stage) - 1) * 0.025; }
 export const WEAPON_ORDER = ['claw', 'bow', 'blaster', 'shell', 'spin', 'laser', 'trident'];
 export const SHOP = [
-  { id: 'bow', kind: 'weapon', price: 50, up: [100, 150, 210, 280], name: 'BUBBLE BOW' },
-  { id: 'blaster', kind: 'weapon', price: 110, up: [220, 290, 370, 460], name: 'INK BLASTER' },
-  { id: 'shell', kind: 'weapon', price: 90, up: [170, 230, 300, 380], name: 'HOMING SHELL' },
-  { id: 'spin', kind: 'weapon', price: 70, up: [140, 190, 250, 320], name: 'WHIRLPOOL SPIN' },
-  { id: 'laser', kind: 'weapon', price: 130, up: [200, 260, 330, 420], name: 'LASER GUN' },
-  { id: 'trident', kind: 'weapon', price: 120, up: [190, 250, 320, 410], name: 'TRIDENT' },
-  { id: 'claw', kind: 'weapon', price: 0, up: [60, 95, 140, 200], name: 'SHARPEN CLAWS' },
+  { id: 'bow', price: 50, up: [100, 150, 210, 280] },
+  { id: 'blaster', price: 110, up: [220, 290, 370, 460] },
+  { id: 'shell', price: 90, up: [170, 230, 300, 380] },
+  { id: 'spin', price: 70, up: [140, 190, 250, 320] },
+  { id: 'laser', price: 130, up: [200, 260, 330, 420] },
+  { id: 'trident', price: 120, up: [190, 250, 320, 410] },
+  { id: 'claw', price: 0, up: [60, 95, 140, 200] },
 ];
 export const FEAT_IDS = ['slayer', 'beastslayer', 'veteran', 'deepdiver', 'bosscollector', 'arsenal', 'skillmaster', 'weaponmaster', 'skillexpert'];
 export const FEAT_NAMES = {

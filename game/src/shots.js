@@ -204,7 +204,7 @@ export function stageShot(shot, seed, fx, audio) {
   }
   return createStateFromSeed(seed);
 }
-export function createStateFromSeed(seed) {
+function createStateFromSeed(seed) {
   const rng = createRandom(seed);
   return createState(rng, seed);
 }

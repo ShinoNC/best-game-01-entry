@@ -35,7 +35,6 @@ const audio = createAudio();
 const fx = createParticles();
 function attachMeta(s) {
   s.meta = readMeta();
-  s.audio = audio;
   return s;
 }
 function toLogical(mx, my) {
@@ -181,7 +180,6 @@ function continueRun(slot, s) {
   const meta = state.meta;
   state = createState(createRandom(s.seed), s.seed);
   state.meta = meta;
-  state.audio = audio;
   state.slot = slot;
   state.stage = s.stage;
   state.level = s.level; state.xp = s.xp;
@@ -312,7 +310,6 @@ function freshState(phase) {
   const fresh = Math.floor(Math.random() * 4294967296);
   state = createState(createRandom(fresh), fresh);
   state.meta = meta;
-  state.audio = audio;
   state.phase = phase;
   fx.clear();
   rebindTide();

@@ -1,14 +1,13 @@
 import { SHOP, WEAPON_ORDER, modOf } from './config.js';
 import { WEAPONS, weaponLevelDef } from './weapons.js';
-import { UPGRADE_DEFS, applyUpgrade } from './upgrades.js';
 import { checkFeats, featBanner } from './meta.js';
 export const REROLL_COST = 5;
-export const HAND_SIZE = 5;
-export const REPAIR_PRICE = 25;
-export const REPAIR_HEAL = 40;
-export const POTION_PRICE = 50;
+const HAND_SIZE = 5;
+const REPAIR_PRICE = 25;
+const REPAIR_HEAL = 40;
+const POTION_PRICE = 50;
 export const POTION_HEAL = 25;
-export const POTION_MAX = 5;
+const POTION_MAX = 5;
 function shopEntry(wid) { return SHOP.find((s) => s.id === wid); }
 function upPrice(entry, lv) {
   const ups = entry.up;
@@ -18,10 +17,6 @@ function upPrice(entry, lv) {
 export function cardStats(card, state) {
   if (card.kind === 'repair') return `+${REPAIR_HEAL} HP`;
   if (card.kind === 'potion') return `+${POTION_HEAL} HP · USE [E]`;
-  if (card.kind === 'skill') {
-    const d = UPGRADE_DEFS.find((u) => u.id === card.track);
-    return d ? d.stat : '';
-  }
   const W = WEAPONS[card.wid];
   const mult = 1.14 * (1.05 ** state.ups.claws);
   const dmgAt = (lv) => Math.round(weaponLevelDef(card.wid, lv).dmg * mult);
@@ -40,35 +35,35 @@ export function cardStats(card, state) {
   }
   return s;
 }
-export function cardPool(state) {
+function cardPool(state) {
   const pr = (p) => Math.round(p * modOf(state, 'price'));
   const pool = [];
   const owned = WEAPON_ORDER.filter((w) => state.weapons[w] > 0).length;
   for (const wid of WEAPON_ORDER) {
     if (wid === 'claw') continue;
     if (state.weapons[wid] === 0) {
-      pool.push({ id: `weapon:${wid}`, kind: 'weapon', wid, lv: 0, toLevel: 1,
+      pool.push({ kind: 'weapon', wid, lv: 0, toLevel: 1,
         price: pr(shopEntry(wid).price), name: WEAPONS[wid].name,
         tag: 'NEW WEAPON', weight: owned < 4 ? 5 : 3, bought: false });
     }
   }
   if ((state.potions || 0) < POTION_MAX) {
-    pool.push({ id: 'potion', kind: 'potion', lv: 0, toLevel: 0,
+    pool.push({ kind: 'potion', lv: 0, toLevel: 0,
       price: pr(POTION_PRICE), name: 'HEALTH POTION', tag: 'CONSUMABLE',
       weight: 2, bought: false });
   }
   for (const wid of WEAPON_ORDER) {
     const lv = state.weapons[wid];
     if (lv > 0) {
-      pool.push({ id: `wup:${wid}:${lv + 1}`, kind: 'wup', wid, lv, toLevel: lv + 1,
+      pool.push({ kind: 'wup', wid, lv, toLevel: lv + 1,
         price: pr(upPrice(shopEntry(wid), lv)), name: `${WEAPONS[wid].name} Lv${lv + 1}`,
         tag: 'LEVEL UP', weight: 2, bought: false });
     }
   }
   return pool;
 }
-function repairCard(n, state) {
-  return { id: `repair:${n}`, kind: 'repair', lv: 0, toLevel: 0, price: Math.round(REPAIR_PRICE * modOf(state, 'price')),
+function repairCard(state) {
+  return { kind: 'repair', lv: 0, toLevel: 0, price: Math.round(REPAIR_PRICE * modOf(state, 'price')),
     name: 'SHELL REPAIR', tag: 'REPAIR',
     weight: 0, bought: false };
 }
@@ -86,9 +81,8 @@ export function drawHand(state) {
     const fresh = pool.filter((c) => c.kind === 'weapon' && !hand.includes(c));
     if (fresh.length > 0 && hand.length > 0) hand[hand.length - 1] = state.rng.pick(fresh);
   }
-  let n = 0;
   while (hand.length < HAND_SIZE && state.player.hp < state.player.maxHp) {
-    hand.push(repairCard(n += 1, state));
+    hand.push(repairCard(state));
   }
   return hand;
 }
@@ -98,8 +92,6 @@ export function buyCard(state, card) {
   state.coins -= card.price;
   if (card.kind === 'weapon' || card.kind === 'wup') {
     state.weapons[card.wid] = card.toLevel;
-  } else if (card.kind === 'skill') {
-    applyUpgrade(state, card.track);
   } else if (card.kind === 'repair') {
     state.player.hp = Math.min(state.player.maxHp, state.player.hp + REPAIR_HEAL);
   } else if (card.kind === 'potion') {
@@ -116,11 +108,9 @@ export function rerollHand(state) {
   state.hand = drawHand(state);
   return true;
 }
-const SKILL_ORDER = ['claws', 'tempo', 'shell', 'reach', 'bubbles', 'legs', 'magnet'];
 function cardScore(card) {
   if (card.kind === 'weapon') return 1000 - card.price;
   if (card.kind === 'wup') return (card.wid === 'claw' ? 900 : 800) - card.price;
-  if (card.kind === 'skill') return 300 - SKILL_ORDER.indexOf(card.track) * 10;
   if (card.kind === 'potion') return 150;
   return 100;
 }

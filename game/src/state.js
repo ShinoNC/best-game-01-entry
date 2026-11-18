@@ -43,12 +43,12 @@ export function createState(rng, seed) {
   const stageMix = [];
   for (let s = 1; s <= 30; s += 1) stageMix.push(s % 5 === 0 ? null : genStageMix(rng, s));
   return {
-    rng, seed, decor, theme, stageMix, envs, bossOrder, stageMap, sandCorner: ['tl', 'tr', 'bl', 'br'][((seed % 4) + 4) % 4], time: 0, phase: 'title', menuSel: 0,
+    rng, seed, decor, stageMix, envs, bossOrder, stageMap, sandCorner: ['tl', 'tr', 'bl', 'br'][((seed % 4) + 4) % 4], time: 0, phase: 'title', menuSel: 0,
     combo: 0, comboT: 0,
     level: 1, xp: 0, xpNext: 71, levelChoices: null, potions: 0,
     player: {
       x: POOL.cx, y: POOL.cy + 40, px: POOL.cx, py: POOL.cy + 40,
-      vx: 0, vy: 0, angle: -Math.PI / 2,
+      angle: -Math.PI / 2,
       hp: PLAYER.hp, maxHp: PLAYER.hp, armor: 0, radius: PLAYER.radius,
       speed: PLAYER.speed, weapCd: { claw: 0, bow: 0, blaster: 0, shell: 0, spin: 0, laser: 0, trident: 0 },
       dashCd: 0, dashT: 0,

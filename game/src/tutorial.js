@@ -1,5 +1,5 @@
 const near = (s, d) => (e) => Math.hypot(e.x - s.player.x, e.y - s.player.y) < d;
-export const HINTS = [
+const HINTS = [
   { id: 'move', text: 'WASD / ARROWS — move', show: 5, cond: (s) => s.time > 0.5 },
   { id: 'weapons', text: 'WEAPONS FIRE ALONE — DODGE!', show: 4.5, cond: (s) => s.enemies.some(near(s, 240)) },
   { id: 'coins', text: 'COINS BUY CARDS AFTER STAGES', show: 4.5, cond: (s) => s.coins > 0 || s.drops.length > 0 },

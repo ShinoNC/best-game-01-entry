@@ -1,8 +1,8 @@
-export const PXF = '"Press Start 2P", monospace';
-export const VTF = '"VT323", monospace';
+const PXF = '"Press Start 2P", monospace';
+const VTF = '"VT323", monospace';
 export function px(n) { return `${n}px ${PXF}`; }
 export function vt(n) { return `${n}px ${VTF}`; }
-export function stepFill(ctx, x, y, w, h) {
+function stepFill(ctx, x, y, w, h) {
   ctx.fillRect(x + 4, y, w - 8, h);
   ctx.fillRect(x, y + 4, w, h - 8);
   ctx.fillRect(x + 2, y + 2, 2, 2);
@@ -37,7 +37,7 @@ export function dither(ctx, base, dark) {
   _pat.set(key, p);
   return p;
 }
-export function dither4(ctx, base, dark) {
+function dither4(ctx, base, dark) {
   const key = 'b4|' + base + '|' + dark;
   let p = _pat.get(key);
   if (p) return p;

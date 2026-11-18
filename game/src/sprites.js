@@ -1,8 +1,8 @@
-export const SPRITE_NAMES = ['crab', 'guppy', 'jelly', 'eel', 'squid', 'archerfish',
+const SPRITE_NAMES = ['crab', 'guppy', 'jelly', 'eel', 'squid', 'archerfish',
   'starfish', 'urchin', 'turtle', 'octopus', 'hammerhead', 'angler', 'stingray',
-  'kraken', 'coral', 'water-tile', 'sand-tile'];
-export const TYPE_IMG = { archer: 'archerfish', mini: 'starfish' };
-export const SPR = {};
+  'kraken', 'kraken2', 'octopus2', 'coral', 'water-tile', 'sand-tile'];
+const TYPE_IMG = { archer: 'archerfish', mini: 'starfish' };
+const SPR = {};
 let readyPromise = null;
 export function imgFor(type) {
   const img = SPR[TYPE_IMG[type] || type];

@@ -7,7 +7,7 @@ import { gainXp, rollLevelChoices } from './level.js';
 import { saveRun } from './save.js';
 import { checkFeats, featBanner } from './meta.js';
 export const STEP = 1 / 60;
-export function comboMultFor(chain) {
+function comboMultFor(chain) {
   return 1 + Math.min(COMBO_MAX - 1, Math.floor(chain / 4));
 }
 export function comboMult(state) { return comboMultFor(state.combo); }
@@ -25,7 +25,7 @@ function dropCoins(state, e) {
   for (let i = 0; i < n; i += 1) {
     if (!state.rng.chance(0.85)) continue;
     state.drops.push({
-      kind: 'coin', x: e.x + state.rng.range(-30, 30), y: e.y + state.rng.range(-30, 30),
+      x: e.x + state.rng.range(-30, 30), y: e.y + state.rng.range(-30, 30),
       v: 1, vx: state.rng.range(-40, 40), vy: state.rng.range(-40, 40),
       life: 25, bob: state.rng.angle(),
     });

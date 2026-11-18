@@ -12,7 +12,7 @@ import { drawLevelUp } from './render/levelup.js';
 import { drawOver } from './render/over.js';
 import { drawCoin, heart } from './render/icons.js';
 import {txt, px} from './render/polish.js';
-export { MENU_ITEMS, POTION_BOX, SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE, levelupLayout, overLayout, stageMenuLayout, titleLayout } from './render/layout.js';
+export { MENU_ITEMS, POTION_BOX, levelupLayout, overLayout, stageMenuLayout, titleLayout } from './render/layout.js';
 export function createRenderer(canvas) {
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;

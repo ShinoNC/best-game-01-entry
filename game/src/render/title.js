@@ -55,7 +55,7 @@ export function drawTitle(ctx, state) {
   ctx.letterSpacing = '0px';
   const tagParts = [
     { t: '★ ENDLESS STAGES', f: px(19) },
-    { t: ' — DEFEND THE REEF, KEEP THE TIDE ★', f: px(15) },
+    { t: ' — DEFEND THE REEF, KEEP THE TIDE ★', f: px(19) },
   ];
   let tagW = 0;
   for (const p of tagParts) { ctx.font = p.f; tagW += ctx.measureText(p.t).width; }
