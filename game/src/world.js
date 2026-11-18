@@ -173,7 +173,7 @@ export function stepWorld(state, input, dt, fx, audio) {
     if (state.enemies[i].hp <= 0) { killEnemy(state, state.enemies[i], fx, audio); state.enemies.splice(i, 1); }
   }
   if (state.ups.magnet) {
-    const pet = state.pet; let t = null, td = p.magnet * 3;
+    const pet = state.pet; let t = null, td = p.magnet * 5;
     if (p.hp < p.maxHp) for (const pk of state.pickups) { if (pk.kind === 'heal') { const dd = Math.hypot(pk.x - p.x, pk.y - p.y); if (dd < td) { td = dd; t = pk; } } }
     if (!t) for (const pe of state.drops) { const dd = Math.hypot(pe.x - p.x, pe.y - p.y); if (dd < td) { td = dd; t = pe; } }
     const tx = t ? t.x : p.x - 50, ty = t ? t.y : p.y + 40;
