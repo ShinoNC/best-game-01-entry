@@ -45,8 +45,8 @@ function pxRect(ctx, x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h
 export function drawPool(ctx, state, t) {
   const env = envForStage(state.stage, state.envs);
   const menu = state.phase === 'title';
-  const x0 = menu ? 0 : POOL.x0, y0 = menu ? 0 : POOL.y0;
-  const pw = menu ? 1280 : POOL.x1 - POOL.x0, ph = menu ? 720 : POOL.y1 - POOL.y0;
+  const x0 = 0, y0 = menu ? 0 : POOL.y0;
+  const pw = POOL.x1, ph = menu ? 720 : POOL.y1 - POOL.y0;
   const wpat = patternFor(ctx, 'water-tile', waterCache);
   if (wpat) {
     ctx.fillStyle = wpat;
@@ -64,7 +64,7 @@ export function drawPool(ctx, state, t) {
   drawSandCorner(ctx, x0, y0, pw, ph, state.sandCorner);
   if (env.rays > 0) {
     for (let i = 0; i < 4; i += 1) {
-      const rx = 200 + i * 260 + Math.sin(t * 0.25 + i * 1.7) * 24;
+      const rx = pw * (0.12 + i * 0.24) + Math.sin(t * 0.25 + i * 1.7) * 24;
       ctx.fillStyle = `rgba(230,255,250,${0.13 * env.rays * (1 + 0.15 * Math.sin(t * 0.7 + i * 2.1))})`;
       ctx.beginPath();
       ctx.moveTo(rx, y0 - 10); ctx.lineTo(rx + 70, y0 - 10);

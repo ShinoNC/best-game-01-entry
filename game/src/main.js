@@ -60,6 +60,7 @@ if (shot) {
   })();
 } else {
   loadPixelFonts();
+  renderer.viewTransform();
   state = attachMeta(createState(createRandom(seed), seed));
   window.__tide = { state, fx, audio, step: (inp) => stepWorld(state, inp, STEP, fx, audio), STEP,
     menuLayout: () => stageMenuLayout(state), toScreen, toLogical, viewTransform: () => renderer.viewTransform(),

@@ -33,8 +33,8 @@ function dimHint(ctx, y) {
   txt(ctx, 'H / ESC / click outside also closes', POOL.cx, y, PAL.dim);
 }
 const BEHAVIOUR = {
-  guppy: 'charges at you', jelly: 'drifts in, wobbling', urchin: 'slow and tough',
-  starfish: 'splits in two', eel: 'winds up, then lunges', squid: 'circles, dives',
+  guppy: 'charges you', jelly: 'drifts, wobbling', urchin: 'slow and tough',
+  starfish: 'splits in two', eel: 'winds up, lunges', squid: 'circles, dives',
   archer: 'spits water jets',
 };
 export function drawHelp(ctx, state) {
@@ -80,12 +80,12 @@ export function drawHelp(ctx, state) {
   ctx.font = px(9);
   txt(ctx, 'TIPS', px0 + 40, 384, PAL.gold);
   ctx.font = vt(19);
-  txt(ctx, 'Weapons fire on their own — dodge and position.', px0 + 40, 402, PAL.text);
+  txt(ctx, 'Weapons fire alone — dodge and position.', px0 + 40, 402, PAL.text);
   txt(ctx, 'Coins buy cards after every stage.', px0 + 40, 419, PAL.text);
-  txt(ctx, 'Slain creatures grant XP. Level up to choose 1 of 3 upgrades.', px0 + 40, 436, PAL.text);
-  txt(ctx, 'Archers shoot from stage 12 — never stand still.', px0 + 40, 453, PAL.text);
+  txt(ctx, 'Slain foes grant XP. Level up, pick 1 of 3 upgrades.', px0 + 40, 436, PAL.text);
+  txt(ctx, 'Archers shoot from stage 4 — never stand still.', px0 + 40, 453, PAL.text);
   txt(ctx, `ARMOR absorbs damage before HP. Clear a boss to gain +${ARMOR_PER_BOSS} ARMOR. Armor does not heal.`, px0 + 40, 470, PAL.text);
-  txt(ctx, 'Stages go on forever — each loop, foes grow stronger.', px0 + 40, 487, PAL.text);
+  txt(ctx, 'Stages go on forever — foes grow each loop.', px0 + 40, 487, PAL.text);
   ctx.font = px(9);
   txt(ctx, 'EFFECTS — ONE PER 5 STAGES', px0 + 40, 508, PAL.gold);
   ctx.font = vt(15);

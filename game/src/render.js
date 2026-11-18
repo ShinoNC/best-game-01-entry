@@ -28,14 +28,15 @@ export function createRenderer(canvas) {
   function viewTransform() {
     const scale = cssH / VIEW_H;
     const effW = Math.max(VIEW_W, cssW / scale);
+    POOL.x1 = effW; POOL.cx = effW / 2; POOL.rx = effW / 2;
     return { scale, ox: (cssW - effW * scale) / 2, oy: 0, cssW, cssH, dpr, effW };
   }
   return {
     viewTransform,
     render(state, fx, t, alpha = 1, hover = null) {
       if (window.innerWidth !== cssW || window.innerHeight !== cssH) resize();
-      const { scale, ox, oy, effW } = viewTransform();
-      POOL.x1 = effW; POOL.cx = effW / 2; POOL.rx = effW / 2; POTION_BOX.x = POOL.cx + 160;
+      const { scale, ox, oy } = viewTransform();
+      POTION_BOX.x = POOL.cx + 160;
       const s = scale * dpr;
       const oxd = ox * dpr, oyd = oy * dpr;
       ctx.imageSmoothingEnabled = false;

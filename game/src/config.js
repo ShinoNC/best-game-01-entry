@@ -114,11 +114,12 @@ export const STAGES = Array.from({ length: STAGE_COUNT }, (_, i) => {
   };
 });
 export function spawnWeights(stage) {
-  const w = { guppy: 10, jelly: 4, urchin: 2, starfish: 3, eel: 0, squid: 0, archer: 0 };
+  const w = { guppy: 10, jelly: 4, urchin: 1, starfish: 3, eel: 0, squid: 0, archer: 0 };
   if (stage >= 2) w.eel = 2;
-  if (stage >= 3) { w.urchin = 4; w.jelly = 6; }
+  if (stage >= 3) { w.urchin = 3; w.jelly = 6; }
+  if (stage >= 4) w.archer = 1;
   if (stage >= 5) w.squid = 4;
-  if (stage >= 7) { w.urchin = 6; w.eel = 3; w.guppy = 7; }
+  if (stage >= 7) { w.urchin = 4; w.eel = 3; w.guppy = 7; }
   if (stage >= 12) { w.jelly = 8; w.starfish = 5; w.archer = 2; }
   if (stage >= 15) w.archer = 3;
   if (stage >= 18) { w.urchin = 8; w.eel = 4; w.squid = 6; }
